@@ -1,0 +1,10 @@
+features:
+  near_logmel: true
+  far_logmel: true
+  residual_logmel: true
+  coherence: true
+  log_ratio: true
+  phase_sin_cos: true
+  n_mels: 128
+  fmin: 0.0
+  fmax: null

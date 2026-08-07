@@ -1,0 +1,4 @@
+calibration:
+  name: hierarchical_conformal
+  alpha: 0.05
+  abstain_margin: 0.02

@@ -1,0 +1,76 @@
+experiment:
+  id: care_dev_default
+  seed: 42
+  dry_run: false
+  notes: "Default development configuration (Phase 0 skeleton)."
+
+data:
+  root: data
+  manifest: data/manifests/dcase2026_dev.parquet
+  sample_rate: null
+  channel_map:
+    near: 0
+    far: 1
+
+signal:
+  n_fft: 1024
+  win_length: 1024
+  hop_length: 512
+  window: hann
+  center: false
+  eps: 1.0e-8
+
+frontend:
+  name: care
+  transfer:
+    mode: causal_ema
+    alpha: 0.95
+    reg_floor: 1.0e-5
+  gate:
+    mode: semi_parametric
+    min_value: 0.0
+    max_value: 0.9
+    bypass: false
+  residual:
+    max_removed_energy_ratio: 0.8
+
+features:
+  near_logmel: true
+  far_logmel: true
+  residual_logmel: true
+  coherence: true
+  log_ratio: true
+  phase_sin_cos: true
+  n_mels: 128
+  fmin: 0.0
+  fmax: null
+
+model:
+  name: lightweight_encoder
+  embedding_dim: 128
+  dropout: 0.1
+
+scoring:
+  name: shrinkage_mahalanobis
+  covariance_shrinkage: auto
+  target_adaptation:
+    enabled: true
+    lambda: 0.2
+
+calibration:
+  name: hierarchical_conformal
+  alpha: 0.05
+  abstain_margin: 0.02
+
+streaming:
+  enabled: false
+  window_seconds: 1.0
+  hop_seconds: 0.25
+  aggregation: topk_mean
+  topk: 3
+
+output:
+  root: outputs
+  save_embeddings: false
+  save_scores: true
+  save_diagnostics: true

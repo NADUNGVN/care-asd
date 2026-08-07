@@ -1,0 +1,6 @@
+scoring:
+  name: shrinkage_mahalanobis
+  covariance_shrinkage: auto
+  target_adaptation:
+    enabled: true
+    lambda: 0.2

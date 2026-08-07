@@ -1,0 +1,32 @@
+# DCASE 2026 Task 2 data sources (no audio committed to git).
+# Zenodo record IDs verified in CARE_ASD_CODEX_IMPLEMENTATION_PLAN.md §3.2
+
+dataset:
+  name: dcase2026_task2
+  channel_0_role: near
+  channel_1_role: far
+  expected_channels: 2
+
+zenodo:
+  development:
+    record_id: "19336329"
+    url: "https://zenodo.org/records/19336329"
+  additional_training:
+    record_id: "20151556"
+    url: "https://zenodo.org/records/20151556"
+  evaluation:
+    record_id: "20437238"
+    url: "https://zenodo.org/records/20437238"
+    requires_policy_acceptance: true
+
+paths:
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed
+  manifests: data/manifests
+  checksums: data/checksums
+
+baseline:
+  official_repo: "https://github.com/nttcslab/dcase2023_task2_baseline_ae"
+  evaluator_repo: "https://github.com/nttcslab/dcase2026_task2_evaluator"
+  uses_channel: 0

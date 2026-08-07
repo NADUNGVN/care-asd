@@ -1,0 +1,6 @@
+streaming:
+  enabled: false
+  window_seconds: 1.0
+  hop_seconds: 0.25
+  aggregation: topk_mean
+  topk: 3

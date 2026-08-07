@@ -1,0 +1,6 @@
+# Fill after docs/HARDWARE_PROFILE.md is complete (Phase 10).
+deployment:
+  device_id: unset
+  backend: cpu_reference
+  onnx_opset: 17
+  quantize: false
