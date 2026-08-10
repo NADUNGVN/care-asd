@@ -19,13 +19,17 @@ Target journal: *Digital Signal Processing* (Elsevier).
 > Implementation follows
 > [`CARE_ASD_CODEX_IMPLEMENTATION_PLAN.md`](CARE_ASD_CODEX_IMPLEMENTATION_PLAN.md)
 > as the binding technical specification.
+>
+> Server collaboration follows
+> [`docs/COLLABORATION_PROTOCOL.md`](docs/COLLABORATION_PROTOCOL.md). Commands
+> supplied for a server are deliberately one physical line per task.
 
 ## Status
 
 | Phase | Description | Status |
 |------:|-------------|--------|
 | 0 | Repository bootstrap | **complete** |
-| 1 | Dataset download & audit | planned |
+| 1 | Dataset download & audit | **implemented; awaiting server acquisition** |
 | 2 | Official baseline reproduction | planned |
 | 3 | Signal-processing baselines | planned |
 | 4 | CARE acoustic-path front-end | planned |
@@ -84,13 +88,14 @@ uv run care-asd config-init -o configs/experiment/my_run.yaml
 
 ### Dataset (Phase 1)
 
-Audio is **not** committed. After Phase 1 is implemented:
+Audio is **not** committed. On a server, follow the collaboration protocol, then
+run one command per task:
 
 ```bash
-care-asd data download --split dev
-care-asd data extract --split dev
-care-asd data manifest --split dev
-care-asd data validate --split dev
+uv run care-asd data download --split dev --data-root /path/on/server/to/care-asd-data
+uv run care-asd data extract --split dev --data-root /path/on/server/to/care-asd-data
+uv run care-asd data manifest --split dev --data-root /path/on/server/to/care-asd-data
+uv run care-asd data validate --split dev --data-root /path/on/server/to/care-asd-data
 ```
 
 See [`data/README.md`](data/README.md) and [`docs/DATASET.md`](docs/DATASET.md).
