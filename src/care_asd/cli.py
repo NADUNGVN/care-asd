@@ -17,6 +17,7 @@ from rich.table import Table
 
 from care_asd import __version__
 from care_asd.config import config_hash, default_config, load_config, validate_config
+from care_asd.deployment import validate_deployment_bundle, validate_tensorrt_model_latency_report
 from care_asd.logging_utils import setup_logging
 from care_asd.reproducibility import collect_environment_report, set_seed
 
@@ -152,6 +153,45 @@ def config_init(
     OmegaConf.save(cfg, output)
     console.print(f"[green]Wrote default config to[/green] {output}")
     console.print(f"[dim]config_hash={config_hash(cfg)}[/dim]")
+
+
+@app.command("bundle-validate")
+def bundle_validate(
+    bundle: Annotated[
+        Path,
+        typer.Argument(help="Path to a CARE-ASD deployment bundle directory."),
+    ],
+) -> None:
+    """Validate deployment artifact hashes and scorer/calibration contracts."""
+    try:
+        manifest = validate_deployment_bundle(bundle)
+    except (FileNotFoundError, ValueError) as exc:
+        console.print(f"[red]Invalid deployment bundle:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]Deployment bundle valid.[/green] "
+        f"schema={manifest.schema_version} config_hash={manifest.config_hash}"
+    )
+
+
+@app.command("benchmark-report-validate")
+def benchmark_report_validate(
+    report: Annotated[
+        Path,
+        typer.Argument(help="Path to care_asd_trt_runner JSON report."),
+    ],
+) -> None:
+    """Validate a hardware-produced TensorRT model-latency report."""
+    try:
+        parsed = validate_tensorrt_model_latency_report(report)
+    except (FileNotFoundError, ValueError) as exc:
+        console.print(f"[red]Invalid TensorRT benchmark report:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]TensorRT benchmark report valid.[/green] "
+        f"p50={parsed.model_latency_ms.p50:.3f} ms "
+        f"p95={parsed.model_latency_ms.p95:.3f} ms"
+    )
 
 
 @app.command("seed-check")

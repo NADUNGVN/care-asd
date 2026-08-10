@@ -17,6 +17,8 @@ Paper-specific path overrides: [`INFRA_OVERRIDE.md`](INFRA_OVERRIDE.md).
 | Train inventory | **4/4 filled** |
 | Edge E1 (Pi5 + Hailo-8) | **Board + PCIe Hailo-8 confirmed** |
 | Hailo runtime on E1 | **Not installed** (`/dev/hailo*` missing; no hailort) |
+| Edge E2 (Xavier NX Developer Kit) | **Selected; physical inventory pending** |
+| Edge E3 (AGX Xavier Developer Kit) | **Selected; physical inventory pending** |
 | Mic / stereo capture on edge | **TBD** |
 
 ## Interim policy (CARE-ASD)
@@ -25,13 +27,18 @@ Paper-specific path overrides: [`INFRA_OVERRIDE.md`](INFRA_OVERRIDE.md).
 - Prefer **CPU / ONNX Runtime** on E1 for early edge scaffolding.
 - Latency/energy claims must label backend and commit; idle thermal baseline ~44°C, no throttle at audit.
 - Note PCIe link **x1 downgraded** (capable x4) when interpreting Hailo throughput later.
-- Phase 10 full export/benchmark after Hailo SW install + optional mic inventory.
+- Jetson export/benchmark starts after E2/E3 inventory and external-meter setup;
+  Hailo remains a supplemental comparison after its software smoke test.
+- Xavier E2/E3 use JetPack 5.1.5 + TensorRT C++ runner; inventory exact module
+  SKU/RAM, carrier, cooling and power meter before a benchmark is valid.
 
 ## CARE-ASD-only deploy notes
 
 | Item | Value |
 |------|-------|
 | Deploy device | **E1** — Raspberry Pi 5 Model B Rev 1.1 + Hailo-8 |
+| Primary student device | **E2** — Jetson Xavier NX Developer Kit (10/15 W) |
+| Expert/comparison device | **E3** — Jetson AGX Xavier Developer Kit (15/30 W) |
 | Channel map (DCASE / CARE) | ch0=near, ch1=far |
 | Near/far mic spacing for demos | TBD |
 | Selective routing | student on E1; expert on train GPU servers (optional) |

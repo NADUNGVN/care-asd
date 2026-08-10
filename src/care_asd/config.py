@@ -9,10 +9,10 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from omegaconf import DictConfig, OmegaConf
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ExperimentConfig(BaseModel):
@@ -51,12 +51,12 @@ class SignalConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    n_fft: int = 1024
-    win_length: int = 1024
-    hop_length: int = 512
-    window: str = "hann"
+    n_fft: int = Field(default=1024, gt=0)
+    win_length: int = Field(default=1024, gt=0)
+    hop_length: int = Field(default=512, gt=0)
+    window: Literal["hann"] = "hann"
     center: bool = False
-    eps: float = 1.0e-8
+    eps: float = Field(default=1.0e-8, gt=0.0)
 
 
 class TransferConfig(BaseModel):
@@ -64,9 +64,9 @@ class TransferConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    mode: str = "causal_ema"
-    alpha: float = 0.95
-    reg_floor: float = 1.0e-5
+    mode: Literal["causal_ema", "static_per_clip"] = "causal_ema"
+    alpha: float = Field(default=0.95, ge=0.0, lt=1.0)
+    reg_floor: float = Field(default=1.0e-5, gt=0.0)
 
 
 class GateConfig(BaseModel):
@@ -74,9 +74,9 @@ class GateConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    mode: str = "semi_parametric"
-    min_value: float = 0.0
-    max_value: float = 0.9
+    mode: Literal["semi_parametric"] = "semi_parametric"
+    min_value: float = Field(default=0.0, ge=0.0, le=1.0)
+    max_value: float = Field(default=0.9, ge=0.0, le=1.0)
     bypass: bool = False
 
 
@@ -85,7 +85,7 @@ class ResidualConfig(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    max_removed_energy_ratio: float = 0.8
+    max_removed_energy_ratio: float = Field(default=0.8, gt=0.0, le=1.0)
 
 
 class FrontendConfig(BaseModel):
@@ -150,8 +150,45 @@ class CalibrationConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str = "hierarchical_conformal"
-    alpha: float = 0.05
-    abstain_margin: float = 0.02
+    alpha: float = Field(default=0.05, gt=0.0, lt=1.0)
+    abstain_margin: float = Field(default=0.02, ge=0.0)
+
+
+class DeploymentConfig(BaseModel):
+    """Reproducible profile for a target deployment device."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    device_id: str = "E2"
+    platform: Literal["jetson_xavier_nx", "jetson_agx_xavier", "pi5_hailo"] = (
+        "jetson_xavier_nx"
+    )
+    backend: Literal["tensorrt", "onnxruntime", "hailo"] = "tensorrt"
+    runner: Literal["cpp_tensorrt", "python_onnxruntime"] = "cpp_tensorrt"
+    precision: Literal["fp32", "fp16", "int8"] = "fp16"
+    power_mode_w: int = Field(default=15, gt=0)
+    warmup_windows: int = Field(default=100, ge=0)
+    timed_windows: int = Field(default=1000, gt=0)
+    repetitions: int = Field(default=3, gt=0)
+    require_external_power_meter: bool = True
+
+    @model_validator(mode="after")
+    def validate_platform_profile(self) -> DeploymentConfig:
+        allowed_power_modes = {
+            "jetson_xavier_nx": {10, 15},
+            "jetson_agx_xavier": {10, 15, 30},
+        }
+        if self.platform in allowed_power_modes and self.power_mode_w not in allowed_power_modes[
+            self.platform
+        ]:
+            raise ValueError(
+                f"power_mode_w={self.power_mode_w} is unsupported for platform={self.platform}"
+            )
+        if self.platform.startswith("jetson_") and (
+            self.backend != "tensorrt" or self.runner != "cpp_tensorrt"
+        ):
+            raise ValueError("Jetson Xavier profiles require the cpp_tensorrt runner")
+        return self
 
 
 class StreamingConfig(BaseModel):
@@ -190,6 +227,7 @@ class CareASDConfig(BaseModel):
     model: ModelConfig = Field(default_factory=ModelConfig)
     scoring: ScoringConfig = Field(default_factory=ScoringConfig)
     calibration: CalibrationConfig = Field(default_factory=CalibrationConfig)
+    deployment: DeploymentConfig = Field(default_factory=DeploymentConfig)
     streaming: StreamingConfig = Field(default_factory=StreamingConfig)
     output: OutputConfig = Field(default_factory=OutputConfig)
 

@@ -107,3 +107,38 @@ def test_channel_map_defaults_match_dcase() -> None:
     cfg = validate_config(default_config())
     assert cfg.data.channel_map.near == 0
     assert cfg.data.channel_map.far == 1
+
+
+def test_deployment_defaults_describe_xavier_nx_contract() -> None:
+    cfg = validate_config(default_config())
+    assert cfg.deployment.device_id == "E2"
+    assert cfg.deployment.platform == "jetson_xavier_nx"
+    assert cfg.deployment.runner == "cpp_tensorrt"
+    assert cfg.deployment.require_external_power_meter
+
+
+def test_invalid_xavier_power_profile_is_rejected() -> None:
+    with pytest.raises(ValidationError, match="power_mode_w=30"):
+        CareASDConfig.model_validate(
+            {
+                "deployment": {
+                    "platform": "jetson_xavier_nx",
+                    "power_mode_w": 30,
+                }
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "xavier_nx_fp16.yaml",
+        "xavier_nx_int8.yaml",
+        "agx_xavier_fp16.yaml",
+        "agx_xavier_expert_30w.yaml",
+    ],
+)
+def test_deployment_profiles_load(filename: str) -> None:
+    root = Path(__file__).resolve().parents[2]
+    cfg = load_config(root / "configs" / "deployment" / filename)
+    assert validate_config(cfg).deployment.backend == "tensorrt"

@@ -6,7 +6,9 @@
 > **Tên tiếng Việt**  
 > Phát hiện âm thanh bất thường nhân quả theo đường truyền âm, có hiệu chỉnh độ tin cậy, cho máy chưa thấy trên thiết bị biên.
 >
-> **Trạng thái tài liệu:** Bản đặc tả triển khai ban đầu  
+> **Trạng thái tài liệu:** Bản đặc tả triển khai ban đầu; xem
+> [`docs/RESEARCH_SCOPE.md`](docs/RESEARCH_SCOPE.md) cho các quyết định nghiên
+> cứu hiện hành có quyền ưu tiên khi mâu thuẫn.
 > **Ngày khóa nội dung:** 06-08-2026  
 > **Journal mục tiêu:** *Digital Signal Processing* — Elsevier  
 > **Dataset chính:** DCASE 2026 Challenge Task 2  

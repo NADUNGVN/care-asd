@@ -1,0 +1,13 @@
+# E3 expert/comparison benchmark. Run 15 W for cross-device comparison and a
+# separately pre-registered 30 W expert/routing profile when the expert exists.
+deployment:
+  device_id: E3
+  platform: jetson_agx_xavier
+  backend: tensorrt
+  runner: cpp_tensorrt
+  precision: fp16
+  power_mode_w: 15
+  warmup_windows: 100
+  timed_windows: 1000
+  repetitions: 3
+  require_external_power_meter: true
