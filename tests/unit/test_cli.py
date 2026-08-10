@@ -69,12 +69,11 @@ def test_seed_check_applies() -> None:
     assert "seed=42" in result.stdout or "seed=42" in result.stderr
 
 
-def test_data_download_stub_dry_run() -> None:
+def test_data_download_dry_run() -> None:
     result = runner.invoke(app, ["data", "download", "--split", "dev", "--dry-run"])
     assert result.exit_code == 0
-    # Phase 1 not implemented yet — must not crash or download
     combined = (result.stdout + result.stderr).lower()
-    assert "phase" in combined or "not implemented" in combined
+    assert "would download" in combined
 
 
 def test_train_stub() -> None:

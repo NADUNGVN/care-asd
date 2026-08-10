@@ -29,11 +29,19 @@
 ## Download (Phase 1)
 
 ```bash
-care-asd data download --split dev
-care-asd data extract --split dev
-care-asd data manifest --split dev
-care-asd data validate --split dev
+care-asd data download --split dev --data-root /path/on/server/to/care-asd-data
+care-asd data extract --split dev --data-root /path/on/server/to/care-asd-data
+care-asd data manifest --split dev --data-root /path/on/server/to/care-asd-data
+care-asd data validate --split dev --data-root /path/on/server/to/care-asd-data
 ```
+
+Each download is verified against the checksum published in the official Zenodo
+record. Extraction and manifest creation never overwrite an existing differing
+file; retain the generated checksum sidecar and manifest with the experiment
+record. Omit `--data-root` to use `data.root` from the selected config.
+
+The evaluation split additionally requires `--accept-eval-policy`; do not pull
+or inspect it before the experimental freeze policy permits doing so.
 
 ## License and citation
 

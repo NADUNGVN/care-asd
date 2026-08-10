@@ -139,6 +139,7 @@ packages = ["care_asd"]
 
 [[tool.mypy.overrides]]
 module = [
+    "pandas.*",
     "soundfile.*",
     "torchaudio.*",
     "librosa.*",

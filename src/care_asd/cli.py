@@ -17,6 +17,14 @@ from rich.table import Table
 
 from care_asd import __version__
 from care_asd.config import config_hash, default_config, load_config, validate_config
+from care_asd.data import (
+    audit_dcase2026_manifest,
+    build_dcase2026_manifest,
+    dcase2026_manifest_path,
+    download_dcase2026_split,
+    extract_dcase2026_split,
+    normalize_split,
+)
 from care_asd.deployment import validate_deployment_bundle, validate_tensorrt_model_latency_report
 from care_asd.logging_utils import setup_logging
 from care_asd.reproducibility import collect_environment_report, set_seed
@@ -227,6 +235,10 @@ def data_download(
         Path | None,
         typer.Option("--config", "-c", help="Config path."),
     ] = None,
+    data_root: Annotated[
+        Path | None,
+        typer.Option("--data-root", help="Dataset root; defaults to data.root in config."),
+    ] = None,
     dry_run: Annotated[
         bool,
         typer.Option("--dry-run", help="Show plan without downloading."),
@@ -239,48 +251,112 @@ def data_download(
         ),
     ] = False,
 ) -> None:
-    """Download DCASE 2026 Task 2 data from Zenodo (Phase 1)."""
-    extra = f"accept_eval_policy={accept_eval_policy}, config={config}"
-    _phase_stub(phase=1, action=f"data download --split {split}", dry_run=dry_run, extra=extra)
+    """Download and checksum-verify DCASE 2026 Task 2 archives from Zenodo."""
+    try:
+        normalized = normalize_split(split)
+        root = _data_root(config, data_root)
+        if dry_run:
+            console.print(
+                f"[yellow]dry-run:[/yellow] would download split={normalized} to {root} "
+                f"(accept_eval_policy={accept_eval_policy})"
+            )
+            return
+        archives = download_dcase2026_split(
+            root,
+            normalized,
+            accept_evaluation_policy=accept_eval_policy,
+        )
+    except (FileNotFoundError, PermissionError, ValueError, OSError) as exc:
+        console.print(f"[red]Dataset download failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    new_count = sum(item.downloaded for item in archives)
+    console.print(
+        f"[green]Verified {len(archives)} archive(s).[/green] "
+        f"downloaded={new_count}, reused={len(archives) - new_count}"
+    )
 
 
 @data_app.command("extract")
 def data_extract(
     split: Annotated[str, typer.Option("--split")] = "dev",
     config: Annotated[Path | None, typer.Option("--config", "-c")] = None,
+    data_root: Annotated[
+        Path | None,
+        typer.Option("--data-root", help="Dataset root; defaults to data.root in config."),
+    ] = None,
     dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
 ) -> None:
-    """Safely extract downloaded archives (Phase 1)."""
-    _phase_stub(phase=1, action=f"data extract --split {split}", dry_run=dry_run, extra=str(config))
+    """Safely extract downloaded archives without overwriting files."""
+    try:
+        normalized = normalize_split(split)
+        root = _data_root(config, data_root)
+        if dry_run:
+            console.print(f"[yellow]dry-run:[/yellow] would extract split={normalized} under {root}")
+            return
+        summaries = extract_dcase2026_split(root, normalized)
+    except (FileNotFoundError, FileExistsError, ValueError, OSError) as exc:
+        console.print(f"[red]Dataset extraction failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    extracted = sum(item.extracted_files for item in summaries)
+    reused = sum(item.reused_files for item in summaries)
+    console.print(
+        f"[green]Extraction complete.[/green] archives={len(summaries)}, "
+        f"new_files={extracted}, reused_files={reused}"
+    )
 
 
 @data_app.command("manifest")
 def data_manifest(
     split: Annotated[str, typer.Option("--split")] = "dev",
     config: Annotated[Path | None, typer.Option("--config", "-c")] = None,
+    data_root: Annotated[
+        Path | None,
+        typer.Option("--data-root", help="Dataset root; defaults to data.root in config."),
+    ] = None,
     dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
 ) -> None:
-    """Build a deterministic dataset manifest (Phase 1)."""
-    _phase_stub(
-        phase=1,
-        action=f"data manifest --split {split}",
-        dry_run=dry_run,
-        extra=str(config),
-    )
+    """Build a deterministic immutable Parquet manifest from extracted audio."""
+    try:
+        normalized = normalize_split(split)
+        root = _data_root(config, data_root)
+        target = dcase2026_manifest_path(root, normalized)
+        if dry_run:
+            console.print(f"[yellow]dry-run:[/yellow] would write manifest to {target}")
+            return
+        manifest = build_dcase2026_manifest(root, normalized)
+    except (FileNotFoundError, FileExistsError, ValueError, OSError) as exc:
+        console.print(f"[red]Manifest build failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[green]Wrote immutable manifest:[/green] {manifest}")
 
 
 @data_app.command("validate")
 def data_validate(
     split: Annotated[str, typer.Option("--split")] = "dev",
     config: Annotated[Path | None, typer.Option("--config", "-c")] = None,
+    data_root: Annotated[
+        Path | None,
+        typer.Option("--data-root", help="Dataset root; defaults to data.root in config."),
+    ] = None,
     dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
 ) -> None:
-    """Audit dataset integrity and stereo layout (Phase 1)."""
-    _phase_stub(
-        phase=1,
-        action=f"data validate --split {split}",
-        dry_run=dry_run,
-        extra=str(config),
+    """Audit manifest integrity and enforce the DCASE stereo-audio contract."""
+    try:
+        normalized = normalize_split(split)
+        root = _data_root(config, data_root)
+        manifest = dcase2026_manifest_path(root, normalized)
+        if dry_run:
+            console.print(f"[yellow]dry-run:[/yellow] would audit {manifest}")
+            return
+        audit = audit_dcase2026_manifest(manifest)
+    except (FileNotFoundError, ValueError, OSError) as exc:
+        console.print(f"[red]Dataset validation failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]Dataset audit passed.[/green] "
+        f"clips={audit.clips}, stereo={audit.stereo_clips}, "
+        f"sample_rates={list(audit.sample_rates)}, conditions={list(audit.conditions)}, "
+        f"domains={list(audit.domains)}"
     )
 
 
@@ -336,6 +412,14 @@ def _phase_stub(
         msg += "\n[dim]--dry-run: no side effects.[/dim]"
     console.print(msg)
     raise typer.Exit(code=0)
+
+
+def _data_root(config_path: Path | None, data_root: Path | None) -> Path:
+    """Resolve CLI data storage without mutating the experiment configuration."""
+    if data_root is not None:
+        return data_root
+    config = validate_config(load_config(config_path))
+    return Path(config.data.root)
 
 
 def run() -> None:
