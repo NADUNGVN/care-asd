@@ -134,7 +134,7 @@ class BaselineConfig(BaseModel):
     evaluator_dir: str = "external/dcase2026_task2_evaluator"
     official_python: str | None = None
     seed: int = 13711
-    input_channels: tuple[int, int] = (0, 1)
+    input_channel: int = 0
 
 
 class TargetAdaptationConfig(BaseModel):

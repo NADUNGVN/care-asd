@@ -8,9 +8,11 @@ reference. It never copies or modifies official source code.
 | AE baseline | `nttcslab/dcase2023_task2_baseline_ae` | `f44242ec1f78f6cc34f53f43fb88be1ce5d13d47` |
 | Evaluator | `nttcslab/dcase2026_task2_evaluator` | `f6a94a2b5e614a9626c9d1ccff6df0705e6aaa75` |
 
-The pinned DCASE 2026 baseline uses its `mono=False` path: stereo WAV input
-with the near microphone in the left channel and the far microphone in the
-right channel. The previous mono-only baseline behavior is not claimed here.
+The pinned DCASE 2026 baseline invokes its `mono=False` path and asserts a
+multi-channel WAV, but its official `file_load` function returns `y[0]` before
+feature extraction. Thus the reproduced AE consumes the left/near channel only;
+the far channel is present only to satisfy the stereo input assertion. This is
+the correct near-only control for CARE-ASD comparisons.
 
 ## Reproduction contract
 
