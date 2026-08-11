@@ -182,11 +182,16 @@ def run_official_development_baseline(
 
 def _run_git(arguments: list[str]) -> subprocess.CompletedProcess[str]:
     command = ["git", *arguments]
+    environment = os.environ.copy()
+    # Conda's libffi can shadow Ubuntu's libffi and break git-remote-https.
+    # Keep the official checkout independent from the caller's active Conda env.
+    environment.pop("LD_LIBRARY_PATH", None)
     try:
         return subprocess.run(
             command,
             capture_output=True,
             check=True,
+            env=environment,
             text=True,
         )
     except subprocess.CalledProcessError as exc:
