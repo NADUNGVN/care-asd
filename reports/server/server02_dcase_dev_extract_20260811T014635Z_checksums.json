@@ -1,0 +1,47 @@
+{
+  "files": [
+    {
+      "bytes": 704228804,
+      "checksum": "md5:58b79bac4b05bf14a11e9d53e6cdfae9",
+      "filename": "dev_fan.zip",
+      "path": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/raw/dcase2026/dev/archives/dev_fan.zip"
+    },
+    {
+      "bytes": 574561173,
+      "checksum": "md5:f7f74e59773eefa512f24625d88d58f0",
+      "filename": "dev_valveEmu.zip",
+      "path": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/raw/dcase2026/dev/archives/dev_valveEmu.zip"
+    },
+    {
+      "bytes": 681113572,
+      "checksum": "md5:21ef8b6dea66472bc4e7c91a175efdb7",
+      "filename": "dev_gearboxEmu.zip",
+      "path": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/raw/dcase2026/dev/archives/dev_gearboxEmu.zip"
+    },
+    {
+      "bytes": 815490762,
+      "checksum": "md5:187b0b3f84d2452d8944d5c831305f15",
+      "filename": "dev_ToyCarEmu.zip",
+      "path": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/raw/dcase2026/dev/archives/dev_ToyCarEmu.zip"
+    },
+    {
+      "bytes": 694421981,
+      "checksum": "md5:1cbc87a09883a1aa05a6b2a4308efb83",
+      "filename": "dev_sliderEmu.zip",
+      "path": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/raw/dcase2026/dev/archives/dev_sliderEmu.zip"
+    },
+    {
+      "bytes": 608240380,
+      "checksum": "md5:82c2d04c5f48d09842152c34ef273667",
+      "filename": "dev_bearingEmu.zip",
+      "path": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/raw/dcase2026/dev/archives/dev_bearingEmu.zip"
+    },
+    {
+      "bytes": 722655322,
+      "checksum": "md5:353201db217e25377a7e7eccf9c1c8a7",
+      "filename": "dev_ToyCar_r2.zip",
+      "path": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/raw/dcase2026/dev/archives/dev_ToyCar_r2.zip"
+    }
+  ],
+  "record_id": "19336329"
+}
