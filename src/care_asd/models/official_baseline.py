@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -167,18 +168,25 @@ def run_official_development_baseline(
     output.parent.mkdir(parents=True, exist_ok=True)
     environment = os.environ.copy()
     environment.pop("LD_LIBRARY_PATH", None)
-    environment["PATH"] = str(python.parent) + os.pathsep + environment.get("PATH", "")
-    with output.open("x", encoding="utf-8") as log:
-        for script in scripts:
-            subprocess.run(
-                ["bash", script, "-d"],
-                cwd=baseline.directory,
-                env=environment,
-                stdout=log,
-                stderr=subprocess.STDOUT,
-                text=True,
-                check=True,
-            )
+    # Official helper scripts invoke ``python3``.  A uv environment can expose
+    # only ``python``; provide an ephemeral shim without editing official code.
+    with tempfile.TemporaryDirectory(prefix="care_asd_official_python_") as shim_directory:
+        shim_python3 = Path(shim_directory) / "python3"
+        shim_python3.symlink_to(python)
+        environment["PATH"] = (
+            str(shim_directory) + os.pathsep + str(python.parent) + os.pathsep + environment.get("PATH", "")
+        )
+        with output.open("x", encoding="utf-8") as log:
+            for script in scripts:
+                subprocess.run(
+                    ["bash", script, "-d"],
+                    cwd=baseline.directory,
+                    env=environment,
+                    stdout=log,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    check=True,
+                )
 
 
 def _run_git(arguments: list[str]) -> subprocess.CompletedProcess[str]:
