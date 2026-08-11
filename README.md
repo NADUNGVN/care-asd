@@ -29,7 +29,7 @@ Target journal: *Digital Signal Processing* (Elsevier).
 | Phase | Description | Status |
 |------:|-------------|--------|
 | 0 | Repository bootstrap | **complete** |
-| 1 | Dataset download & audit | **implemented; awaiting server acquisition** |
+| 1 | Dataset download & audit | **complete** |
 | 2 | Official baseline reproduction | planned |
 | 3 | Signal-processing baselines | planned |
 | 4 | CARE acoustic-path front-end | planned |
