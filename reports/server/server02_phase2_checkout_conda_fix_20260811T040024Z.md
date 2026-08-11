@@ -1,0 +1,4 @@
+Pinned baseline: external/dcase2026_task2_baseline_ae @ f44242ec1f78f6cc34f53f43fb88be1ce5d13d47
+Pinned evaluator: external/dcase2026_task2_evaluator @ f6a94a2b5e614a9626c9d1ccff6df0705e6aaa75
+
+task_status=0
