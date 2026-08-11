@@ -62,6 +62,7 @@ data/processed/
 
 # Outputs and experiments products
 outputs/
+external/
 *.pt
 *.pth
 *.onnx

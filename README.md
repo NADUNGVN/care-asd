@@ -30,7 +30,7 @@ Target journal: *Digital Signal Processing* (Elsevier).
 |------:|-------------|--------|
 | 0 | Repository bootstrap | **complete** |
 | 1 | Dataset download & audit | **complete** |
-| 2 | Official baseline reproduction | planned |
+| 2 | Official baseline reproduction | **implemented; awaiting SERVER-02 run** |
 | 3 | Signal-processing baselines | planned |
 | 4 | CARE acoustic-path front-end | planned |
 | 5 | Embedding & anomaly scoring | planned |
@@ -99,6 +99,13 @@ uv run care-asd data validate --split dev --data-root /path/on/server/to/care-as
 ```
 
 See [`data/README.md`](data/README.md) and [`docs/DATASET.md`](docs/DATASET.md).
+
+### Official baseline (Phase 2)
+
+The DCASE 2026 baseline is an external pinned reference; see
+[`docs/OFFICIAL_BASELINE.md`](docs/OFFICIAL_BASELINE.md). It uses the official
+two-channel near/far input, runs unchanged, then has its scores normalized into
+CARE-ASD's schema.
 
 ## Project layout
 

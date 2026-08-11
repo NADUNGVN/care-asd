@@ -125,6 +125,18 @@ class ModelConfig(BaseModel):
     dropout: float = 0.1
 
 
+class BaselineConfig(BaseModel):
+    """Pinned external DCASE baseline execution contract."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    reference_dir: str = "external/dcase2026_task2_baseline_ae"
+    evaluator_dir: str = "external/dcase2026_task2_evaluator"
+    official_python: str | None = None
+    seed: int = 13711
+    input_channels: tuple[int, int] = (0, 1)
+
+
 class TargetAdaptationConfig(BaseModel):
     """Source-target prototype shrinkage."""
 
@@ -225,6 +237,7 @@ class CareASDConfig(BaseModel):
     frontend: FrontendConfig = Field(default_factory=FrontendConfig)
     features: FeaturesConfig = Field(default_factory=FeaturesConfig)
     model: ModelConfig = Field(default_factory=ModelConfig)
+    baseline: BaselineConfig = Field(default_factory=BaselineConfig)
     scoring: ScoringConfig = Field(default_factory=ScoringConfig)
     calibration: CalibrationConfig = Field(default_factory=CalibrationConfig)
     deployment: DeploymentConfig = Field(default_factory=DeploymentConfig)

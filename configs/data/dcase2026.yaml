@@ -29,4 +29,4 @@ paths:
 baseline:
   official_repo: "https://github.com/nttcslab/dcase2023_task2_baseline_ae"
   evaluator_repo: "https://github.com/nttcslab/dcase2026_task2_evaluator"
-  uses_channel: 0
+  input_channels: [0, 1]

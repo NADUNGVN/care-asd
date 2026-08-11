@@ -7,8 +7,9 @@ phases and support ``--dry-run`` / ``--config`` conventions.
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, cast
 
 import typer
 from omegaconf import OmegaConf
@@ -26,7 +27,22 @@ from care_asd.data import (
     normalize_split,
 )
 from care_asd.deployment import validate_deployment_bundle, validate_tensorrt_model_latency_report
+from care_asd.evaluation import (
+    ScoreMode,
+    calculate_development_auc_metrics,
+    normalize_official_development_scores,
+)
 from care_asd.logging_utils import setup_logging
+from care_asd.models import (
+    OFFICIAL_BASELINE_COMMIT,
+    OFFICIAL_BASELINE_REPOSITORY,
+    OFFICIAL_EVALUATOR_COMMIT,
+    OFFICIAL_EVALUATOR_REPOSITORY,
+    BaselineMode,
+    checkout_pinned_reference,
+    run_official_development_baseline,
+    stage_official_development_data,
+)
 from care_asd.reproducibility import collect_environment_report, set_seed
 
 app = typer.Typer(
@@ -40,6 +56,8 @@ app = typer.Typer(
 )
 data_app = typer.Typer(help="Dataset download, extraction, manifest, and validation.")
 app.add_typer(data_app, name="data")
+baseline_app = typer.Typer(help="Pinned official DCASE 2026 baseline reproduction.")
+app.add_typer(baseline_app, name="baseline")
 
 console = Console(stderr=True)
 
@@ -291,7 +309,9 @@ def data_extract(
         normalized = normalize_split(split)
         root = _data_root(config, data_root)
         if dry_run:
-            console.print(f"[yellow]dry-run:[/yellow] would extract split={normalized} under {root}")
+            console.print(
+                f"[yellow]dry-run:[/yellow] would extract split={normalized} under {root}"
+            )
             return
         summaries = extract_dcase2026_split(root, normalized)
     except (FileNotFoundError, FileExistsError, ValueError, OSError) as exc:
@@ -358,6 +378,152 @@ def data_validate(
         f"sample_rates={list(audit.sample_rates)}, conditions={list(audit.conditions)}, "
         f"domains={list(audit.domains)}"
     )
+
+
+@baseline_app.command("checkout")
+def baseline_checkout(
+    baseline_dir: Annotated[
+        Path, typer.Option("--baseline-dir", help="External official baseline checkout.")
+    ],
+    evaluator_dir: Annotated[
+        Path, typer.Option("--evaluator-dir", help="External official evaluator checkout.")
+    ],
+    dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
+) -> None:
+    """Clone and pin external official baseline/evaluator references."""
+    if dry_run:
+        console.print(
+            f"[yellow]dry-run:[/yellow] would pin baseline={baseline_dir} at "
+            f"{OFFICIAL_BASELINE_COMMIT} and evaluator={evaluator_dir} at {OFFICIAL_EVALUATOR_COMMIT}"
+        )
+        return
+    try:
+        baseline = checkout_pinned_reference(
+            baseline_dir,
+            repository=OFFICIAL_BASELINE_REPOSITORY,
+            commit=OFFICIAL_BASELINE_COMMIT,
+            required_file="01_train_2026t2.sh",
+        )
+        evaluator = checkout_pinned_reference(
+            evaluator_dir,
+            repository=OFFICIAL_EVALUATOR_REPOSITORY,
+            commit=OFFICIAL_EVALUATOR_COMMIT,
+            required_file="dcase2026_task2_evaluator.py",
+        )
+    except (FileNotFoundError, OSError, ValueError, subprocess.CalledProcessError) as exc:
+        console.print(f"[red]Official reference checkout failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[green]Pinned baseline:[/green] {baseline.directory} @ {baseline.commit}")
+    console.print(f"[green]Pinned evaluator:[/green] {evaluator.directory} @ {evaluator.commit}")
+
+
+@baseline_app.command("stage-dev")
+def baseline_stage_dev(
+    baseline_dir: Annotated[Path, typer.Option("--baseline-dir")],
+    data_root: Annotated[Path, typer.Option("--data-root")],
+    manifest: Annotated[Path, typer.Option("--manifest")],
+    dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
+) -> None:
+    """Create no-copy symlinks from audited development audio to the official layout."""
+    if dry_run:
+        console.print(f"[yellow]dry-run:[/yellow] would stage {manifest} into {baseline_dir}")
+        return
+    try:
+        result = stage_official_development_data(
+            baseline_directory=baseline_dir, data_root=data_root, manifest_path=manifest
+        )
+    except (FileNotFoundError, FileExistsError, OSError, ValueError) as exc:
+        console.print(f"[red]Official baseline staging failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        f"[green]Staged {len(result.machine_types)} machine type(s) without copying WAVs.[/green] "
+        f"created_links={result.created_links}, reused_links={result.reused_links}"
+    )
+
+
+@baseline_app.command("run-dev")
+def baseline_run_dev(
+    baseline_dir: Annotated[Path, typer.Option("--baseline-dir")],
+    official_python: Annotated[
+        Path, typer.Option("--official-python", help="Python in the isolated official environment.")
+    ],
+    mode: Annotated[str, typer.Option("--mode", help="mse | mahala | all")] = "all",
+    log: Annotated[Path, typer.Option("--log", help="New immutable official run log.")] = Path(
+        "outputs/baseline/official_dev.log"
+    ),
+    dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
+) -> None:
+    """Run the unmodified official training and selected development score mode(s)."""
+    if mode not in {"mse", "mahala", "all"}:
+        console.print("[red]mode must be one of: mse, mahala, all[/red]")
+        raise typer.Exit(code=1)
+    if dry_run:
+        console.print(
+            f"[yellow]dry-run:[/yellow] would run official baseline mode={mode} log={log}"
+        )
+        return
+    try:
+        run_official_development_baseline(
+            baseline_directory=baseline_dir,
+            official_python=official_python,
+            mode=cast("BaselineMode", mode),
+            log_path=log,
+        )
+    except (
+        FileNotFoundError,
+        FileExistsError,
+        OSError,
+        ValueError,
+        subprocess.CalledProcessError,
+    ) as exc:
+        console.print(f"[red]Official baseline run failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[green]Official baseline completed; immutable log:[/green] {log}")
+
+
+@baseline_app.command("normalize")
+def baseline_normalize(
+    official_scores: Annotated[
+        Path,
+        typer.Option(
+            "--official-scores", help="Official results directory containing anomaly_score CSVs."
+        ),
+    ],
+    manifest: Annotated[Path, typer.Option("--manifest")],
+    score_mode: Annotated[str, typer.Option("--score-mode", help="mse | mahala")],
+    experiment_id: Annotated[str, typer.Option("--experiment-id")],
+    output: Annotated[Path, typer.Option("--output")],
+) -> None:
+    """Normalize official CSV scores into the CARE-ASD score schema."""
+    if score_mode not in {"mse", "mahala"}:
+        console.print("[red]score-mode must be one of: mse, mahala[/red]")
+        raise typer.Exit(code=1)
+    try:
+        result = normalize_official_development_scores(
+            official_score_directory=official_scores,
+            manifest_path=manifest,
+            score_mode=cast("ScoreMode", score_mode),
+            experiment_id=experiment_id,
+            output_path=output,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, ValueError) as exc:
+        console.print(f"[red]Official score normalization failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[green]Wrote normalized official scores:[/green] {result}")
+
+
+@baseline_app.command("metrics")
+def baseline_metrics(
+    scores: Annotated[Path, typer.Option("--scores")],
+    output: Annotated[Path, typer.Option("--output")],
+) -> None:
+    """Recompute deterministic development AUC/pAUC from normalized scores."""
+    try:
+        result = calculate_development_auc_metrics(scores, output)
+    except (FileNotFoundError, FileExistsError, OSError, ValueError) as exc:
+        console.print(f"[red]Development metric computation failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[green]Wrote development metrics:[/green] {result}")
 
 
 @app.command("train")
