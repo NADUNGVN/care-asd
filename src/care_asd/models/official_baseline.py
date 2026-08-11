@@ -166,6 +166,7 @@ def run_official_development_baseline(
         raise FileExistsError(f"Refusing to overwrite baseline log: {output}")
     output.parent.mkdir(parents=True, exist_ok=True)
     environment = os.environ.copy()
+    environment.pop("LD_LIBRARY_PATH", None)
     environment["PATH"] = str(python.parent) + os.pathsep + environment.get("PATH", "")
     with output.open("x", encoding="utf-8") as log:
         for script in scripts:
