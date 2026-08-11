@@ -181,9 +181,14 @@ def run_official_development_baseline(
 
 
 def _run_git(arguments: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["git", *arguments],
-        capture_output=True,
-        check=True,
-        text=True,
-    )
+    command = ["git", *arguments]
+    try:
+        return subprocess.run(
+            command,
+            capture_output=True,
+            check=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        detail = exc.stderr.strip() or exc.stdout.strip() or "no Git diagnostic was produced"
+        raise ValueError(f"Git reference command failed ({' '.join(command)}): {detail}") from exc
