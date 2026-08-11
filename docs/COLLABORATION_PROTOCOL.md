@@ -51,13 +51,12 @@ environment.
 For any future server task, Codex supplies a command following this pattern:
 
 ```bash
-cd ~/Dung_TDTU/CARE_ASD && git pull --ff-only && RUN_ID="server02_<task>_$(date -u +%Y%m%dT%H%M%SZ)" && mkdir -p reports/server && (<task command>; TASK_STATUS=$?; printf '\nexit_status=%s\n' "$TASK_STATUS"; exit "$TASK_STATUS") > "reports/server/${RUN_ID}.log" 2>&1; TASK_STATUS=$?; git add "reports/server/${RUN_ID}.log" && git commit -m "report: add ${RUN_ID}" && git push origin main; exit "$TASK_STATUS"
+cd ~/Dung_TDTU/CARE_ASD && git pull --ff-only && RUN_ID="server02_<task>_$(date -u +%Y%m%dT%H%M%SZ)" && TASK_STATUS=99 && mkdir -p reports/server && { <task command>; TASK_STATUS=$?; printf '\ntask_status=%s\n' "$TASK_STATUS"; } > "reports/server/${RUN_ID}.log" 2>&1; git add "reports/server/${RUN_ID}.log" && git commit -m "report: add ${RUN_ID}" && git push origin main; printf 'task_status=%s (the SSH shell remains open)\n' "$TASK_STATUS"
 ```
 
 Replace `<task>` and `<task command>` only with values supplied by Codex. For a
-failing task, this pattern still commits its short error output for inspection,
-then returns the original failure status. Do **not** commit raw data or a huge
-log.
+failing task, this pattern still commits its short error output for inspection
+and returns the user to the SSH prompt. Do **not** commit raw data or a huge log.
 
 ## Dataset-specific rules
 
