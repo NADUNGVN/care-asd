@@ -384,10 +384,10 @@ def data_validate(
 def baseline_checkout(
     baseline_dir: Annotated[
         Path, typer.Option("--baseline-dir", help="External official baseline checkout.")
-    ],
+    ] = Path("external/dcase2026_task2_baseline_ae"),
     evaluator_dir: Annotated[
         Path, typer.Option("--evaluator-dir", help="External official evaluator checkout.")
-    ],
+    ] = Path("external/dcase2026_task2_evaluator"),
     dry_run: Annotated[bool, typer.Option("--dry-run")] = False,
 ) -> None:
     """Clone and pin external official baseline/evaluator references."""
