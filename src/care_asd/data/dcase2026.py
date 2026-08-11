@@ -175,6 +175,7 @@ def audit_dcase2026_manifest(manifest_path: str | Path) -> DatasetAudit:
     frame = pd.read_parquet(path)
     required = {
         "file_id",
+        "relative_path",
         "channels",
         "sample_rate",
         "condition",
@@ -191,6 +192,14 @@ def audit_dcase2026_manifest(manifest_path: str | Path) -> DatasetAudit:
         raise ValueError(f"DCASE 2026 requires stereo audio; invalid clips={invalid_channels}")
     if not frame["file_id"].is_unique:
         raise ValueError("Manifest file_id values must be unique")
+    relative_paths = frame["relative_path"].astype(str)
+    if any(
+        candidate in {"", ".", ".."}
+        or Path(candidate).is_absolute()
+        or ".." in Path(candidate).parts
+        for candidate in relative_paths
+    ):
+        raise ValueError("Manifest contains an unsafe relative_path")
     return DatasetAudit(
         manifest_path=str(path),
         clips=len(frame),
@@ -307,7 +316,7 @@ def _manifest_record(path: Path, extracted_root: Path, split: DatasetSplit) -> d
     }[split]
     return {
         "file_id": relative.as_posix(),
-        "path": str(path),
+        "relative_path": relative.as_posix(),
         "machine_type": machine_type,
         "section": section,
         "condition": condition,

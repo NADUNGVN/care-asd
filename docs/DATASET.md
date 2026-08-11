@@ -44,6 +44,12 @@ See implementation plan §12. Required roles:
 - `domain ∈ {source, target, unknown}`
 - `dataset_split ∈ {dev_train, dev_test, add_train, eval_test}`
 
+The manifest contains both a stable `file_id` and a portable `relative_path`.
+`relative_path` is POSIX-formatted relative to
+`raw/dcase2026/<split>/extracted/`; consumers resolve it against their own
+configured data root. Absolute server paths and parent traversal are forbidden
+so a manifest can move safely between SERVER-02 and edge devices.
+
 ## Self-collected data
 
 Not required for version 1. If added later, document license, mic geometry,

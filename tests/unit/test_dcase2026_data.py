@@ -6,6 +6,7 @@ import zipfile
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 import soundfile as sf
 
@@ -44,12 +45,15 @@ def test_build_and_audit_stereo_manifest(tmp_path: Path) -> None:
 
     manifest = build_dcase2026_manifest(tmp_path, "dev")
     audit = audit_dcase2026_manifest(manifest)
+    frame = pd.read_parquet(manifest)
 
     assert audit.clips == 1
     assert audit.stereo_clips == 1
     assert audit.sample_rates == (16000,)
     assert audit.conditions == ("normal",)
     assert audit.domains == ("source",)
+    assert frame.loc[0, "relative_path"] == "ToyCar/test/normal_id_00_source_test_section_00.wav"
+    assert not Path(frame.loc[0, "relative_path"]).is_absolute()
 
 
 def test_audit_rejects_mono_audio(tmp_path: Path) -> None:
