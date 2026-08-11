@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shlex
 import subprocess
 import tempfile
 from dataclasses import dataclass
@@ -170,11 +171,15 @@ def run_official_development_baseline(
     output.parent.mkdir(parents=True, exist_ok=True)
     environment = os.environ.copy()
     environment.pop("LD_LIBRARY_PATH", None)
-    # Official helper scripts invoke ``python3``.  A uv environment can expose
-    # only ``python``; provide an ephemeral shim without editing official code.
+    # Official helper scripts invoke ``python3``.  Use an ephemeral wrapper,
+    # rather than a symlink, so Python retains the venv's ``pyvenv.cfg``.
     with tempfile.TemporaryDirectory(prefix="care_asd_official_python_") as shim_directory:
         shim_python3 = Path(shim_directory) / "python3"
-        shim_python3.symlink_to(python)
+        shim_python3.write_text(
+            f"#!/bin/sh\nexec {shlex.quote(str(python))} \"$@\"\n",
+            encoding="utf-8",
+        )
+        shim_python3.chmod(0o700)
         environment["PATH"] = (
             str(shim_directory) + os.pathsep + str(python.parent) + os.pathsep + environment.get("PATH", "")
         )
