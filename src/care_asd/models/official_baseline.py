@@ -154,7 +154,7 @@ def run_official_development_baseline(
         commit=OFFICIAL_BASELINE_COMMIT,
         required_file="01_train_2026t2.sh",
     )
-    python = Path(official_python)
+    python = Path(official_python).resolve()
     if not python.is_file():
         raise FileNotFoundError(f"Official baseline Python executable not found: {python}")
     scripts = ["01_train_2026t2.sh"]
