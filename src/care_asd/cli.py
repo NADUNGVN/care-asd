@@ -34,7 +34,6 @@ from care_asd.evaluation import (
     normalize_official_development_scores,
     run_care_development_benchmark,
     run_dsp_development_benchmark,
-    run_mvp_neural_development,
     write_paired_bootstrap_comparison,
 )
 from care_asd.logging_utils import setup_logging
@@ -676,7 +675,10 @@ def mvp_neural_dev(
 ) -> None:
     """Train one normal-only GPU MVP ablation and score all dev test clips."""
     try:
-        from care_asd.evaluation import available_mvp_ablations
+        from care_asd.evaluation.mvp_neural import (
+            available_mvp_ablations,
+            run_mvp_neural_development,
+        )
 
         if ablation not in available_mvp_ablations():
             raise ValueError(f"ablation must be one of: {', '.join(available_mvp_ablations())}")
