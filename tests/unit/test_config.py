@@ -73,6 +73,11 @@ def test_invalid_config_rejected() -> None:
         CareASDConfig.model_validate(bad)
 
 
+def test_gate_bounds_are_rejected_when_reversed() -> None:
+    with pytest.raises(ValidationError, match="min_value must not exceed max_value"):
+        CareASDConfig.model_validate({"frontend": {"gate": {"min_value": 0.8, "max_value": 0.2}}})
+
+
 def test_extra_fields_forbidden() -> None:
     with pytest.raises(ValidationError):
         CareASDConfig.model_validate({"experiment": {"id": "x", "unknown_field": 1}})

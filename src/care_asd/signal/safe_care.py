@@ -14,6 +14,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from care_asd.config import FrontendConfig, SignalConfig
+from care_asd.signal.dsp_baselines import FeatureBatch
 
 FloatArray = NDArray[np.float64]
 ComplexArray = NDArray[np.complex128]
@@ -32,6 +33,7 @@ class SafeCAREOutput:
     residual_stft: ComplexArray
     transfer_function: ComplexArray
     gate: FloatArray
+    snr_proxy: FloatArray
     coherence: FloatArray
     path_confidence: FloatArray
     removed_energy_ratio: FloatArray
@@ -48,8 +50,6 @@ class SafeCAREFrontEnd:
     def __init__(self, signal: SignalConfig, frontend: FrontendConfig) -> None:
         if signal.win_length > signal.n_fft:
             raise ValueError("signal.win_length must not exceed signal.n_fft")
-        if frontend.gate.min_value > frontend.gate.max_value:
-            raise ValueError("frontend.gate.min_value must not exceed max_value")
         self._signal = signal
         self._frontend = frontend
 
@@ -74,7 +74,10 @@ class SafeCAREFrontEnd:
         if self._frontend.gate.bypass:
             gate = np.zeros_like(coherence)
         else:
-            gate = self._gate_from_coherence(coherence)
+            snr_proxy = self._snr_proxy(near, far)
+            gate = self._gate_from_statistics(coherence, snr_proxy)
+        if self._frontend.gate.bypass:
+            snr_proxy = self._snr_proxy(near, far)
 
         cancelled = gate * transfer * far
         cancelled, removed_ratio = self._bound_removed_energy(cancelled, near)
@@ -90,6 +93,7 @@ class SafeCAREFrontEnd:
             residual_stft=residual,
             transfer_function=transfer,
             gate=gate,
+            snr_proxy=snr_proxy,
             coherence=coherence,
             path_confidence=confidence,
             removed_energy_ratio=removed_ratio,
@@ -101,7 +105,9 @@ class SafeCAREFrontEnd:
         if n_samples <= self._signal.win_length:
             starts = [0]
         else:
-            starts = list(range(0, n_samples - self._signal.win_length + 1, self._signal.hop_length))
+            starts = list(
+                range(0, n_samples - self._signal.win_length + 1, self._signal.hop_length)
+            )
             final_start = n_samples - self._signal.win_length
             if starts[-1] != final_start:
                 starts.append(final_start)
@@ -129,9 +135,9 @@ class SafeCAREFrontEnd:
         near: ComplexArray,
         far: ComplexArray,
     ) -> tuple[ComplexArray, FloatArray]:
-        cross = np.mean(near * np.conj(far), axis=0)
-        near_power = np.mean(np.abs(near) ** 2, axis=0)
-        far_power = np.mean(np.abs(far) ** 2, axis=0)
+        cross = self._smooth_complex_frequency(np.mean(near * np.conj(far), axis=0))
+        near_power = self._smooth_real_frequency(np.mean(np.abs(near) ** 2, axis=0))
+        far_power = self._smooth_real_frequency(np.mean(np.abs(far) ** 2, axis=0))
         transfer_row = cross / (far_power + self._frontend.transfer.reg_floor)
         coherence_row = np.clip(
             (np.abs(cross) ** 2) / (near_power * far_power + self._signal.eps),
@@ -173,20 +179,48 @@ class SafeCAREFrontEnd:
                 far_power_ema = alpha * far_power_ema + (1.0 - alpha) * far_power
             assert near_power_ema is not None
             assert far_power_ema is not None
-            transfer[frame] = cross_ema / (far_power_ema + reg_floor)
+            smoothed_cross = self._smooth_complex_frequency(cross_ema)
+            smoothed_near_power = self._smooth_real_frequency(near_power_ema)
+            smoothed_far_power = self._smooth_real_frequency(far_power_ema)
+            transfer[frame] = smoothed_cross / (smoothed_far_power + reg_floor)
             coherence[frame] = np.clip(
-                (np.abs(cross_ema) ** 2)
-                / (near_power_ema * far_power_ema + self._signal.eps),
+                (np.abs(smoothed_cross) ** 2)
+                / (smoothed_near_power * smoothed_far_power + self._signal.eps),
                 0.0,
                 1.0,
             )
         return transfer, coherence
 
-    def _gate_from_coherence(self, coherence: FloatArray) -> FloatArray:
-        gate = self._frontend.gate.min_value + (
-            self._frontend.gate.max_value - self._frontend.gate.min_value
-        ) * coherence
+    def _snr_proxy(self, near: ComplexArray, far: ComplexArray) -> FloatArray:
+        ratio = (np.abs(near) ** 2 + self._signal.eps) / (np.abs(far) ** 2 + self._signal.eps)
+        return np.clip(np.log(ratio), -12.0, 12.0)
+
+    def _gate_from_statistics(self, coherence: FloatArray, snr_proxy: FloatArray) -> FloatArray:
+        gate_config = self._frontend.gate
+        logits = (
+            gate_config.coherence_weight * (2.0 * coherence - 1.0)
+            + gate_config.snr_weight * snr_proxy
+            + gate_config.bias
+        )
+        sigmoid = 1.0 / (1.0 + np.exp(-np.clip(logits, -40.0, 40.0)))
+        gate = gate_config.min_value + (gate_config.max_value - gate_config.min_value) * sigmoid
         return np.clip(gate, self._frontend.gate.min_value, self._frontend.gate.max_value)
+
+    def _smooth_real_frequency(self, values: FloatArray) -> FloatArray:
+        width = self._frontend.transfer.frequency_smoothing_bins
+        if width == 1:
+            return values
+        kernel = np.full(width, 1.0 / width, dtype=np.float64)
+        return np.convolve(values, kernel, mode="same")
+
+    def _smooth_complex_frequency(self, values: ComplexArray) -> ComplexArray:
+        width = self._frontend.transfer.frequency_smoothing_bins
+        if width == 1:
+            return values
+        kernel = np.full(width, 1.0 / width, dtype=np.float64)
+        return np.convolve(values.real, kernel, mode="same") + 1j * np.convolve(
+            values.imag, kernel, mode="same"
+        )
 
     def _bound_removed_energy(
         self,
@@ -204,3 +238,53 @@ class SafeCAREFrontEnd:
             self._signal.eps,
         )
         return bounded, bounded_ratio
+
+
+class CAREAudioFrontEnd:
+    """Expose Safe CARE through the stable multi-view front-end contract.
+
+    The class is deliberately an adapter instead of changing ``SafeCAREOutput``:
+    existing callers retain the detailed acoustic-path result while Phase 5 can
+    consume the common ``FeatureBatch`` interface shared with the DSP controls.
+    """
+
+    name = "care"
+
+    def __init__(self, signal: SignalConfig, frontend: FrontendConfig) -> None:
+        self._implementation = SafeCAREFrontEnd(signal, frontend)
+        self._eps = signal.eps
+
+    def transform(self, waveform: FloatArray, sample_rate: int) -> FeatureBatch:
+        """Return near/far/residual views and auditable spatial diagnostics."""
+        if sample_rate <= 0:
+            raise ValueError("sample_rate must be positive")
+        output = self._implementation.transform(waveform)
+        removed = np.broadcast_to(
+            output.removed_energy_ratio[:, np.newaxis], output.near_stft.shape
+        )
+        phase = np.angle(output.near_stft * np.conj(output.far_stft))
+        log_ratio = np.log(
+            (np.abs(output.near_stft) + self._eps) / (np.abs(output.far_stft) + self._eps)
+        )
+        return FeatureBatch(
+            frontend_name=self.name,
+            sample_rate=sample_rate,
+            views={
+                "near": output.near_stft,
+                "far": output.far_stft,
+                "residual": output.residual_stft,
+            },
+            diagnostics={
+                "coherence": output.coherence,
+                "gate": output.gate,
+                "snr_proxy": output.snr_proxy,
+                "path_confidence": output.path_confidence,
+                "removed_energy_ratio": removed,
+                "log_ratio": log_ratio,
+                "phase_sin": np.sin(phase),
+                "phase_cos": np.cos(phase),
+                "transfer_magnitude": np.abs(output.transfer_function),
+                "view_to_near_energy_ratio": np.abs(output.residual_stft) ** 2
+                / np.maximum(np.abs(output.near_stft) ** 2, self._eps),
+            },
+        )

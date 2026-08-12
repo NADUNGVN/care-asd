@@ -31,6 +31,7 @@ from care_asd.evaluation import (
     ScoreMode,
     calculate_development_auc_metrics,
     normalize_official_development_scores,
+    run_care_development_benchmark,
     run_dsp_development_benchmark,
 )
 from care_asd.logging_utils import setup_logging
@@ -589,6 +590,45 @@ def dsp_benchmark_dev(
     console.print(
         "[green]DSP development benchmark completed.[/green] "
         f"summary={result.summary_path} overcancellation={result.overcancellation_path}"
+    )
+
+
+@app.command("care-benchmark-dev")
+def care_benchmark_dev(
+    manifest: Annotated[
+        Path, typer.Option("--manifest", help="DCASE development Parquet manifest.")
+    ],
+    audio_root: Annotated[
+        Path,
+        typer.Option("--audio-root", help="Extracted DCASE audio directory."),
+    ],
+    output_directory: Annotated[
+        Path,
+        typer.Option("--output-dir", help="New immutable directory for CARE evidence."),
+    ],
+    experiment_id: Annotated[str, typer.Option("--experiment-id")],
+    workers: Annotated[
+        int,
+        typer.Option(
+            "--workers", min=1, help="CPU processes; use 1 for strictly serial execution."
+        ),
+    ] = 1,
+) -> None:
+    """Benchmark the Safe CARE front-end with the fixed Phase 3 scorer."""
+    try:
+        result = run_care_development_benchmark(
+            manifest_path=manifest,
+            audio_root=audio_root,
+            output_directory=output_directory,
+            experiment_id=experiment_id,
+            workers=workers,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, ValueError) as exc:
+        console.print(f"[red]CARE benchmark failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]CARE development benchmark completed.[/green] "
+        f"summary={result.summary_path} frequency_bands={result.frequency_bands_path}"
     )
 
 

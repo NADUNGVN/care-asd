@@ -67,6 +67,7 @@ class TransferConfig(BaseModel):
     mode: Literal["causal_ema", "static_per_clip"] = "causal_ema"
     alpha: float = Field(default=0.95, ge=0.0, lt=1.0)
     reg_floor: float = Field(default=1.0e-5, gt=0.0)
+    frequency_smoothing_bins: int = Field(default=1, ge=1)
 
 
 class GateConfig(BaseModel):
@@ -77,7 +78,16 @@ class GateConfig(BaseModel):
     mode: Literal["semi_parametric"] = "semi_parametric"
     min_value: float = Field(default=0.0, ge=0.0, le=1.0)
     max_value: float = Field(default=0.9, ge=0.0, le=1.0)
+    coherence_weight: float = 4.0
+    snr_weight: float = -0.5
+    bias: float = 0.0
     bypass: bool = False
+
+    @model_validator(mode="after")
+    def validate_bounds(self) -> GateConfig:
+        if self.min_value > self.max_value:
+            raise ValueError("min_value must not exceed max_value")
+        return self
 
 
 class ResidualConfig(BaseModel):
@@ -172,9 +182,7 @@ class DeploymentConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     device_id: str = "E2"
-    platform: Literal["jetson_xavier_nx", "jetson_agx_xavier", "pi5_hailo"] = (
-        "jetson_xavier_nx"
-    )
+    platform: Literal["jetson_xavier_nx", "jetson_agx_xavier", "pi5_hailo"] = "jetson_xavier_nx"
     backend: Literal["tensorrt", "onnxruntime", "hailo"] = "tensorrt"
     runner: Literal["cpp_tensorrt", "python_onnxruntime"] = "cpp_tensorrt"
     precision: Literal["fp32", "fp16", "int8"] = "fp16"
@@ -190,9 +198,10 @@ class DeploymentConfig(BaseModel):
             "jetson_xavier_nx": {10, 15},
             "jetson_agx_xavier": {10, 15, 30},
         }
-        if self.platform in allowed_power_modes and self.power_mode_w not in allowed_power_modes[
-            self.platform
-        ]:
+        if (
+            self.platform in allowed_power_modes
+            and self.power_mode_w not in allowed_power_modes[self.platform]
+        ):
             raise ValueError(
                 f"power_mode_w={self.power_mode_w} is unsupported for platform={self.platform}"
             )

@@ -8,11 +8,12 @@ from care_asd.signal.dsp_baselines import (
     available_dsp_frontends,
     create_dsp_frontend,
 )
-from care_asd.signal.safe_care import SafeCAREFrontEnd, SafeCAREOutput
+from care_asd.signal.safe_care import CAREAudioFrontEnd, SafeCAREFrontEnd, SafeCAREOutput
 from care_asd.signal.synthetic import SyntheticStereoCase, simulate_stereo_case
 
 __all__ = [
     "AudioFrontEnd",
+    "CAREAudioFrontEnd",
     "DSPFrontEnd",
     "FeatureBatch",
     "FrontEndName",

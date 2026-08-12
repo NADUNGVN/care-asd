@@ -31,8 +31,8 @@ Target journal: *Digital Signal Processing* (Elsevier).
 | 0 | Repository bootstrap | **complete** |
 | 1 | Dataset download & audit | **complete** |
 | 2 | Official baseline reproduction | **complete** |
-| 3 | Signal-processing baselines | **implemented; awaiting full development benchmark** |
-| 4 | CARE acoustic-path front-end | planned |
+| 3 | Signal-processing baselines | **complete** |
+| 4 | CARE acoustic-path front-end | **implemented; awaiting controlled development benchmark** |
 | 5 | Embedding & anomaly scoring | planned |
 | 6 | Reliability calibration | planned |
 | 7 | Causal streaming | planned |

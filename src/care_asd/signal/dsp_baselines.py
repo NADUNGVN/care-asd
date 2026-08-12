@@ -43,7 +43,7 @@ class FeatureBatch:
     consumed by their common encoder.
     """
 
-    frontend_name: FrontEndName
+    frontend_name: str
     sample_rate: int
     views: Mapping[str, ComplexArray]
     diagnostics: Mapping[str, FloatArray]

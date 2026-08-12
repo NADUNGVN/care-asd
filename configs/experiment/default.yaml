@@ -26,10 +26,14 @@ frontend:
     mode: causal_ema
     alpha: 0.95
     reg_floor: 1.0e-5
+    frequency_smoothing_bins: 1
   gate:
     mode: semi_parametric
     min_value: 0.0
     max_value: 0.9
+    coherence_weight: 4.0
+    snr_weight: -0.5
+    bias: 0.0
     bypass: false
   residual:
     max_removed_energy_ratio: 0.8
