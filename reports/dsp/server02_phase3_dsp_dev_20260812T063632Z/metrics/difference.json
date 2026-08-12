@@ -1,0 +1,61 @@
+{
+  "groups": {
+    "ToyCar/section_00": {
+      "auc_all": 0.5166999999999999,
+      "auc_source": 0.5228,
+      "auc_target": 0.5327999999999999,
+      "pauc_all_max_fpr_0_1": 0.5052631578947369,
+      "pauc_source_max_fpr_0_1": 0.4884210526315789,
+      "pauc_target_max_fpr_0_1": 0.5052631578947369
+    },
+    "ToyCarEmu/section_00": {
+      "auc_all": 0.4914,
+      "auc_source": 0.42239999999999994,
+      "auc_target": 0.5548,
+      "pauc_all_max_fpr_0_1": 0.5289473684210526,
+      "pauc_source_max_fpr_0_1": 0.5263157894736842,
+      "pauc_target_max_fpr_0_1": 0.5221052631578947
+    },
+    "bearingEmu/section_00": {
+      "auc_all": 0.5754,
+      "auc_source": 0.5524,
+      "auc_target": 0.5976,
+      "pauc_all_max_fpr_0_1": 0.5047368421052632,
+      "pauc_source_max_fpr_0_1": 0.49894736842105264,
+      "pauc_target_max_fpr_0_1": 0.5178947368421053
+    },
+    "fan/section_00": {
+      "auc_all": 0.5414,
+      "auc_source": 0.5471999999999999,
+      "auc_target": 0.5368,
+      "pauc_all_max_fpr_0_1": 0.5163157894736842,
+      "pauc_source_max_fpr_0_1": 0.5368421052631579,
+      "pauc_target_max_fpr_0_1": 0.49473684210526314
+    },
+    "gearboxEmu/section_00": {
+      "auc_all": 0.5163,
+      "auc_source": 0.5780000000000001,
+      "auc_target": 0.4572,
+      "pauc_all_max_fpr_0_1": 0.5063157894736842,
+      "pauc_source_max_fpr_0_1": 0.5031578947368421,
+      "pauc_target_max_fpr_0_1": 0.5094736842105263
+    },
+    "sliderEmu/section_00": {
+      "auc_all": 0.4295,
+      "auc_source": 0.4423999999999999,
+      "auc_target": 0.43279999999999996,
+      "pauc_all_max_fpr_0_1": 0.4868421052631579,
+      "pauc_source_max_fpr_0_1": 0.49894736842105264,
+      "pauc_target_max_fpr_0_1": 0.47789473684210526
+    },
+    "valveEmu/section_00": {
+      "auc_all": 0.5453,
+      "auc_source": 0.6315999999999999,
+      "auc_target": 0.4596,
+      "pauc_all_max_fpr_0_1": 0.5205263157894737,
+      "pauc_source_max_fpr_0_1": 0.52,
+      "pauc_target_max_fpr_0_1": 0.52
+    }
+  },
+  "score_file": "difference.csv"
+}

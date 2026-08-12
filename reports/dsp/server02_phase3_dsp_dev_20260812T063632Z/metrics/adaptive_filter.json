@@ -1,0 +1,61 @@
+{
+  "groups": {
+    "ToyCar/section_00": {
+      "auc_all": 0.5133,
+      "auc_source": 0.5187999999999999,
+      "auc_target": 0.5284,
+      "pauc_all_max_fpr_0_1": 0.5031578947368421,
+      "pauc_source_max_fpr_0_1": 0.4905263157894737,
+      "pauc_target_max_fpr_0_1": 0.49894736842105264
+    },
+    "ToyCarEmu/section_00": {
+      "auc_all": 0.4894,
+      "auc_source": 0.434,
+      "auc_target": 0.534,
+      "pauc_all_max_fpr_0_1": 0.5126315789473684,
+      "pauc_source_max_fpr_0_1": 0.5136842105263157,
+      "pauc_target_max_fpr_0_1": 0.5136842105263157
+    },
+    "bearingEmu/section_00": {
+      "auc_all": 0.5855,
+      "auc_source": 0.5488,
+      "auc_target": 0.6252000000000002,
+      "pauc_all_max_fpr_0_1": 0.508421052631579,
+      "pauc_source_max_fpr_0_1": 0.4968421052631579,
+      "pauc_target_max_fpr_0_1": 0.5263157894736842
+    },
+    "fan/section_00": {
+      "auc_all": 0.5734,
+      "auc_source": 0.6152,
+      "auc_target": 0.526,
+      "pauc_all_max_fpr_0_1": 0.5194736842105263,
+      "pauc_source_max_fpr_0_1": 0.5305263157894737,
+      "pauc_target_max_fpr_0_1": 0.5221052631578947
+    },
+    "gearboxEmu/section_00": {
+      "auc_all": 0.5332,
+      "auc_source": 0.582,
+      "auc_target": 0.49520000000000003,
+      "pauc_all_max_fpr_0_1": 0.49842105263157893,
+      "pauc_source_max_fpr_0_1": 0.4884210526315789,
+      "pauc_target_max_fpr_0_1": 0.5136842105263157
+    },
+    "sliderEmu/section_00": {
+      "auc_all": 0.4764,
+      "auc_source": 0.49639999999999995,
+      "auc_target": 0.46079999999999993,
+      "pauc_all_max_fpr_0_1": 0.4868421052631579,
+      "pauc_source_max_fpr_0_1": 0.49894736842105264,
+      "pauc_target_max_fpr_0_1": 0.47789473684210526
+    },
+    "valveEmu/section_00": {
+      "auc_all": 0.5848,
+      "auc_source": 0.6784,
+      "auc_target": 0.48360000000000003,
+      "pauc_all_max_fpr_0_1": 0.531578947368421,
+      "pauc_source_max_fpr_0_1": 0.5347368421052632,
+      "pauc_target_max_fpr_0_1": 0.5263157894736842
+    }
+  },
+  "score_file": "adaptive_filter.csv"
+}

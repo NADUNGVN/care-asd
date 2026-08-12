@@ -1,0 +1,61 @@
+{
+  "groups": {
+    "ToyCar/section_00": {
+      "auc_all": 0.5169,
+      "auc_source": 0.528,
+      "auc_target": 0.5276000000000001,
+      "pauc_all_max_fpr_0_1": 0.5021052631578947,
+      "pauc_source_max_fpr_0_1": 0.4968421052631579,
+      "pauc_target_max_fpr_0_1": 0.4926315789473684
+    },
+    "ToyCarEmu/section_00": {
+      "auc_all": 0.4899,
+      "auc_source": 0.4728,
+      "auc_target": 0.48239999999999994,
+      "pauc_all_max_fpr_0_1": 0.5094736842105263,
+      "pauc_source_max_fpr_0_1": 0.5242105263157895,
+      "pauc_target_max_fpr_0_1": 0.5010526315789474
+    },
+    "bearingEmu/section_00": {
+      "auc_all": 0.5535,
+      "auc_source": 0.5004000000000001,
+      "auc_target": 0.6060000000000001,
+      "pauc_all_max_fpr_0_1": 0.5289473684210526,
+      "pauc_source_max_fpr_0_1": 0.5305263157894737,
+      "pauc_target_max_fpr_0_1": 0.5326315789473685
+    },
+    "fan/section_00": {
+      "auc_all": 0.5727,
+      "auc_source": 0.6776,
+      "auc_target": 0.44959999999999994,
+      "pauc_all_max_fpr_0_1": 0.5257894736842105,
+      "pauc_source_max_fpr_0_1": 0.56,
+      "pauc_target_max_fpr_0_1": 0.4926315789473684
+    },
+    "gearboxEmu/section_00": {
+      "auc_all": 0.5507,
+      "auc_source": 0.5768,
+      "auc_target": 0.5264,
+      "pauc_all_max_fpr_0_1": 0.511578947368421,
+      "pauc_source_max_fpr_0_1": 0.5031578947368421,
+      "pauc_target_max_fpr_0_1": 0.5305263157894737
+    },
+    "sliderEmu/section_00": {
+      "auc_all": 0.49960000000000004,
+      "auc_source": 0.5112,
+      "auc_target": 0.4916,
+      "pauc_all_max_fpr_0_1": 0.48789473684210527,
+      "pauc_source_max_fpr_0_1": 0.49894736842105264,
+      "pauc_target_max_fpr_0_1": 0.48
+    },
+    "valveEmu/section_00": {
+      "auc_all": 0.6079,
+      "auc_source": 0.7728,
+      "auc_target": 0.4572,
+      "pauc_all_max_fpr_0_1": 0.5310526315789473,
+      "pauc_source_max_fpr_0_1": 0.5642105263157895,
+      "pauc_target_max_fpr_0_1": 0.5263157894736842
+    }
+  },
+  "score_file": "coherence_mask.csv"
+}

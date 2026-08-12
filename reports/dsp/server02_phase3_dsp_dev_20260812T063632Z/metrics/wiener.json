@@ -1,0 +1,61 @@
+{
+  "groups": {
+    "ToyCar/section_00": {
+      "auc_all": 0.5158,
+      "auc_source": 0.5196,
+      "auc_target": 0.5312,
+      "pauc_all_max_fpr_0_1": 0.5047368421052632,
+      "pauc_source_max_fpr_0_1": 0.4884210526315789,
+      "pauc_target_max_fpr_0_1": 0.5031578947368421
+    },
+    "ToyCarEmu/section_00": {
+      "auc_all": 0.49579999999999996,
+      "auc_source": 0.42560000000000003,
+      "auc_target": 0.5599999999999999,
+      "pauc_all_max_fpr_0_1": 0.5284210526315789,
+      "pauc_source_max_fpr_0_1": 0.5242105263157895,
+      "pauc_target_max_fpr_0_1": 0.5221052631578947
+    },
+    "bearingEmu/section_00": {
+      "auc_all": 0.581,
+      "auc_source": 0.5644000000000001,
+      "auc_target": 0.5956000000000001,
+      "pauc_all_max_fpr_0_1": 0.501578947368421,
+      "pauc_source_max_fpr_0_1": 0.5052631578947369,
+      "pauc_target_max_fpr_0_1": 0.49894736842105264
+    },
+    "fan/section_00": {
+      "auc_all": 0.5744,
+      "auc_source": 0.668,
+      "auc_target": 0.4608,
+      "pauc_all_max_fpr_0_1": 0.5163157894736842,
+      "pauc_source_max_fpr_0_1": 0.5452631578947369,
+      "pauc_target_max_fpr_0_1": 0.4842105263157895
+    },
+    "gearboxEmu/section_00": {
+      "auc_all": 0.534,
+      "auc_source": 0.5704,
+      "auc_target": 0.5236000000000001,
+      "pauc_all_max_fpr_0_1": 0.51,
+      "pauc_source_max_fpr_0_1": 0.4968421052631579,
+      "pauc_target_max_fpr_0_1": 0.5305263157894737
+    },
+    "sliderEmu/section_00": {
+      "auc_all": 0.48910000000000003,
+      "auc_source": 0.4848,
+      "auc_target": 0.49439999999999995,
+      "pauc_all_max_fpr_0_1": 0.48736842105263156,
+      "pauc_source_max_fpr_0_1": 0.5010526315789474,
+      "pauc_target_max_fpr_0_1": 0.47789473684210526
+    },
+    "valveEmu/section_00": {
+      "auc_all": 0.5603,
+      "auc_source": 0.6896,
+      "auc_target": 0.4152,
+      "pauc_all_max_fpr_0_1": 0.5289473684210526,
+      "pauc_source_max_fpr_0_1": 0.5431578947368421,
+      "pauc_target_max_fpr_0_1": 0.5094736842105263
+    }
+  },
+  "score_file": "wiener.csv"
+}

@@ -1,0 +1,61 @@
+{
+  "groups": {
+    "ToyCar/section_00": {
+      "auc_all": 0.5158,
+      "auc_source": 0.5196000000000001,
+      "auc_target": 0.5324,
+      "pauc_all_max_fpr_0_1": 0.5052631578947369,
+      "pauc_source_max_fpr_0_1": 0.4905263157894737,
+      "pauc_target_max_fpr_0_1": 0.5052631578947369
+    },
+    "ToyCarEmu/section_00": {
+      "auc_all": 0.4952,
+      "auc_source": 0.4288,
+      "auc_target": 0.5572,
+      "pauc_all_max_fpr_0_1": 0.5289473684210526,
+      "pauc_source_max_fpr_0_1": 0.5263157894736842,
+      "pauc_target_max_fpr_0_1": 0.5221052631578947
+    },
+    "bearingEmu/section_00": {
+      "auc_all": 0.5765,
+      "auc_source": 0.5572,
+      "auc_target": 0.5916,
+      "pauc_all_max_fpr_0_1": 0.5010526315789474,
+      "pauc_source_max_fpr_0_1": 0.5052631578947369,
+      "pauc_target_max_fpr_0_1": 0.49473684210526314
+    },
+    "fan/section_00": {
+      "auc_all": 0.5691,
+      "auc_source": 0.5996,
+      "auc_target": 0.5348,
+      "pauc_all_max_fpr_0_1": 0.51,
+      "pauc_source_max_fpr_0_1": 0.5263157894736842,
+      "pauc_target_max_fpr_0_1": 0.49473684210526314
+    },
+    "gearboxEmu/section_00": {
+      "auc_all": 0.5176000000000001,
+      "auc_source": 0.5708,
+      "auc_target": 0.4628,
+      "pauc_all_max_fpr_0_1": 0.501578947368421,
+      "pauc_source_max_fpr_0_1": 0.4968421052631579,
+      "pauc_target_max_fpr_0_1": 0.5136842105263157
+    },
+    "sliderEmu/section_00": {
+      "auc_all": 0.4478,
+      "auc_source": 0.45680000000000004,
+      "auc_target": 0.4472,
+      "pauc_all_max_fpr_0_1": 0.48578947368421055,
+      "pauc_source_max_fpr_0_1": 0.5010526315789474,
+      "pauc_target_max_fpr_0_1": 0.47578947368421054
+    },
+    "valveEmu/section_00": {
+      "auc_all": 0.5571,
+      "auc_source": 0.6656000000000001,
+      "auc_target": 0.43879999999999997,
+      "pauc_all_max_fpr_0_1": 0.5310526315789473,
+      "pauc_source_max_fpr_0_1": 0.5347368421052632,
+      "pauc_target_max_fpr_0_1": 0.5221052631578947
+    }
+  },
+  "score_file": "near.csv"
+}

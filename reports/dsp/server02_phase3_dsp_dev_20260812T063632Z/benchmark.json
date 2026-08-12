@@ -1,0 +1,29 @@
+{
+  "audio_root": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/raw/dcase2026/dev/extracted",
+  "experiment_id": "server02_phase3_dsp_dev_20260812T063632Z",
+  "frontends": [
+    "near",
+    "far",
+    "average",
+    "difference",
+    "early_concat",
+    "spectral_subtraction",
+    "wiener",
+    "coherence_mask",
+    "adaptive_filter",
+    "late_score_fusion"
+  ],
+  "manifest": "data/manifests/dcase2026_dev.parquet",
+  "scorer": "fixed_log_spectral_mean_std_standardized_distance_v1",
+  "signal_config": {
+    "center": false,
+    "eps": 1e-08,
+    "hop_length": 512,
+    "n_fft": 1024,
+    "win_length": 1024,
+    "window": "hann"
+  },
+  "test_rows": 1400,
+  "train_rows": 7000,
+  "workers": 12
+}

@@ -1,0 +1,61 @@
+{
+  "groups": {
+    "ToyCar/section_00": {
+      "auc_all": 0.5162,
+      "auc_source": 0.5216000000000001,
+      "auc_target": 0.5307999999999999,
+      "pauc_all_max_fpr_0_1": 0.5047368421052632,
+      "pauc_source_max_fpr_0_1": 0.4905263157894737,
+      "pauc_target_max_fpr_0_1": 0.5031578947368421
+    },
+    "ToyCarEmu/section_00": {
+      "auc_all": 0.4961,
+      "auc_source": 0.4252,
+      "auc_target": 0.5608,
+      "pauc_all_max_fpr_0_1": 0.5284210526315789,
+      "pauc_source_max_fpr_0_1": 0.5242105263157895,
+      "pauc_target_max_fpr_0_1": 0.5221052631578947
+    },
+    "bearingEmu/section_00": {
+      "auc_all": 0.5859,
+      "auc_source": 0.5656,
+      "auc_target": 0.6048000000000001,
+      "pauc_all_max_fpr_0_1": 0.5026315789473684,
+      "pauc_source_max_fpr_0_1": 0.5052631578947369,
+      "pauc_target_max_fpr_0_1": 0.49894736842105264
+    },
+    "fan/section_00": {
+      "auc_all": 0.5724,
+      "auc_source": 0.6628,
+      "auc_target": 0.46599999999999997,
+      "pauc_all_max_fpr_0_1": 0.5168421052631579,
+      "pauc_source_max_fpr_0_1": 0.5452631578947369,
+      "pauc_target_max_fpr_0_1": 0.4842105263157895
+    },
+    "gearboxEmu/section_00": {
+      "auc_all": 0.5357999999999999,
+      "auc_source": 0.5676,
+      "auc_target": 0.5296,
+      "pauc_all_max_fpr_0_1": 0.51,
+      "pauc_source_max_fpr_0_1": 0.49473684210526314,
+      "pauc_target_max_fpr_0_1": 0.5326315789473685
+    },
+    "sliderEmu/section_00": {
+      "auc_all": 0.491,
+      "auc_source": 0.48560000000000003,
+      "auc_target": 0.49599999999999994,
+      "pauc_all_max_fpr_0_1": 0.4868421052631579,
+      "pauc_source_max_fpr_0_1": 0.5010526315789474,
+      "pauc_target_max_fpr_0_1": 0.47789473684210526
+    },
+    "valveEmu/section_00": {
+      "auc_all": 0.5585,
+      "auc_source": 0.6888,
+      "auc_target": 0.4119999999999999,
+      "pauc_all_max_fpr_0_1": 0.5284210526315789,
+      "pauc_source_max_fpr_0_1": 0.5410526315789473,
+      "pauc_target_max_fpr_0_1": 0.5094736842105263
+    }
+  },
+  "score_file": "spectral_subtraction.csv"
+}
