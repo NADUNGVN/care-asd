@@ -124,7 +124,16 @@ def run_mvp_neural_development(
         )
         if machine_test.empty:
             raise ValueError(f"No development test rows for machine: {machine_type}")
-        scores = _score_machine(model, cache, machine_test, channels, normalizer, device)
+        scores = _score_machine(
+            model,
+            cache,
+            machine_test,
+            channels,
+            normalizer,
+            device,
+            batch_size=config.training.batch_size,
+            num_workers=config.training.num_workers,
+        )
         for item, score in zip(machine_test.to_dict(orient="records"), scores, strict=True):
             rows.append(
                 {
@@ -191,12 +200,14 @@ class _CachedClipDataset(Dataset[tuple[Tensor, Tensor]]):
         rows: pd.DataFrame,
         channels: tuple[str, ...],
         normalizer: dict[str, list[float]],
+        crop_frames: int | None = 64,
     ) -> None:
         self._cache = cache
         self._rows = rows.to_dict(orient="records")
         self._channels = channels
         self._mean = np.asarray(normalizer["mean"], dtype=np.float32)[:, None, None]
         self._std = np.asarray(normalizer["std"], dtype=np.float32)[:, None, None]
+        self._crop_frames = crop_frames
 
     def __len__(self) -> int:
         return len(self._rows)
@@ -206,7 +217,10 @@ class _CachedClipDataset(Dataset[tuple[Tensor, Tensor]]):
         values = load_cached_feature(self._cache / str(row["cache_file"]), self._channels)
         values = (values - self._mean) / self._std
         target = values[:1]
-        return torch.from_numpy(_crop_time(values)), torch.from_numpy(_crop_time(target))
+        if self._crop_frames is not None:
+            values = _crop_time(values, frames=self._crop_frames)
+            target = _crop_time(target, frames=self._crop_frames)
+        return torch.from_numpy(values), torch.from_numpy(target)
 
 
 def _fit_machine(
@@ -226,6 +240,7 @@ def _fit_machine(
         shuffle=True,
         num_workers=config.training.num_workers,
         pin_memory=device.type == "cuda",
+        persistent_workers=config.training.num_workers > 0,
     )
     model = LightweightNearAutoencoder(len(channels), embedding_dim=config.model.embedding_dim).to(
         device
@@ -262,18 +277,28 @@ def _score_machine(
     channels: tuple[str, ...],
     normalizer: dict[str, list[float]],
     device: torch.device,
+    *,
+    batch_size: int,
+    num_workers: int,
 ) -> list[float]:
-    mean = np.asarray(normalizer["mean"], dtype=np.float32)[:, None, None]
-    std = np.asarray(normalizer["std"], dtype=np.float32)[:, None, None]
+    dataset = _CachedClipDataset(
+        cache, rows, channels, normalizer, crop_frames=None
+    )
+    loader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=device.type == "cuda",
+        persistent_workers=num_workers > 0,
+    )
     scores: list[float] = []
     with torch.no_grad():
-        for row in rows.to_dict(orient="records"):
-            values = load_cached_feature(cache / str(row["cache_file"]), channels)
-            values = (values - mean) / std
-            inputs = torch.from_numpy(values[None]).to(device)
-            target = inputs[:, :1]
+        for inputs, target in loader:
+            inputs = inputs.to(device, non_blocking=True)
+            target = target.to(device, non_blocking=True)
             prediction = model(inputs)
-            scores.append(float(torch.mean((prediction - target) ** 2).cpu()))
+            scores.extend(torch.mean((prediction - target) ** 2, dim=(1, 2, 3)).cpu().tolist())
     return scores
 
 

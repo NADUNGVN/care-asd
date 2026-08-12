@@ -1,0 +1,14 @@
+# Fixed, GPU-accelerated single-seed screen.  All three input views use this
+# identical optimisation contract; only their declared input channels differ.
+experiment:
+  id: mvp_neural_screening_seed13711
+  seed: 13711
+  notes: "Phase 5 pre-registered GPU screening of A00, A01, and A02."
+
+training:
+  epochs: 30
+  batch_size: 128
+  learning_rate: 1.0e-3
+  num_workers: 8
+  device: cuda
+  mixed_precision: true
