@@ -51,8 +51,16 @@ features:
 
 model:
   name: lightweight_encoder
-  embedding_dim: 128
+  embedding_dim: 64
   dropout: 0.1
+
+training:
+  epochs: 30
+  batch_size: 32
+  learning_rate: 1.0e-3
+  num_workers: 4
+  device: cuda
+  mixed_precision: true
 
 scoring:
   name: shrinkage_mahalanobis

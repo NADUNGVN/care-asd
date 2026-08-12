@@ -131,8 +131,21 @@ class ModelConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str = "lightweight_encoder"
-    embedding_dim: int = 128
+    embedding_dim: int = Field(default=64, ge=1)
     dropout: float = 0.1
+
+
+class TrainingConfig(BaseModel):
+    """Fixed Phase 5 MVP training contract for comparable ablations."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    epochs: int = Field(default=30, ge=1)
+    batch_size: int = Field(default=32, ge=1)
+    learning_rate: float = Field(default=1.0e-3, gt=0.0)
+    num_workers: int = Field(default=4, ge=0)
+    device: str = "cuda"
+    mixed_precision: bool = True
 
 
 class BaselineConfig(BaseModel):
@@ -246,6 +259,7 @@ class CareASDConfig(BaseModel):
     frontend: FrontendConfig = Field(default_factory=FrontendConfig)
     features: FeaturesConfig = Field(default_factory=FeaturesConfig)
     model: ModelConfig = Field(default_factory=ModelConfig)
+    training: TrainingConfig = Field(default_factory=TrainingConfig)
     baseline: BaselineConfig = Field(default_factory=BaselineConfig)
     scoring: ScoringConfig = Field(default_factory=ScoringConfig)
     calibration: CalibrationConfig = Field(default_factory=CalibrationConfig)

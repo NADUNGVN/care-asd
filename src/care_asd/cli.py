@@ -21,6 +21,7 @@ from care_asd.config import config_hash, default_config, load_config, validate_c
 from care_asd.data import (
     audit_dcase2026_manifest,
     build_dcase2026_manifest,
+    build_neural_feature_cache,
     dcase2026_manifest_path,
     download_dcase2026_split,
     extract_dcase2026_split,
@@ -33,6 +34,8 @@ from care_asd.evaluation import (
     normalize_official_development_scores,
     run_care_development_benchmark,
     run_dsp_development_benchmark,
+    run_mvp_neural_development,
+    write_paired_bootstrap_comparison,
 )
 from care_asd.logging_utils import setup_logging
 from care_asd.models import (
@@ -384,6 +387,36 @@ def data_validate(
     )
 
 
+@data_app.command("cache-neural")
+def data_cache_neural(
+    manifest: Annotated[Path, typer.Option("--manifest")],
+    audio_root: Annotated[Path, typer.Option("--audio-root")],
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    config: Annotated[Path | None, typer.Option("--config", "-c")] = None,
+    workers: Annotated[int, typer.Option("--workers", min=1)] = 1,
+    limit: Annotated[int | None, typer.Option("--limit", min=1)] = None,
+) -> None:
+    """Build one reusable local near/far/CARE feature cache for every MVP ablation."""
+    try:
+        cfg = validate_config(load_config(config))
+        result = build_neural_feature_cache(
+            manifest_path=manifest,
+            audio_root=audio_root,
+            output_directory=output_directory,
+            signal=cfg.signal,
+            frontend=cfg.frontend,
+            features=cfg.features,
+            workers=workers,
+            limit=limit,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, ValueError) as exc:
+        console.print(f"[red]Neural cache build failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        f"[green]Neural cache complete.[/green] clips={result.clips} index={result.index_path}"
+    )
+
+
 @baseline_app.command("checkout")
 def baseline_checkout(
     baseline_dir: Annotated[
@@ -630,6 +663,61 @@ def care_benchmark_dev(
         "[green]CARE development benchmark completed.[/green] "
         f"summary={result.summary_path} frequency_bands={result.frequency_bands_path}"
     )
+
+
+@app.command("mvp-neural-dev")
+def mvp_neural_dev(
+    cache_directory: Annotated[Path, typer.Option("--cache-dir")],
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    checkpoint_directory: Annotated[Path, typer.Option("--checkpoint-dir")],
+    ablation: Annotated[str, typer.Option("--ablation")],
+    config: Annotated[Path | None, typer.Option("--config", "-c")] = None,
+    epochs: Annotated[int | None, typer.Option("--epochs", min=1)] = None,
+) -> None:
+    """Train one normal-only GPU MVP ablation and score all dev test clips."""
+    try:
+        from care_asd.evaluation import available_mvp_ablations
+
+        if ablation not in available_mvp_ablations():
+            raise ValueError(f"ablation must be one of: {', '.join(available_mvp_ablations())}")
+        result = run_mvp_neural_development(
+            cache_directory=cache_directory,
+            output_directory=output_directory,
+            checkpoint_directory=checkpoint_directory,
+            config=validate_config(load_config(config)),
+            ablation=ablation,
+            epochs=epochs,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]MVP neural run failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]MVP neural development run completed.[/green] "
+        f"scores={result.score_path} summary={result.summary_path}"
+    )
+
+
+@app.command("mvp-bootstrap")
+def mvp_bootstrap(
+    reference_scores: Annotated[Path, typer.Option("--reference-scores")],
+    candidate_scores: Annotated[Path, typer.Option("--candidate-scores")],
+    output: Annotated[Path, typer.Option("--output")],
+    iterations: Annotated[int, typer.Option("--iterations", min=100)] = 2000,
+    seed: Annotated[int, typer.Option("--seed", min=0)] = 2026,
+) -> None:
+    """Compute paired stratified bootstrap deltas after final multi-seed selection."""
+    try:
+        result = write_paired_bootstrap_comparison(
+            reference_scores=reference_scores,
+            candidate_scores=candidate_scores,
+            output_path=output,
+            iterations=iterations,
+            seed=seed,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, ValueError) as exc:
+        console.print(f"[red]MVP bootstrap failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[green]Paired bootstrap complete:[/green] {result}")
 
 
 @app.command("train")

@@ -33,7 +33,7 @@ Target journal: *Digital Signal Processing* (Elsevier).
 | 2 | Official baseline reproduction | **complete** |
 | 3 | Signal-processing baselines | **complete** |
 | 4 | CARE acoustic-path front-end | **implemented; awaiting controlled development benchmark** |
-| 5 | Embedding & anomaly scoring | planned |
+| 5 | MVP embedding & anomaly scoring | **implemented; awaiting GPU screening** |
 | 6 | Reliability calibration | planned |
 | 7 | Causal streaming | planned |
 | 8 | Experiment orchestration | planned |
