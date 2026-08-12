@@ -699,6 +699,33 @@ def mvp_neural_dev(
     )
 
 
+@app.command("mvp-neural-screening-dev")
+def mvp_neural_screening_dev(
+    cache_directory: Annotated[Path, typer.Option("--cache-dir")],
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    checkpoint_directory: Annotated[Path, typer.Option("--checkpoint-dir")],
+    config: Annotated[Path | None, typer.Option("--config", "-c")] = None,
+    preload_workers: Annotated[int, typer.Option("--preload-workers", min=1)] = 16,
+) -> None:
+    """Screen all three fixed GPU views after one shared in-memory cache preload."""
+    try:
+        from care_asd.evaluation.mvp_neural import run_mvp_neural_screening_development
+
+        result = run_mvp_neural_screening_development(
+            cache_directory=cache_directory,
+            output_directory=output_directory,
+            checkpoint_directory=checkpoint_directory,
+            config=validate_config(load_config(config)),
+            preload_workers=preload_workers,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]MVP neural screening failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]MVP neural screening completed.[/green] " f"summary={result.summary_path}"
+    )
+
+
 @app.command("mvp-bootstrap")
 def mvp_bootstrap(
     reference_scores: Annotated[Path, typer.Option("--reference-scores")],

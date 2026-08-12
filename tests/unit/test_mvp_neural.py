@@ -10,7 +10,10 @@ import pandas as pd
 import pytest
 
 from care_asd.config import CareASDConfig, TrainingConfig
-from care_asd.evaluation.mvp_neural import run_mvp_neural_development
+from care_asd.evaluation.mvp_neural import (
+    run_mvp_neural_development,
+    run_mvp_neural_screening_development,
+)
 from care_asd.evaluation.paired_bootstrap import write_paired_bootstrap_comparison
 from care_asd.models import LightweightNearAutoencoder
 
@@ -102,3 +105,13 @@ def test_mvp_runner_fits_only_train_normal_rows_and_scores_all_test_rows(tmp_pat
         ]["mean"]
         == 0.0
     )
+
+    screening = run_mvp_neural_screening_development(
+        cache_directory=cache,
+        output_directory=tmp_path / "screening",
+        checkpoint_directory=tmp_path / "screening_checkpoints",
+        config=config,
+        preload_workers=1,
+    )
+    assert len(screening.results) == 3
+    assert screening.summary_path.is_file()

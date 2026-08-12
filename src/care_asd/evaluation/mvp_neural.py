@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import random
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -15,7 +16,7 @@ from torch import Tensor, nn
 from torch.utils.data import DataLoader, Dataset
 
 from care_asd.config import CareASDConfig
-from care_asd.data.neural_cache import load_cached_feature
+from care_asd.data.neural_cache import BASE_CHANNELS, load_cached_feature
 from care_asd.evaluation.official_baseline import SCORE_COLUMNS, calculate_development_auc_metrics
 from care_asd.models.mvp_autoencoder import LightweightNearAutoencoder, approximate_parameter_count
 
@@ -47,6 +48,26 @@ class MvpNeuralResult:
     model_card_path: Path
 
 
+@dataclass(frozen=True)
+class MvpNeuralScreeningResult:
+    """Evidence paths emitted by one in-memory three-ablation GPU screen."""
+
+    output_directory: Path
+    summary_path: Path
+    results: tuple[MvpNeuralResult, ...]
+
+
+class InMemoryFeatureStore:
+    """Read-only full-cache view that removes repeated NPZ decompression."""
+
+    def __init__(self, values_by_cache_file: dict[str, np.ndarray]) -> None:
+        self._values_by_cache_file = values_by_cache_file
+
+    def load(self, cache_file: str, channels: tuple[str, ...]) -> np.ndarray:
+        indices = [BASE_CHANNELS.index(channel) for channel in channels]
+        return self._values_by_cache_file[cache_file][indices]
+
+
 def available_mvp_ablations() -> tuple[MvpAblation, ...]:
     """Return the three pre-registered MVP comparisons in stable order."""
     return tuple(_ABLATION_CHANNELS)
@@ -60,6 +81,7 @@ def run_mvp_neural_development(
     config: CareASDConfig,
     ablation: MvpAblation,
     epochs: int | None = None,
+    feature_store: InMemoryFeatureStore | None = None,
 ) -> MvpNeuralResult:
     """Train one ablation per machine from normal rows and score dev test only."""
     cache = Path(cache_directory)
@@ -107,6 +129,7 @@ def run_mvp_neural_development(
             config=config,
             epochs=chosen_epochs,
             device=device,
+            feature_store=feature_store,
         )
         checkpoint = checkpoints / f"{ablation}_{machine_type}_seed{config.experiment.seed}.pt"
         torch.save(
@@ -133,6 +156,7 @@ def run_mvp_neural_development(
             device,
             batch_size=config.training.batch_size,
             num_workers=config.training.num_workers,
+            feature_store=feature_store,
         )
         for item, score in zip(machine_test.to_dict(orient="records"), scores, strict=True):
             rows.append(
@@ -193,6 +217,46 @@ def run_mvp_neural_development(
     return MvpNeuralResult(output, score_path, metrics_path, summary_path, model_card_path)
 
 
+def run_mvp_neural_screening_development(
+    *,
+    cache_directory: str | Path,
+    output_directory: str | Path,
+    checkpoint_directory: str | Path,
+    config: CareASDConfig,
+    preload_workers: int = 16,
+) -> MvpNeuralScreeningResult:
+    """Preload the shared cache once, then screen the fixed three GPU input views."""
+    cache = Path(cache_directory)
+    output = Path(output_directory)
+    index_path = cache / "index.parquet"
+    if not index_path.is_file():
+        raise FileNotFoundError("Cache requires index.parquet")
+    if preload_workers < 1:
+        raise ValueError("preload_workers must be positive")
+    if output.exists():
+        raise FileExistsError(f"Refusing to overwrite neural report: {output}")
+    index = pd.read_parquet(index_path)
+    print(f"Preloading {len(index)} cached clips into RAM with {preload_workers} workers.")
+    store = _load_in_memory_feature_store(cache, index, workers=preload_workers)
+    print("Cache preload complete; starting GPU ablations.")
+    results = tuple(
+        run_mvp_neural_development(
+            cache_directory=cache,
+            output_directory=output / ablation,
+            checkpoint_directory=Path(checkpoint_directory) / ablation,
+            config=config,
+            ablation=ablation,
+            feature_store=store,
+        )
+        for ablation in available_mvp_ablations()
+    )
+    summary_path = output / "screening_summary.csv"
+    pd.concat([pd.read_csv(result.summary_path) for result in results], ignore_index=True).to_csv(
+        summary_path, index=False
+    )
+    return MvpNeuralScreeningResult(output, summary_path, results)
+
+
 class _CachedClipDataset(Dataset[tuple[Tensor, Tensor]]):
     def __init__(
         self,
@@ -201,6 +265,7 @@ class _CachedClipDataset(Dataset[tuple[Tensor, Tensor]]):
         channels: tuple[str, ...],
         normalizer: dict[str, list[float]],
         crop_frames: int | None = 64,
+        feature_store: InMemoryFeatureStore | None = None,
     ) -> None:
         self._cache = cache
         self._rows = rows.to_dict(orient="records")
@@ -208,13 +273,16 @@ class _CachedClipDataset(Dataset[tuple[Tensor, Tensor]]):
         self._mean = np.asarray(normalizer["mean"], dtype=np.float32)[:, None, None]
         self._std = np.asarray(normalizer["std"], dtype=np.float32)[:, None, None]
         self._crop_frames = crop_frames
+        self._feature_store = feature_store
 
     def __len__(self) -> int:
         return len(self._rows)
 
     def __getitem__(self, index: int) -> tuple[Tensor, Tensor]:
         row = self._rows[index]
-        values = load_cached_feature(self._cache / str(row["cache_file"]), self._channels)
+        values = _load_feature(
+            self._cache, str(row["cache_file"]), self._channels, self._feature_store
+        )
         values = (values - self._mean) / self._std
         target = values[:1]
         if self._crop_frames is not None:
@@ -231,9 +299,10 @@ def _fit_machine(
     config: CareASDConfig,
     epochs: int,
     device: torch.device,
+    feature_store: InMemoryFeatureStore | None,
 ) -> tuple[LightweightNearAutoencoder, dict[str, list[float]], float]:
-    normalizer = _fit_normalizer(cache, train, channels)
-    dataset = _CachedClipDataset(cache, train, channels, normalizer)
+    normalizer = _fit_normalizer(cache, train, channels, feature_store=feature_store)
+    dataset = _CachedClipDataset(cache, train, channels, normalizer, feature_store=feature_store)
     loader = DataLoader(
         dataset,
         batch_size=config.training.batch_size,
@@ -280,9 +349,10 @@ def _score_machine(
     *,
     batch_size: int,
     num_workers: int,
+    feature_store: InMemoryFeatureStore | None,
 ) -> list[float]:
     dataset = _CachedClipDataset(
-        cache, rows, channels, normalizer, crop_frames=None
+        cache, rows, channels, normalizer, crop_frames=None, feature_store=feature_store
     )
     loader = DataLoader(
         dataset,
@@ -303,19 +373,54 @@ def _score_machine(
 
 
 def _fit_normalizer(
-    cache: Path, rows: pd.DataFrame, channels: tuple[str, ...]
+    cache: Path,
+    rows: pd.DataFrame,
+    channels: tuple[str, ...],
+    *,
+    feature_store: InMemoryFeatureStore | None,
 ) -> dict[str, list[float]]:
     total = np.zeros(len(channels), dtype=np.float64)
     squared = np.zeros(len(channels), dtype=np.float64)
     count = 0
     for row in rows.to_dict(orient="records"):
-        values = load_cached_feature(cache / str(row["cache_file"]), channels).astype(np.float64)
+        values = _load_feature(cache, str(row["cache_file"]), channels, feature_store).astype(
+            np.float64
+        )
         total += values.sum(axis=(1, 2))
         squared += (values**2).sum(axis=(1, 2))
         count += values.shape[1] * values.shape[2]
     mean = total / count
     variance = np.maximum(squared / count - mean**2, 1.0e-6)
     return {"mean": mean.tolist(), "std": np.sqrt(variance).tolist()}
+
+
+def _load_in_memory_feature_store(
+    cache: Path, index: pd.DataFrame, *, workers: int
+) -> InMemoryFeatureStore:
+    cache_files = index["cache_file"].astype(str).tolist()
+    if len(cache_files) != len(set(cache_files)):
+        raise ValueError("Cache index contains duplicate cache_file entries")
+
+    def load(cache_file: str) -> tuple[str, np.ndarray]:
+        return cache_file, load_cached_feature(cache / cache_file, BASE_CHANNELS)
+
+    if workers == 1:
+        loaded = [load(cache_file) for cache_file in cache_files]
+    else:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            loaded = list(executor.map(load, cache_files))
+    return InMemoryFeatureStore(dict(loaded))
+
+
+def _load_feature(
+    cache: Path,
+    cache_file: str,
+    channels: tuple[str, ...],
+    feature_store: InMemoryFeatureStore | None,
+) -> np.ndarray:
+    if feature_store is not None:
+        return feature_store.load(cache_file, channels)
+    return load_cached_feature(cache / cache_file, channels)
 
 
 def _crop_time(values: np.ndarray, frames: int = 64) -> np.ndarray:

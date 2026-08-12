@@ -16,7 +16,10 @@ variable is the input view set:
 | `a02_care_multiview` | near, far, Safe CARE residual, coherence, log-ratio, phase sin/cos, path confidence |
 
 The feature cache is built once from public stereo audio. It contains no fitted
-normalization values and no learned parameters. For each machine type, feature
+normalization values and no learned parameters. During GPU screening, all cache
+maps are preloaded once into server RAM (16 CPU workers) and reused by the
+three sequential ablations; this prevents repeated NPZ decompression and keeps
+the single GPU supplied with batches. For each machine type, feature
 normalization and model fitting use only `dev_train` normal clips, including
 the allowed ten target-normal clips. Development test conditions are used only
 by the deterministic post-hoc metric function.
@@ -25,7 +28,9 @@ by the deterministic post-hoc metric function.
 
 1. Run a ten-clip cache smoke test and a one-epoch CPU/GPU smoke run.
 2. Build the full immutable cache once with CPU workers.
-3. Screen A00, A01, A02 with seed `13711` and 30 epochs on GPU.
+3. Screen A00, A01, A02 with seed `13711`, 30 epochs, batch size 128, and
+   mixed precision on GPU. The views run sequentially because concurrent
+   training would contend for the same GPU and make the comparison slower.
 4. Select the two strongest configurations from their development summaries;
    rerun only those configurations with seeds `13711`, `42`, and `2026`.
 5. Run paired stratified bootstrap on the final score files. The final model
