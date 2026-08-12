@@ -1,6 +1,7 @@
 """Models: official baseline adapter, lightweight encoder, CARE front-end (Phases 2-5)."""
 
-from care_asd.models.mvp_autoencoder import LightweightNearAutoencoder, approximate_parameter_count
+from typing import Any
+
 from care_asd.models.official_baseline import (
     OFFICIAL_BASELINE_COMMIT,
     OFFICIAL_BASELINE_REPOSITORY,
@@ -26,3 +27,18 @@ __all__ = [
     "stage_official_development_data",
     "verify_pinned_reference",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    """Load optional Torch model symbols only when a neural command requests them."""
+    if name in {"LightweightNearAutoencoder", "approximate_parameter_count"}:
+        from care_asd.models.mvp_autoencoder import (
+            LightweightNearAutoencoder,
+            approximate_parameter_count,
+        )
+
+        return {
+            "LightweightNearAutoencoder": LightweightNearAutoencoder,
+            "approximate_parameter_count": approximate_parameter_count,
+        }[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

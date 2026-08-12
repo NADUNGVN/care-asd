@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader, Dataset
 from care_asd.config import CareASDConfig
 from care_asd.data.neural_cache import load_cached_feature
 from care_asd.evaluation.official_baseline import SCORE_COLUMNS, calculate_development_auc_metrics
-from care_asd.models import LightweightNearAutoencoder, approximate_parameter_count
+from care_asd.models.mvp_autoencoder import LightweightNearAutoencoder, approximate_parameter_count
 
 MvpAblation = Literal["a00_near", "a01_near_far", "a02_care_multiview"]
 _ABLATION_CHANNELS: dict[MvpAblation, tuple[str, ...]] = {
