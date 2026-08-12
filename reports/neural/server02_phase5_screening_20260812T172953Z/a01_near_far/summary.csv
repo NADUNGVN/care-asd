@@ -1,0 +1,2 @@
+ablation,mean_auc_all,mean_pauc_all_max_fpr_0_1,mean_auc_source,mean_auc_target
+a01_near_far,0.5113571428571427,0.5217293233082707,0.5105142857142857,0.4952571428571429

@@ -1,0 +1,93 @@
+[
+  {
+    "ablation": "a01_near_far",
+    "channels": [
+      "near",
+      "far"
+    ],
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/neural/server02_phase5_screening_20260812T172953Z/a01_near_far/a01_near_far_ToyCar_seed13711.pt",
+    "machine_type": "ToyCar",
+    "parameters": 120503,
+    "seed": 13711,
+    "train_clips": 1000,
+    "train_loss_final": 0.09591825675964355
+  },
+  {
+    "ablation": "a01_near_far",
+    "channels": [
+      "near",
+      "far"
+    ],
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/neural/server02_phase5_screening_20260812T172953Z/a01_near_far/a01_near_far_ToyCarEmu_seed13711.pt",
+    "machine_type": "ToyCarEmu",
+    "parameters": 120503,
+    "seed": 13711,
+    "train_clips": 1000,
+    "train_loss_final": 0.1546583870649338
+  },
+  {
+    "ablation": "a01_near_far",
+    "channels": [
+      "near",
+      "far"
+    ],
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/neural/server02_phase5_screening_20260812T172953Z/a01_near_far/a01_near_far_bearingEmu_seed13711.pt",
+    "machine_type": "bearingEmu",
+    "parameters": 120503,
+    "seed": 13711,
+    "train_clips": 1000,
+    "train_loss_final": 0.06827790850400925
+  },
+  {
+    "ablation": "a01_near_far",
+    "channels": [
+      "near",
+      "far"
+    ],
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/neural/server02_phase5_screening_20260812T172953Z/a01_near_far/a01_near_far_fan_seed13711.pt",
+    "machine_type": "fan",
+    "parameters": 120503,
+    "seed": 13711,
+    "train_clips": 1000,
+    "train_loss_final": 0.04223890542984009
+  },
+  {
+    "ablation": "a01_near_far",
+    "channels": [
+      "near",
+      "far"
+    ],
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/neural/server02_phase5_screening_20260812T172953Z/a01_near_far/a01_near_far_gearboxEmu_seed13711.pt",
+    "machine_type": "gearboxEmu",
+    "parameters": 120503,
+    "seed": 13711,
+    "train_clips": 1000,
+    "train_loss_final": 0.06334858778119087
+  },
+  {
+    "ablation": "a01_near_far",
+    "channels": [
+      "near",
+      "far"
+    ],
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/neural/server02_phase5_screening_20260812T172953Z/a01_near_far/a01_near_far_sliderEmu_seed13711.pt",
+    "machine_type": "sliderEmu",
+    "parameters": 120503,
+    "seed": 13711,
+    "train_clips": 1000,
+    "train_loss_final": 0.045314495146274565
+  },
+  {
+    "ablation": "a01_near_far",
+    "channels": [
+      "near",
+      "far"
+    ],
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/neural/server02_phase5_screening_20260812T172953Z/a01_near_far/a01_near_far_valveEmu_seed13711.pt",
+    "machine_type": "valveEmu",
+    "parameters": 120503,
+    "seed": 13711,
+    "train_clips": 1000,
+    "train_loss_final": 0.035862608939409256
+  }
+]
