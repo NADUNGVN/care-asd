@@ -31,6 +31,7 @@ from care_asd.evaluation import (
     ScoreMode,
     calculate_development_auc_metrics,
     normalize_official_development_scores,
+    run_dsp_development_benchmark,
 )
 from care_asd.logging_utils import setup_logging
 from care_asd.models import (
@@ -58,6 +59,8 @@ data_app = typer.Typer(help="Dataset download, extraction, manifest, and validat
 app.add_typer(data_app, name="data")
 baseline_app = typer.Typer(help="Pinned official DCASE 2026 baseline reproduction.")
 app.add_typer(baseline_app, name="baseline")
+dsp_app = typer.Typer(help="Phase 3 deterministic stereo DSP controls.")
+app.add_typer(dsp_app, name="dsp")
 
 console = Console(stderr=True)
 
@@ -533,6 +536,60 @@ def baseline_metrics(
         console.print(f"[red]Development metric computation failed:[/red] {exc}")
         raise typer.Exit(code=1) from exc
     console.print(f"[green]Wrote development metrics:[/green] {result}")
+
+
+@dsp_app.command("benchmark-dev")
+def dsp_benchmark_dev(
+    manifest: Annotated[
+        Path, typer.Option("--manifest", help="DCASE development Parquet manifest.")
+    ],
+    audio_root: Annotated[
+        Path,
+        typer.Option(
+            "--audio-root",
+            help="Extracted DCASE dev audio directory that contains the manifest paths.",
+        ),
+    ],
+    output_directory: Annotated[
+        Path,
+        typer.Option("--output-dir", help="New immutable directory for all benchmark evidence."),
+    ],
+    experiment_id: Annotated[str, typer.Option("--experiment-id")],
+    frontends: Annotated[
+        str,
+        typer.Option("--frontends", help="Comma list or 'all' (the default)."),
+    ] = "all",
+    workers: Annotated[
+        int,
+        typer.Option(
+            "--workers", min=1, help="CPU processes; use 1 for strictly serial execution."
+        ),
+    ] = 1,
+) -> None:
+    """Run all selected Phase 3 DSP controls with one fixed reference scorer."""
+    try:
+        from care_asd.signal.dsp_baselines import available_dsp_frontends
+
+        selected = (
+            available_dsp_frontends()
+            if frontends == "all"
+            else tuple(item.strip() for item in frontends.split(",") if item.strip())
+        )
+        result = run_dsp_development_benchmark(
+            manifest_path=manifest,
+            audio_root=audio_root,
+            output_directory=output_directory,
+            experiment_id=experiment_id,
+            frontends=selected,
+            workers=workers,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, ValueError) as exc:
+        console.print(f"[red]DSP benchmark failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]DSP development benchmark completed.[/green] "
+        f"summary={result.summary_path} overcancellation={result.overcancellation_path}"
+    )
 
 
 @app.command("train")
