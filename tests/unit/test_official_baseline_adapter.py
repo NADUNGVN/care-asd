@@ -74,6 +74,19 @@ def test_normalize_official_scores_and_compute_metrics(tmp_path: Path) -> None:
     assert group["auc_target"] == pytest.approx(1.0)
 
 
+def test_normalizer_accepts_official_dcase2026_machine_prefix(tmp_path: Path) -> None:
+    manifest = _write_manifest(tmp_path / "manifest.parquet")
+    output = normalize_official_development_scores(
+        official_score_directory=_write_scores(tmp_path / "official"),
+        manifest_path=manifest,
+        score_mode="mse",
+        experiment_id="baseline_dev_seed13711",
+        output_path=tmp_path / "scores.csv",
+    )
+
+    assert len(pd.read_csv(output)) == 4
+
+
 def test_normalizer_rejects_incomplete_official_scores(tmp_path: Path) -> None:
     manifest = _write_manifest(tmp_path / "manifest.parquet")
     directory = _write_scores(tmp_path / "official")

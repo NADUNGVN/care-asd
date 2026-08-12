@@ -448,6 +448,10 @@ def baseline_run_dev(
         Path, typer.Option("--official-python", help="Python in the isolated official environment.")
     ],
     mode: Annotated[str, typer.Option("--mode", help="mse | mahala | all")] = "all",
+    skip_training: Annotated[
+        bool,
+        typer.Option("--skip-training", help="Score from existing official checkpoints only."),
+    ] = False,
     log: Annotated[Path, typer.Option("--log", help="New immutable official run log.")] = Path(
         "outputs/baseline/official_dev.log"
     ),
@@ -457,9 +461,13 @@ def baseline_run_dev(
     if mode not in {"mse", "mahala", "all"}:
         console.print("[red]mode must be one of: mse, mahala, all[/red]")
         raise typer.Exit(code=1)
+    if skip_training and mode == "all":
+        console.print("[red]--skip-training requires --mode=mse or --mode=mahala[/red]")
+        raise typer.Exit(code=1)
     if dry_run:
         console.print(
-            f"[yellow]dry-run:[/yellow] would run official baseline mode={mode} log={log}"
+            f"[yellow]dry-run:[/yellow] would run official baseline mode={mode} "
+            f"skip_training={skip_training} log={log}"
         )
         return
     try:
@@ -468,6 +476,7 @@ def baseline_run_dev(
             official_python=official_python,
             mode=cast("BaselineMode", mode),
             log_path=log,
+            skip_training=skip_training,
         )
     except (
         FileNotFoundError,

@@ -57,7 +57,7 @@ def normalize_official_development_scores(
         match = _OFFICIAL_SCORE_NAME.match(score_file.name)
         if match is None:
             continue
-        machine = match.group("machine")
+        machine = match.group("machine").removeprefix("DCASE2026T2")
         section = match.group("section")
         lookup = expected.loc[
             (expected["machine_type"] == machine) & (expected["section"] == section)

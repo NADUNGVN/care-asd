@@ -147,6 +147,7 @@ def run_official_development_baseline(
     official_python: str | Path,
     mode: BaselineMode,
     log_path: str | Path,
+    skip_training: bool = False,
 ) -> None:
     """Run unmodified official scripts with the supplied isolated Python runtime."""
     baseline = verify_pinned_reference(
@@ -160,7 +161,9 @@ def run_official_development_baseline(
     python = Path(official_python).absolute()
     if not python.is_file():
         raise FileNotFoundError(f"Official baseline Python executable not found: {python}")
-    scripts = ["01_train_2026t2.sh"]
+    scripts = [] if skip_training else ["01_train_2026t2.sh"]
+    if skip_training and mode == "all":
+        raise ValueError("skip_training requires exactly one score mode: mse or mahala")
     if mode in {"mse", "all"}:
         scripts.append("02a_test_2026t2.sh")
     if mode in {"mahala", "all"}:

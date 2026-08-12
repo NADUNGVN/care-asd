@@ -22,6 +22,9 @@ the correct near-only control for CARE-ASD comparisons.
    rename, alter, or commit WAV files; it refuses a non-normal training split.
 3. `baseline run-dev` invokes unmodified official shell scripts with an
    explicitly supplied Python executable from the isolated official environment.
+   The reference environment pins `matplotlib==3.10.1`, the version documented
+   by the official baseline; later Matplotlib versions removed the plotting
+   keyword used by its unmodified plotting helper.
 4. `baseline normalize` maps every official two-column anomaly-score CSV to the
    CARE-ASD score schema and fails if a development test clip is missing or
    duplicated.
