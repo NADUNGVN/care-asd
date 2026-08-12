@@ -14,7 +14,7 @@ SERVER_REPORT="reports/server/$RUN_ID.md"
 mkdir -p "$CHECKPOINT_DIR" "$LOG_DIR" reports/server
 
 LOG_PATH="$LOG_DIR/screening.log"
-uv run care-asd mvp-neural-screening-dev --cache-dir "$CACHE_DIR" --output-dir "$REPORT_DIR" --checkpoint-dir "$CHECKPOINT_DIR" --config configs/experiment/phase5_screening.yaml --preload-workers 16 >"$LOG_PATH" 2>&1
+uv run care-asd mvp-neural-screening-dev --cache-dir "$CACHE_DIR" --output-dir "$REPORT_DIR" --checkpoint-dir "$CHECKPOINT_DIR" --config configs/experiment/phase5_screening.yaml --preload-workers 24 >"$LOG_PATH" 2>&1
 TASK_STATUS=$?
 printf 'screening=%s\n' "$TASK_STATUS" >"$LOG_DIR/status.txt"
 {
