@@ -1,0 +1,41 @@
+{
+  "audio_root": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/raw/dcase2026/dev/extracted",
+  "care_frontend_config": {
+    "gate": {
+      "bias": 0.0,
+      "bypass": false,
+      "coherence_weight": 4.0,
+      "max_value": 0.9,
+      "min_value": 0.0,
+      "mode": "semi_parametric",
+      "snr_weight": -0.5
+    },
+    "name": "care",
+    "residual": {
+      "max_removed_energy_ratio": 0.8
+    },
+    "transfer": {
+      "alpha": 0.95,
+      "frequency_smoothing_bins": 1,
+      "mode": "causal_ema",
+      "reg_floor": 1e-05
+    }
+  },
+  "experiment_id": "server02_phase4_care_dev_20260812T084330Z",
+  "frontends": [
+    "care"
+  ],
+  "manifest": "data/manifests/dcase2026_dev.parquet",
+  "scorer": "fixed_log_spectral_mean_std_standardized_distance_v1",
+  "signal_config": {
+    "center": false,
+    "eps": 1e-08,
+    "hop_length": 512,
+    "n_fft": 1024,
+    "win_length": 1024,
+    "window": "hann"
+  },
+  "test_rows": 1400,
+  "train_rows": 7000,
+  "workers": 12
+}
