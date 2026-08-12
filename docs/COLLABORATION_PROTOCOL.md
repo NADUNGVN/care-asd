@@ -58,6 +58,24 @@ Replace `<task>` and `<task command>` only with values supplied by Codex. For a
 failing task, this pattern still commits its short error output for inspection
 and returns the user to the SSH prompt. Do **not** commit raw data or a huge log.
 
+## Detached long-running jobs
+
+For a task that must survive a closed SSH connection, Codex supplies one line
+that ends the `nohup ... &` launch with `disown`. `disown` only removes the job
+from the interactive shell's job table; it does **not** stop the process. This
+prevents Bash from later printing a long `[n] Done ...` notification that can
+look like a stuck terminal.
+
+```bash
+nohup bash -lc '<immutable task, evidence commit, and push>' </dev/null >/dev/null 2>&1 & disown; printf 'detached run started\n'
+```
+
+After `detached run started`, the SSH prompt is immediately available for new
+commands. Do not press `Ctrl+C` merely because a detached task has no terminal
+output; inspect its process and named log instead. Completion is determined by
+the durable artifact commit and `TASK_STATUS=0`, not by an interactive-shell
+notification.
+
 ## Dataset-specific rules
 
 - Download the development split first; the normal path is download, extract,
