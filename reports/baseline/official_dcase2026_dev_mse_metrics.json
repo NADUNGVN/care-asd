@@ -1,0 +1,61 @@
+{
+  "groups": {
+    "ToyCar/section_00": {
+      "auc_all": 0.5674,
+      "auc_source": 0.5676,
+      "auc_target": 0.6479999999999999,
+      "pauc_all_max_fpr_0_1": 0.5305263157894737,
+      "pauc_source_max_fpr_0_1": 0.49473684210526314,
+      "pauc_target_max_fpr_0_1": 0.5389473684210526
+    },
+    "ToyCarEmu/section_00": {
+      "auc_all": 0.6705,
+      "auc_source": 0.5992,
+      "auc_target": 0.7808,
+      "pauc_all_max_fpr_0_1": 0.54,
+      "pauc_source_max_fpr_0_1": 0.511578947368421,
+      "pauc_target_max_fpr_0_1": 0.5642105263157895
+    },
+    "bearingEmu/section_00": {
+      "auc_all": 0.6037000000000001,
+      "auc_source": 0.6108,
+      "auc_target": 0.5908,
+      "pauc_all_max_fpr_0_1": 0.5952631578947368,
+      "pauc_source_max_fpr_0_1": 0.5747368421052632,
+      "pauc_target_max_fpr_0_1": 0.6231578947368421
+    },
+    "fan/section_00": {
+      "auc_all": 0.5522,
+      "auc_source": 0.6292,
+      "auc_target": 0.47679999999999995,
+      "pauc_all_max_fpr_0_1": 0.5289473684210526,
+      "pauc_source_max_fpr_0_1": 0.5810526315789474,
+      "pauc_target_max_fpr_0_1": 0.5010526315789474
+    },
+    "gearboxEmu/section_00": {
+      "auc_all": 0.5838999999999999,
+      "auc_source": 0.6364000000000001,
+      "auc_target": 0.5640000000000001,
+      "pauc_all_max_fpr_0_1": 0.5231578947368422,
+      "pauc_source_max_fpr_0_1": 0.6168421052631579,
+      "pauc_target_max_fpr_0_1": 0.5031578947368421
+    },
+    "sliderEmu/section_00": {
+      "auc_all": 0.5714,
+      "auc_source": 0.6428,
+      "auc_target": 0.48879999999999996,
+      "pauc_all_max_fpr_0_1": 0.5068421052631579,
+      "pauc_source_max_fpr_0_1": 0.5347368421052632,
+      "pauc_target_max_fpr_0_1": 0.5052631578947369
+    },
+    "valveEmu/section_00": {
+      "auc_all": 0.7190000000000001,
+      "auc_source": 0.7676,
+      "auc_target": 0.68,
+      "pauc_all_max_fpr_0_1": 0.5715789473684211,
+      "pauc_source_max_fpr_0_1": 0.5873684210526315,
+      "pauc_target_max_fpr_0_1": 0.5621052631578948
+    }
+  },
+  "score_file": "official_dcase2026_dev_mse_scores.csv"
+}

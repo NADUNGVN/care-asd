@@ -1,0 +1,61 @@
+{
+  "groups": {
+    "ToyCar/section_00": {
+      "auc_all": 0.6549,
+      "auc_source": 0.6252,
+      "auc_target": 0.7508,
+      "pauc_all_max_fpr_0_1": 0.5721052631578948,
+      "pauc_source_max_fpr_0_1": 0.5178947368421053,
+      "pauc_target_max_fpr_0_1": 0.671578947368421
+    },
+    "ToyCarEmu/section_00": {
+      "auc_all": 0.6429,
+      "auc_source": 0.5664,
+      "auc_target": 0.7528,
+      "pauc_all_max_fpr_0_1": 0.5231578947368422,
+      "pauc_source_max_fpr_0_1": 0.49473684210526314,
+      "pauc_target_max_fpr_0_1": 0.6252631578947369
+    },
+    "bearingEmu/section_00": {
+      "auc_all": 0.6419000000000001,
+      "auc_source": 0.6704000000000001,
+      "auc_target": 0.6056,
+      "pauc_all_max_fpr_0_1": 0.6026315789473684,
+      "pauc_source_max_fpr_0_1": 0.5957894736842105,
+      "pauc_target_max_fpr_0_1": 0.6
+    },
+    "fan/section_00": {
+      "auc_all": 0.5236999999999999,
+      "auc_source": 0.6272,
+      "auc_target": 0.42160000000000003,
+      "pauc_all_max_fpr_0_1": 0.5247368421052632,
+      "pauc_source_max_fpr_0_1": 0.5515789473684211,
+      "pauc_target_max_fpr_0_1": 0.5094736842105263
+    },
+    "gearboxEmu/section_00": {
+      "auc_all": 0.6142000000000001,
+      "auc_source": 0.6588,
+      "auc_target": 0.5800000000000001,
+      "pauc_all_max_fpr_0_1": 0.5278947368421053,
+      "pauc_source_max_fpr_0_1": 0.6442105263157895,
+      "pauc_target_max_fpr_0_1": 0.5473684210526316
+    },
+    "sliderEmu/section_00": {
+      "auc_all": 0.5897,
+      "auc_source": 0.6427999999999999,
+      "auc_target": 0.5436000000000001,
+      "pauc_all_max_fpr_0_1": 0.5031578947368421,
+      "pauc_source_max_fpr_0_1": 0.5347368421052632,
+      "pauc_target_max_fpr_0_1": 0.5157894736842106
+    },
+    "valveEmu/section_00": {
+      "auc_all": 0.5640000000000001,
+      "auc_source": 0.6224,
+      "auc_target": 0.5147999999999999,
+      "pauc_all_max_fpr_0_1": 0.49894736842105264,
+      "pauc_source_max_fpr_0_1": 0.4926315789473684,
+      "pauc_target_max_fpr_0_1": 0.5052631578947369
+    }
+  },
+  "score_file": "official_dcase2026_dev_mahala_scores.csv"
+}
