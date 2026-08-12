@@ -17,7 +17,7 @@ variable is the input view set:
 
 The feature cache is built once from public stereo audio. It contains no fitted
 normalization values and no learned parameters. During GPU screening, all cache
-maps are preloaded once into server RAM (24 CPU workers on SERVER-02) and reused by the
+maps are preloaded once into server RAM (16 CPU workers on SERVER-02) and reused by the
 three sequential ablations; this prevents repeated NPZ decompression and keeps
 the single GPU supplied with batches. For each machine type, feature
 normalization and model fitting use only `dev_train` normal clips, including
