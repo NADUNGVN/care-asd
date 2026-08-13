@@ -5,6 +5,9 @@ set -uo pipefail
 REPO_DIR="${CARE_ASD_REPO_DIR:-$HOME/Dung_TDTU/CARE_ASD}"
 DATA_ROOT="${CARE_ASD_DATA_ROOT:-$HOME/Dung_TDTU/data/CARE_ASD}"
 cd "$REPO_DIR"
+# Required by PyTorch when the pinned official deterministic setting reaches
+# CUDA cuBLAS. It must exist before the Python process starts.
+export CUBLAS_WORKSPACE_CONFIG=:4096:8
 RUN_ID="server02_phase6_alignment_$(date -u +%Y%m%dT%H%M%SZ)"
 CACHE_DIR="${CARE_ASD_OFFICIAL_CACHE_DIR:-$(find "$DATA_ROOT/official_vector_cache" -mindepth 2 -maxdepth 2 -type f -name cache.json -printf '%T@ %h\n' 2>/dev/null | sort -nr | head -n1 | cut -d' ' -f2-)}"
 REPORT_DIR="reports/alignment/$RUN_ID"
