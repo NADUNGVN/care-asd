@@ -1,0 +1,19 @@
+{
+  "candidate": "reports/neural/server02_phase5_replication_20260813T043315Z/a02_care_multiview_ensemble/scores.csv",
+  "iterations": 5000,
+  "metric_delta_candidate_minus_reference": {
+    "mean_auc": {
+      "ci95_high": 0.0028142857142855527,
+      "ci95_low": -0.020614642857142946,
+      "mean": -0.008702691428571432
+    },
+    "mean_pauc_max_fpr_0_1": {
+      "ci95_high": 0.017593984962405943,
+      "ci95_low": 0.0005263157894737052,
+      "mean": 0.00877757894736842
+    }
+  },
+  "reference": "reports/neural/server02_phase5_replication_20260813T043315Z/a00_near_ensemble/scores.csv",
+  "seed": 2026,
+  "stratification": "machine_type/section/condition"
+}

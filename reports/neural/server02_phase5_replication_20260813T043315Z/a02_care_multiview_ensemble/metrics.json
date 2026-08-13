@@ -1,0 +1,61 @@
+{
+  "groups": {
+    "ToyCar/section_00": {
+      "auc_all": 0.4443,
+      "auc_source": 0.36239999999999994,
+      "auc_target": 0.4392,
+      "pauc_all_max_fpr_0_1": 0.48157894736842105,
+      "pauc_source_max_fpr_0_1": 0.4842105263157895,
+      "pauc_target_max_fpr_0_1": 0.49894736842105264
+    },
+    "ToyCarEmu/section_00": {
+      "auc_all": 0.5158,
+      "auc_source": 0.46799999999999997,
+      "auc_target": 0.572,
+      "pauc_all_max_fpr_0_1": 0.5221052631578947,
+      "pauc_source_max_fpr_0_1": 0.5305263157894737,
+      "pauc_target_max_fpr_0_1": 0.511578947368421
+    },
+    "bearingEmu/section_00": {
+      "auc_all": 0.6176,
+      "auc_source": 0.5932000000000001,
+      "auc_target": 0.6384,
+      "pauc_all_max_fpr_0_1": 0.6189473684210526,
+      "pauc_source_max_fpr_0_1": 0.6547368421052632,
+      "pauc_target_max_fpr_0_1": 0.5873684210526315
+    },
+    "fan/section_00": {
+      "auc_all": 0.6089,
+      "auc_source": 0.7968,
+      "auc_target": 0.4296,
+      "pauc_all_max_fpr_0_1": 0.6147368421052631,
+      "pauc_source_max_fpr_0_1": 0.7284210526315789,
+      "pauc_target_max_fpr_0_1": 0.48210526315789476
+    },
+    "gearboxEmu/section_00": {
+      "auc_all": 0.5075999999999999,
+      "auc_source": 0.5352000000000001,
+      "auc_target": 0.4832,
+      "pauc_all_max_fpr_0_1": 0.4868421052631579,
+      "pauc_source_max_fpr_0_1": 0.48,
+      "pauc_target_max_fpr_0_1": 0.4905263157894737
+    },
+    "sliderEmu/section_00": {
+      "auc_all": 0.5276000000000001,
+      "auc_source": 0.5456,
+      "auc_target": 0.5044,
+      "pauc_all_max_fpr_0_1": 0.48789473684210527,
+      "pauc_source_max_fpr_0_1": 0.4842105263157895,
+      "pauc_target_max_fpr_0_1": 0.4884210526315789
+    },
+    "valveEmu/section_00": {
+      "auc_all": 0.3243,
+      "auc_source": 0.134,
+      "auc_target": 0.5192,
+      "pauc_all_max_fpr_0_1": 0.4936842105263158,
+      "pauc_source_max_fpr_0_1": 0.47368421052631576,
+      "pauc_target_max_fpr_0_1": 0.511578947368421
+    }
+  },
+  "score_file": "scores.csv"
+}

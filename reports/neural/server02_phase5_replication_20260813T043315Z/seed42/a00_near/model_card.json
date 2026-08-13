@@ -1,0 +1,86 @@
+[
+  {
+    "ablation": "a00_near",
+    "channels": [
+      "near"
+    ],
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/neural/server02_phase5_replication_20260813T043315Z/seed42/a00_near/a00_near_ToyCar_seed42.pt",
+    "machine_type": "ToyCar",
+    "parameters": 120460,
+    "seed": 42,
+    "train_clips": 1000,
+    "train_loss_final": 0.0907960540652275
+  },
+  {
+    "ablation": "a00_near",
+    "channels": [
+      "near"
+    ],
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/neural/server02_phase5_replication_20260813T043315Z/seed42/a00_near/a00_near_ToyCarEmu_seed42.pt",
+    "machine_type": "ToyCarEmu",
+    "parameters": 120460,
+    "seed": 42,
+    "train_clips": 1000,
+    "train_loss_final": 0.07640746229887009
+  },
+  {
+    "ablation": "a00_near",
+    "channels": [
+      "near"
+    ],
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/neural/server02_phase5_replication_20260813T043315Z/seed42/a00_near/a00_near_bearingEmu_seed42.pt",
+    "machine_type": "bearingEmu",
+    "parameters": 120460,
+    "seed": 42,
+    "train_clips": 1000,
+    "train_loss_final": 0.08440379828214645
+  },
+  {
+    "ablation": "a00_near",
+    "channels": [
+      "near"
+    ],
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/neural/server02_phase5_replication_20260813T043315Z/seed42/a00_near/a00_near_fan_seed42.pt",
+    "machine_type": "fan",
+    "parameters": 120460,
+    "seed": 42,
+    "train_clips": 1000,
+    "train_loss_final": 0.06796015030145645
+  },
+  {
+    "ablation": "a00_near",
+    "channels": [
+      "near"
+    ],
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/neural/server02_phase5_replication_20260813T043315Z/seed42/a00_near/a00_near_gearboxEmu_seed42.pt",
+    "machine_type": "gearboxEmu",
+    "parameters": 120460,
+    "seed": 42,
+    "train_clips": 1000,
+    "train_loss_final": 0.0675181657075882
+  },
+  {
+    "ablation": "a00_near",
+    "channels": [
+      "near"
+    ],
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/neural/server02_phase5_replication_20260813T043315Z/seed42/a00_near/a00_near_sliderEmu_seed42.pt",
+    "machine_type": "sliderEmu",
+    "parameters": 120460,
+    "seed": 42,
+    "train_clips": 1000,
+    "train_loss_final": 0.0830968913435936
+  },
+  {
+    "ablation": "a00_near",
+    "channels": [
+      "near"
+    ],
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/neural/server02_phase5_replication_20260813T043315Z/seed42/a00_near/a00_near_valveEmu_seed42.pt",
+    "machine_type": "valveEmu",
+    "parameters": 120460,
+    "seed": 42,
+    "train_clips": 1000,
+    "train_loss_final": 0.02893287269771099
+  }
+]

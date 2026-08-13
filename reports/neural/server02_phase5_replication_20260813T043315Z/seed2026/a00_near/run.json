@@ -1,0 +1,179 @@
+{
+  "ablation": "a00_near",
+  "cache": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/neural_cache/server02_phase5_cache_20260812T145808Z",
+  "cache_metadata": {
+    "base_channels": [
+      "near",
+      "far",
+      "residual",
+      "coherence",
+      "log_ratio",
+      "phase_sin",
+      "phase_cos",
+      "path_confidence"
+    ],
+    "clips": 8400,
+    "features": {
+      "coherence": true,
+      "far_logmel": true,
+      "fmax": null,
+      "fmin": 0.0,
+      "log_ratio": true,
+      "n_mels": 128,
+      "near_logmel": true,
+      "phase_sin_cos": true,
+      "residual_logmel": true
+    },
+    "frontend": {
+      "gate": {
+        "bias": 0.0,
+        "bypass": false,
+        "coherence_weight": 4.0,
+        "max_value": 0.9,
+        "min_value": 0.0,
+        "mode": "semi_parametric",
+        "snr_weight": -0.5
+      },
+      "name": "care",
+      "residual": {
+        "max_removed_energy_ratio": 0.8
+      },
+      "transfer": {
+        "alpha": 0.95,
+        "frequency_smoothing_bins": 1,
+        "mode": "causal_ema",
+        "reg_floor": 1e-05
+      }
+    },
+    "manifest_sha256": "4cffc418e0a72a82e14b411125ee57ff36878f863fc90d577c276d52687f9882",
+    "signal": {
+      "center": false,
+      "eps": 1e-08,
+      "hop_length": 512,
+      "n_fft": 1024,
+      "win_length": 1024,
+      "window": "hann"
+    }
+  },
+  "channels": [
+    "near"
+  ],
+  "config": {
+    "baseline": {
+      "evaluator_dir": "external/dcase2026_task2_evaluator",
+      "input_channel": 0,
+      "official_python": null,
+      "reference_dir": "external/dcase2026_task2_baseline_ae",
+      "seed": 13711
+    },
+    "calibration": {
+      "abstain_margin": 0.02,
+      "alpha": 0.05,
+      "name": "hierarchical_conformal"
+    },
+    "data": {
+      "channel_map": {
+        "far": 1,
+        "near": 0
+      },
+      "manifest": "data/manifests/dcase2026_dev.parquet",
+      "root": "data",
+      "sample_rate": null
+    },
+    "deployment": {
+      "backend": "tensorrt",
+      "device_id": "E2",
+      "platform": "jetson_xavier_nx",
+      "power_mode_w": 15,
+      "precision": "fp16",
+      "repetitions": 3,
+      "require_external_power_meter": true,
+      "runner": "cpp_tensorrt",
+      "timed_windows": 1000,
+      "warmup_windows": 100
+    },
+    "experiment": {
+      "dry_run": false,
+      "id": "mvp_neural_screening_seed13711_seed2026",
+      "notes": "Phase 5 pre-registered GPU screening of A00, A01, and A02.",
+      "seed": 2026
+    },
+    "features": {
+      "coherence": true,
+      "far_logmel": true,
+      "fmax": null,
+      "fmin": 0.0,
+      "log_ratio": true,
+      "n_mels": 128,
+      "near_logmel": true,
+      "phase_sin_cos": true,
+      "residual_logmel": true
+    },
+    "frontend": {
+      "gate": {
+        "bias": 0.0,
+        "bypass": false,
+        "coherence_weight": 4.0,
+        "max_value": 0.9,
+        "min_value": 0.0,
+        "mode": "semi_parametric",
+        "snr_weight": -0.5
+      },
+      "name": "care",
+      "residual": {
+        "max_removed_energy_ratio": 0.8
+      },
+      "transfer": {
+        "alpha": 0.95,
+        "frequency_smoothing_bins": 1,
+        "mode": "causal_ema",
+        "reg_floor": 1e-05
+      }
+    },
+    "model": {
+      "dropout": 0.1,
+      "embedding_dim": 64,
+      "name": "lightweight_encoder"
+    },
+    "output": {
+      "root": "outputs",
+      "save_diagnostics": true,
+      "save_embeddings": false,
+      "save_scores": true
+    },
+    "scoring": {
+      "covariance_shrinkage": "auto",
+      "name": "shrinkage_mahalanobis",
+      "target_adaptation": {
+        "enabled": true,
+        "lambda": 0.2
+      }
+    },
+    "signal": {
+      "center": false,
+      "eps": 1e-08,
+      "hop_length": 512,
+      "n_fft": 1024,
+      "win_length": 1024,
+      "window": "hann"
+    },
+    "streaming": {
+      "aggregation": "topk_mean",
+      "enabled": false,
+      "hop_seconds": 0.25,
+      "topk": 3,
+      "window_seconds": 1.0
+    },
+    "training": {
+      "batch_size": 128,
+      "device": "cuda",
+      "epochs": 30,
+      "learning_rate": 0.001,
+      "mixed_precision": true,
+      "num_workers": 16
+    }
+  },
+  "device": "cuda",
+  "epochs": 30,
+  "seed": 2026
+}

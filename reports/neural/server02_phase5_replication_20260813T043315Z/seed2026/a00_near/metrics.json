@@ -1,0 +1,61 @@
+{
+  "groups": {
+    "ToyCar/section_00": {
+      "auc_all": 0.47369999999999995,
+      "auc_source": 0.42519999999999997,
+      "auc_target": 0.4688,
+      "pauc_all_max_fpr_0_1": 0.48210526315789476,
+      "pauc_source_max_fpr_0_1": 0.48,
+      "pauc_target_max_fpr_0_1": 0.5073684210526316
+    },
+    "ToyCarEmu/section_00": {
+      "auc_all": 0.5054000000000001,
+      "auc_source": 0.47239999999999993,
+      "auc_target": 0.5432,
+      "pauc_all_max_fpr_0_1": 0.5173684210526316,
+      "pauc_source_max_fpr_0_1": 0.5326315789473685,
+      "pauc_target_max_fpr_0_1": 0.5052631578947369
+    },
+    "bearingEmu/section_00": {
+      "auc_all": 0.5871,
+      "auc_source": 0.5680000000000001,
+      "auc_target": 0.6004,
+      "pauc_all_max_fpr_0_1": 0.5715789473684211,
+      "pauc_source_max_fpr_0_1": 0.6105263157894737,
+      "pauc_target_max_fpr_0_1": 0.5326315789473685
+    },
+    "fan/section_00": {
+      "auc_all": 0.5944,
+      "auc_source": 0.7412000000000001,
+      "auc_target": 0.44000000000000006,
+      "pauc_all_max_fpr_0_1": 0.5647368421052632,
+      "pauc_source_max_fpr_0_1": 0.5894736842105264,
+      "pauc_target_max_fpr_0_1": 0.48210526315789476
+    },
+    "gearboxEmu/section_00": {
+      "auc_all": 0.5206,
+      "auc_source": 0.5384,
+      "auc_target": 0.5128,
+      "pauc_all_max_fpr_0_1": 0.49526315789473685,
+      "pauc_source_max_fpr_0_1": 0.4926315789473684,
+      "pauc_target_max_fpr_0_1": 0.5073684210526316
+    },
+    "sliderEmu/section_00": {
+      "auc_all": 0.5284,
+      "auc_source": 0.5448000000000001,
+      "auc_target": 0.504,
+      "pauc_all_max_fpr_0_1": 0.4826315789473684,
+      "pauc_source_max_fpr_0_1": 0.49473684210526314,
+      "pauc_target_max_fpr_0_1": 0.47578947368421054
+    },
+    "valveEmu/section_00": {
+      "auc_all": 0.45130000000000003,
+      "auc_source": 0.3104,
+      "auc_target": 0.5692000000000002,
+      "pauc_all_max_fpr_0_1": 0.5052631578947369,
+      "pauc_source_max_fpr_0_1": 0.5178947368421053,
+      "pauc_target_max_fpr_0_1": 0.4884210526315789
+    }
+  },
+  "score_file": "scores.csv"
+}

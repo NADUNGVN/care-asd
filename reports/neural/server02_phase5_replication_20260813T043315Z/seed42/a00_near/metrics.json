@@ -1,0 +1,61 @@
+{
+  "groups": {
+    "ToyCar/section_00": {
+      "auc_all": 0.4487,
+      "auc_source": 0.3556,
+      "auc_target": 0.46079999999999993,
+      "pauc_all_max_fpr_0_1": 0.48736842105263156,
+      "pauc_source_max_fpr_0_1": 0.49473684210526314,
+      "pauc_target_max_fpr_0_1": 0.4905263157894737
+    },
+    "ToyCarEmu/section_00": {
+      "auc_all": 0.49640000000000006,
+      "auc_source": 0.4208,
+      "auc_target": 0.5811999999999999,
+      "pauc_all_max_fpr_0_1": 0.5157894736842106,
+      "pauc_source_max_fpr_0_1": 0.5221052631578947,
+      "pauc_target_max_fpr_0_1": 0.5178947368421053
+    },
+    "bearingEmu/section_00": {
+      "auc_all": 0.6049,
+      "auc_source": 0.5863999999999999,
+      "auc_target": 0.6195999999999999,
+      "pauc_all_max_fpr_0_1": 0.6221052631578947,
+      "pauc_source_max_fpr_0_1": 0.6463157894736842,
+      "pauc_target_max_fpr_0_1": 0.5894736842105264
+    },
+    "fan/section_00": {
+      "auc_all": 0.5897,
+      "auc_source": 0.7104,
+      "auc_target": 0.47879999999999995,
+      "pauc_all_max_fpr_0_1": 0.5668421052631579,
+      "pauc_source_max_fpr_0_1": 0.5915789473684211,
+      "pauc_target_max_fpr_0_1": 0.48
+    },
+    "gearboxEmu/section_00": {
+      "auc_all": 0.5064,
+      "auc_source": 0.5596000000000001,
+      "auc_target": 0.44680000000000003,
+      "pauc_all_max_fpr_0_1": 0.49105263157894735,
+      "pauc_source_max_fpr_0_1": 0.5031578947368421,
+      "pauc_target_max_fpr_0_1": 0.48
+    },
+    "sliderEmu/section_00": {
+      "auc_all": 0.5225,
+      "auc_source": 0.5392,
+      "auc_target": 0.5064,
+      "pauc_all_max_fpr_0_1": 0.48473684210526313,
+      "pauc_source_max_fpr_0_1": 0.4926315789473684,
+      "pauc_target_max_fpr_0_1": 0.47789473684210526
+    },
+    "valveEmu/section_00": {
+      "auc_all": 0.3633,
+      "auc_source": 0.1968,
+      "auc_target": 0.5292000000000001,
+      "pauc_all_max_fpr_0_1": 0.5,
+      "pauc_source_max_fpr_0_1": 0.48,
+      "pauc_target_max_fpr_0_1": 0.52
+    }
+  },
+  "score_file": "scores.csv"
+}
