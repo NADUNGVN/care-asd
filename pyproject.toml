@@ -47,6 +47,9 @@ ml = [
     "matplotlib>=3.8",
     "psutil>=5.9",
 ]
+official-alignment = [
+    "librosa>=0.10,<0.12",
+]
 deploy = [
     "onnx>=1.15",
     "onnxruntime>=1.16",

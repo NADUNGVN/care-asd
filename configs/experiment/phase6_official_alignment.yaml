@@ -1,0 +1,13 @@
+# Locked contract for the internal reproduction of the pinned official baseline.
+experiment:
+  id: official_alignment_seed13711
+  seed: 13711
+  notes: "Phase 6 internal reproduction of official feature, architecture and MSE score contract."
+
+training:
+  epochs: 100
+  batch_size: 256
+  learning_rate: 1.0e-3
+  num_workers: 0
+  device: cuda
+  mixed_precision: false

@@ -21,6 +21,7 @@ __all__ = [
     "OFFICIAL_EVALUATOR_REPOSITORY",
     "BaselineMode",
     "LightweightNearAutoencoder",
+    "OfficialCompatibleAutoencoder",
     "approximate_parameter_count",
     "checkout_pinned_reference",
     "run_official_development_baseline",
@@ -31,14 +32,20 @@ __all__ = [
 
 def __getattr__(name: str) -> Any:
     """Load optional Torch model symbols only when a neural command requests them."""
-    if name in {"LightweightNearAutoencoder", "approximate_parameter_count"}:
+    if name in {
+        "LightweightNearAutoencoder",
+        "OfficialCompatibleAutoencoder",
+        "approximate_parameter_count",
+    }:
         from care_asd.models.mvp_autoencoder import (
             LightweightNearAutoencoder,
             approximate_parameter_count,
         )
+        from care_asd.models.official_compatible import OfficialCompatibleAutoencoder
 
         return {
             "LightweightNearAutoencoder": LightweightNearAutoencoder,
+            "OfficialCompatibleAutoencoder": OfficialCompatibleAutoencoder,
             "approximate_parameter_count": approximate_parameter_count,
         }[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

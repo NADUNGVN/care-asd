@@ -22,6 +22,7 @@ from care_asd.data import (
     audit_dcase2026_manifest,
     build_dcase2026_manifest,
     build_neural_feature_cache,
+    build_official_vector_cache,
     dcase2026_manifest_path,
     download_dcase2026_split,
     extract_dcase2026_split,
@@ -417,6 +418,30 @@ def data_cache_neural(
     )
 
 
+@data_app.command("cache-official-vectors")
+def data_cache_official_vectors(
+    manifest: Annotated[Path, typer.Option("--manifest")],
+    audio_root: Annotated[Path, typer.Option("--audio-root")],
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    workers: Annotated[int, typer.Option("--workers", min=1)] = 1,
+) -> None:
+    """Build exact channel-0 five-frame log-Mel vectors for official alignment."""
+    try:
+        result = build_official_vector_cache(
+            manifest_path=manifest,
+            audio_root=audio_root,
+            output_directory=output_directory,
+            workers=workers,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]Official vector cache failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]Official vector cache complete.[/green] "
+        f"clips={result.clips} index={result.index_path}"
+    )
+
+
 @baseline_app.command("checkout")
 def baseline_checkout(
     baseline_dir: Annotated[
@@ -757,6 +782,31 @@ def mvp_neural_replication_dev(
         raise typer.Exit(code=1) from exc
     console.print(
         "[green]MVP neural replication completed.[/green] " f"summary={result.summary_path}"
+    )
+
+
+@app.command("official-alignment-dev")
+def official_alignment_dev(
+    cache_directory: Annotated[Path, typer.Option("--cache-dir")],
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    checkpoint_directory: Annotated[Path, typer.Option("--checkpoint-dir")],
+    config: Annotated[Path | None, typer.Option("--config", "-c")] = None,
+) -> None:
+    """Run the internal architecture-level reproduction of official MSE scoring."""
+    try:
+        from care_asd.evaluation.official_alignment import run_official_alignment_development
+
+        result = run_official_alignment_development(
+            cache_directory=cache_directory,
+            output_directory=output_directory,
+            checkpoint_directory=checkpoint_directory,
+            config=validate_config(load_config(config)),
+        )
+    except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]Official alignment failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]Official alignment completed.[/green] " f"summary={result.summary_path}"
     )
 
 
