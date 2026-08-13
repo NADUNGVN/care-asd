@@ -35,6 +35,7 @@ from care_asd.evaluation import (
     run_care_development_benchmark,
     run_dsp_development_benchmark,
     write_paired_bootstrap_comparison,
+    write_seed_ensemble_scores,
 )
 from care_asd.logging_utils import setup_logging
 from care_asd.models import (
@@ -724,6 +725,60 @@ def mvp_neural_screening_dev(
     console.print(
         "[green]MVP neural screening completed.[/green] " f"summary={result.summary_path}"
     )
+
+
+@app.command("mvp-neural-replication-dev")
+def mvp_neural_replication_dev(
+    cache_directory: Annotated[Path, typer.Option("--cache-dir")],
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    checkpoint_directory: Annotated[Path, typer.Option("--checkpoint-dir")],
+    seeds: Annotated[str, typer.Option("--seeds")] = "42,2026",
+    ablations: Annotated[str, typer.Option("--ablations")] = "a00_near,a02_care_multiview",
+    config: Annotated[Path | None, typer.Option("--config", "-c")] = None,
+    preload_workers: Annotated[int, typer.Option("--preload-workers", min=1)] = 16,
+) -> None:
+    """Replicate selected fixed GPU views across seeds after one RAM preload."""
+    try:
+        from care_asd.evaluation.mvp_neural import run_mvp_neural_replication_development
+
+        seed_values = tuple(int(value.strip()) for value in seeds.split(",") if value.strip())
+        ablation_values = tuple(value.strip() for value in ablations.split(",") if value.strip())
+        result = run_mvp_neural_replication_development(
+            cache_directory=cache_directory,
+            output_directory=output_directory,
+            checkpoint_directory=checkpoint_directory,
+            config=validate_config(load_config(config)),
+            seeds=seed_values,
+            ablations=ablation_values,  # type: ignore[arg-type]
+            preload_workers=preload_workers,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]MVP neural replication failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]MVP neural replication completed.[/green] " f"summary={result.summary_path}"
+    )
+
+
+@app.command("mvp-ensemble")
+def mvp_ensemble(
+    scores: Annotated[list[Path], typer.Option("--scores")],
+    output: Annotated[Path, typer.Option("--output")],
+    model_id: Annotated[str, typer.Option("--model-id")],
+    experiment_id: Annotated[str, typer.Option("--experiment-id")],
+) -> None:
+    """Average matched per-file scores from independent seeds before bootstrap."""
+    try:
+        result = write_seed_ensemble_scores(
+            score_paths=scores,
+            output_path=output,
+            model_id=model_id,
+            experiment_id=experiment_id,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, ValueError) as exc:
+        console.print(f"[red]MVP score ensemble failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[green]MVP score ensemble complete:[/green] {result}")
 
 
 @app.command("mvp-bootstrap")

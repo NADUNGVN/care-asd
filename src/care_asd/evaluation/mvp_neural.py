@@ -57,6 +57,15 @@ class MvpNeuralScreeningResult:
     results: tuple[MvpNeuralResult, ...]
 
 
+@dataclass(frozen=True)
+class MvpNeuralReplicationResult:
+    """Evidence paths for selected multi-seed neural replications."""
+
+    output_directory: Path
+    summary_path: Path
+    results: tuple[MvpNeuralResult, ...]
+
+
 class InMemoryFeatureStore:
     """Read-only full-cache view that removes repeated NPZ decompression."""
 
@@ -255,6 +264,59 @@ def run_mvp_neural_screening_development(
         summary_path, index=False
     )
     return MvpNeuralScreeningResult(output, summary_path, results)
+
+
+def run_mvp_neural_replication_development(
+    *,
+    cache_directory: str | Path,
+    output_directory: str | Path,
+    checkpoint_directory: str | Path,
+    config: CareASDConfig,
+    seeds: tuple[int, ...] = (42, 2026),
+    ablations: tuple[MvpAblation, ...] = ("a00_near", "a02_care_multiview"),
+    preload_workers: int = 16,
+) -> MvpNeuralReplicationResult:
+    """Preload once and rerun only selected views under independent fixed seeds."""
+    cache = Path(cache_directory)
+    output = Path(output_directory)
+    index_path = cache / "index.parquet"
+    if not index_path.is_file():
+        raise FileNotFoundError("Cache requires index.parquet")
+    if output.exists():
+        raise FileExistsError(f"Refusing to overwrite neural report: {output}")
+    if not seeds or len(set(seeds)) != len(seeds) or any(seed < 0 for seed in seeds):
+        raise ValueError("seeds must be unique non-negative integers")
+    if not ablations or any(ablation not in _ABLATION_CHANNELS for ablation in ablations):
+        raise ValueError("ablations must be a non-empty subset of the registered MVP views")
+    index = pd.read_parquet(index_path)
+    print(f"Preloading {len(index)} cached clips into RAM with {preload_workers} workers.")
+    store = _load_in_memory_feature_store(cache, index, workers=preload_workers)
+    print("Cache preload complete; starting selected GPU replications.")
+    results: list[MvpNeuralResult] = []
+    for seed in seeds:
+        run_config = config.model_copy(
+            update={
+                "experiment": config.experiment.model_copy(
+                    update={"id": f"{config.experiment.id}_seed{seed}", "seed": seed}
+                )
+            }
+        )
+        for ablation in ablations:
+            results.append(
+                run_mvp_neural_development(
+                    cache_directory=cache,
+                    output_directory=output / f"seed{seed}" / ablation,
+                    checkpoint_directory=Path(checkpoint_directory) / f"seed{seed}" / ablation,
+                    config=run_config,
+                    ablation=ablation,
+                    feature_store=store,
+                )
+            )
+    summary_path = output / "replication_summary.csv"
+    summary = pd.concat([pd.read_csv(result.summary_path) for result in results], ignore_index=True)
+    summary.insert(0, "seed", [int(result.output_directory.parent.name.removeprefix("seed")) for result in results])
+    summary.to_csv(summary_path, index=False)
+    return MvpNeuralReplicationResult(output, summary_path, tuple(results))
 
 
 class _CachedClipDataset(Dataset[tuple[Tensor, Tensor]]):

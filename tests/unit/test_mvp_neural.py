@@ -12,9 +12,13 @@ import pytest
 from care_asd.config import CareASDConfig, TrainingConfig
 from care_asd.evaluation.mvp_neural import (
     run_mvp_neural_development,
+    run_mvp_neural_replication_development,
     run_mvp_neural_screening_development,
 )
-from care_asd.evaluation.paired_bootstrap import write_paired_bootstrap_comparison
+from care_asd.evaluation.paired_bootstrap import (
+    write_paired_bootstrap_comparison,
+    write_seed_ensemble_scores,
+)
 from care_asd.models import LightweightNearAutoencoder
 
 torch = pytest.importorskip("torch")
@@ -115,3 +119,23 @@ def test_mvp_runner_fits_only_train_normal_rows_and_scores_all_test_rows(tmp_pat
     )
     assert len(screening.results) == 3
     assert screening.summary_path.is_file()
+
+    replication = run_mvp_neural_replication_development(
+        cache_directory=cache,
+        output_directory=tmp_path / "replication",
+        checkpoint_directory=tmp_path / "replication_checkpoints",
+        config=config,
+        seeds=(42,),
+        ablations=("a00_near",),
+        preload_workers=1,
+    )
+    assert len(replication.results) == 1
+    assert replication.summary_path.is_file()
+
+    ensemble = write_seed_ensemble_scores(
+        score_paths=[result.score_path, result.score_path],
+        output_path=tmp_path / "ensemble.csv",
+        model_id="unit_ensemble",
+        experiment_id="unit_ensemble",
+    )
+    assert len(pd.read_csv(ensemble)) == 4

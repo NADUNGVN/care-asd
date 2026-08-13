@@ -3,12 +3,44 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from care_asd.evaluation.official_baseline import SCORE_COLUMNS, _partial_auc, _roc_auc
+
+
+def write_seed_ensemble_scores(
+    *,
+    score_paths: Sequence[str | Path],
+    output_path: str | Path,
+    model_id: str,
+    experiment_id: str,
+) -> Path:
+    """Average matched anomaly scores over independent seeds without using labels."""
+    output = Path(output_path)
+    if output.exists():
+        raise FileExistsError(f"Refusing to overwrite ensemble scores: {output}")
+    if len(score_paths) < 2:
+        raise ValueError("An ensemble requires at least two score files")
+    frames = [_load_scores(Path(path)) for path in score_paths]
+    keys = ["file_id", "machine_type", "section", "domain", "condition"]
+    indexed = [frame.set_index(keys, verify_integrity=True) for frame in frames]
+    reference = indexed[0]
+    for frame in indexed[1:]:
+        if not reference.index.equals(frame.index):
+            raise ValueError("Seed score files must cover the identical ordered file set")
+    result = reference.reset_index()[keys].copy()
+    result["anomaly_score"] = np.mean(
+        np.stack([frame["anomaly_score"].to_numpy(dtype=float) for frame in indexed]), axis=0
+    )
+    result["model_id"] = model_id
+    result["experiment_id"] = experiment_id
+    output.parent.mkdir(parents=True, exist_ok=True)
+    result.loc[:, SCORE_COLUMNS].to_csv(output, index=False)
+    return output
 
 
 def write_paired_bootstrap_comparison(

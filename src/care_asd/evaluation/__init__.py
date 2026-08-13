@@ -11,7 +11,10 @@ from care_asd.evaluation.official_baseline import (
     calculate_development_auc_metrics,
     normalize_official_development_scores,
 )
-from care_asd.evaluation.paired_bootstrap import write_paired_bootstrap_comparison
+from care_asd.evaluation.paired_bootstrap import (
+    write_paired_bootstrap_comparison,
+    write_seed_ensemble_scores,
+)
 
 __all__ = [
     "SCORE_COLUMNS",
@@ -22,4 +25,5 @@ __all__ = [
     "run_care_development_benchmark",
     "run_dsp_development_benchmark",
     "write_paired_bootstrap_comparison",
+    "write_seed_ensemble_scores",
 ]
