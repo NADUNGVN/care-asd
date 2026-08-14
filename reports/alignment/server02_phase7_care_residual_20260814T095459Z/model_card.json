@@ -1,0 +1,58 @@
+[
+  {
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/care_residual_alignment/server02_phase7_care_residual_20260814T095459Z/official_alignment_ToyCar_seed13711.pt",
+    "final_train_loss": 9.203746764089548,
+    "machine_type": "ToyCar",
+    "parameters": 267928,
+    "train_clips": 1000,
+    "train_feature_vectors": 306000
+  },
+  {
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/care_residual_alignment/server02_phase7_care_residual_20260814T095459Z/official_alignment_ToyCarEmu_seed13711.pt",
+    "final_train_loss": 9.581726303738648,
+    "machine_type": "ToyCarEmu",
+    "parameters": 267928,
+    "train_clips": 1000,
+    "train_feature_vectors": 334800
+  },
+  {
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/care_residual_alignment/server02_phase7_care_residual_20260814T095459Z/official_alignment_bearingEmu_seed13711.pt",
+    "final_train_loss": 9.151076335653219,
+    "machine_type": "bearingEmu",
+    "parameters": 267928,
+    "train_clips": 1000,
+    "train_feature_vectors": 278100
+  },
+  {
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/care_residual_alignment/server02_phase7_care_residual_20260814T095459Z/official_alignment_fan_seed13711.pt",
+    "final_train_loss": 8.826962981554983,
+    "machine_type": "fan",
+    "parameters": 267928,
+    "train_clips": 1000,
+    "train_feature_vectors": 278100
+  },
+  {
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/care_residual_alignment/server02_phase7_care_residual_20260814T095459Z/official_alignment_gearboxEmu_seed13711.pt",
+    "final_train_loss": 9.023335390896817,
+    "machine_type": "gearboxEmu",
+    "parameters": 267928,
+    "train_clips": 1000,
+    "train_feature_vectors": 278100
+  },
+  {
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/care_residual_alignment/server02_phase7_care_residual_20260814T095459Z/official_alignment_sliderEmu_seed13711.pt",
+    "final_train_loss": 10.406790209197174,
+    "machine_type": "sliderEmu",
+    "parameters": 267928,
+    "train_clips": 1000,
+    "train_feature_vectors": 278100
+  },
+  {
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/care_residual_alignment/server02_phase7_care_residual_20260814T095459Z/official_alignment_valveEmu_seed13711.pt",
+    "final_train_loss": 10.167218234745643,
+    "machine_type": "valveEmu",
+    "parameters": 267928,
+    "train_clips": 1000,
+    "train_feature_vectors": 278100
+  }
+]

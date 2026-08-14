@@ -1,0 +1,163 @@
+{
+  "cache": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/care_residual_vector_cache/server02_phase7_care_residual_20260814T095459Z",
+  "cache_metadata": {
+    "clips": 8400,
+    "feature_dim": 640,
+    "frontend": {
+      "gate": {
+        "bias": 0.0,
+        "bypass": false,
+        "coherence_weight": 4.0,
+        "max_value": 0.9,
+        "min_value": 0.0,
+        "mode": "semi_parametric",
+        "snr_weight": -0.5
+      },
+      "name": "care_residual",
+      "residual": {
+        "max_removed_energy_ratio": 0.8
+      },
+      "transfer": {
+        "alpha": 0.95,
+        "frequency_smoothing_bins": 1,
+        "mode": "causal_ema",
+        "reg_floor": 1e-05
+      }
+    },
+    "input": "channel_0_near_minus_bounded_causal_care_path_estimate",
+    "official_feature_stack": "librosa.melspectrogram + 10*log10 + five-frame stack",
+    "signal": {
+      "center": false,
+      "eps": 1e-08,
+      "hop_length": 512,
+      "n_fft": 1024,
+      "win_length": 1024,
+      "window": "hann"
+    },
+    "waveform_reconstruction": "normalized_overlap_add"
+  },
+  "config": {
+    "baseline": {
+      "evaluator_dir": "external/dcase2026_task2_evaluator",
+      "input_channel": 0,
+      "official_python": null,
+      "reference_dir": "external/dcase2026_task2_baseline_ae",
+      "seed": 13711
+    },
+    "calibration": {
+      "abstain_margin": 0.02,
+      "alpha": 0.05,
+      "name": "hierarchical_conformal"
+    },
+    "data": {
+      "channel_map": {
+        "far": 1,
+        "near": 0
+      },
+      "manifest": "data/manifests/dcase2026_dev.parquet",
+      "root": "data",
+      "sample_rate": null
+    },
+    "deployment": {
+      "backend": "tensorrt",
+      "device_id": "E2",
+      "platform": "jetson_xavier_nx",
+      "power_mode_w": 15,
+      "precision": "fp16",
+      "repetitions": 3,
+      "require_external_power_meter": true,
+      "runner": "cpp_tensorrt",
+      "timed_windows": 1000,
+      "warmup_windows": 100
+    },
+    "experiment": {
+      "dry_run": false,
+      "id": "care_residual_alignment_seed13711",
+      "notes": "B01: bounded causal CARE residual; official 640-vector AE and scoring remain locked.",
+      "seed": 13711
+    },
+    "features": {
+      "coherence": true,
+      "far_logmel": true,
+      "fmax": null,
+      "fmin": 0.0,
+      "log_ratio": true,
+      "n_mels": 128,
+      "near_logmel": true,
+      "phase_sin_cos": true,
+      "residual_logmel": true
+    },
+    "frontend": {
+      "gate": {
+        "bias": 0.0,
+        "bypass": false,
+        "coherence_weight": 4.0,
+        "max_value": 0.9,
+        "min_value": 0.0,
+        "mode": "semi_parametric",
+        "snr_weight": -0.5
+      },
+      "name": "care_residual",
+      "residual": {
+        "max_removed_energy_ratio": 0.8
+      },
+      "transfer": {
+        "alpha": 0.95,
+        "frequency_smoothing_bins": 1,
+        "mode": "causal_ema",
+        "reg_floor": 1e-05
+      }
+    },
+    "model": {
+      "dropout": 0.1,
+      "embedding_dim": 64,
+      "name": "lightweight_encoder"
+    },
+    "output": {
+      "root": "outputs",
+      "save_diagnostics": true,
+      "save_embeddings": false,
+      "save_scores": true
+    },
+    "scoring": {
+      "covariance_shrinkage": "auto",
+      "name": "shrinkage_mahalanobis",
+      "target_adaptation": {
+        "enabled": true,
+        "lambda": 0.2
+      }
+    },
+    "signal": {
+      "center": false,
+      "eps": 1e-08,
+      "hop_length": 512,
+      "n_fft": 1024,
+      "win_length": 1024,
+      "window": "hann"
+    },
+    "streaming": {
+      "aggregation": "topk_mean",
+      "enabled": false,
+      "hop_seconds": 0.25,
+      "topk": 3,
+      "window_seconds": 1.0
+    },
+    "training": {
+      "batch_size": 256,
+      "device": "cuda",
+      "epochs": 100,
+      "learning_rate": 0.001,
+      "mixed_precision": false,
+      "num_workers": 0
+    }
+  },
+  "device": "cuda",
+  "official_contract": {
+    "architecture": "640-128-128-128-128-8-128-128-128-128-640",
+    "batch_norm": {
+      "eps": 0.001,
+      "momentum": 0.01
+    },
+    "score": "mean clip reconstruction MSE"
+  }
+}

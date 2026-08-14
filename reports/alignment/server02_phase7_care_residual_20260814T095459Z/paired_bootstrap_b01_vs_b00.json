@@ -1,0 +1,19 @@
+{
+  "candidate": "reports/alignment/server02_phase7_care_residual_20260814T095459Z/scores.csv",
+  "iterations": 5000,
+  "metric_delta_candidate_minus_reference": {
+    "mean_auc": {
+      "ci95_high": 0.012972499999999937,
+      "ci95_low": -0.02491464285714292,
+      "mean": -0.0056566514285714305
+    },
+    "mean_pauc_max_fpr_0_1": {
+      "ci95_high": -0.0028571428571428914,
+      "ci95_low": -0.03270676691729313,
+      "mean": -0.01740075187969925
+    }
+  },
+  "reference": "reports/alignment/server02_phase6_alignment_20260813T061557Z/scores.csv",
+  "seed": 2026,
+  "stratification": "machine_type/section/condition"
+}
