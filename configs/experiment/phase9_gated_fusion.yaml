@@ -1,0 +1,13 @@
+experiment:
+  id: b02_near_primary_gated_residual_seed13711
+  seed: 13711
+  notes: "One preregistered capacity-matched near-primary CARE reliability-gated fusion test."
+training:
+  epochs: 100
+  batch_size: 256
+  learning_rate: 1.0e-3
+  num_workers: 0
+  device: cuda
+  mixed_precision: false
+frontend:
+  name: care

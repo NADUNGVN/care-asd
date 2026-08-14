@@ -20,6 +20,7 @@ __all__ = [
     "OFFICIAL_EVALUATOR_COMMIT",
     "OFFICIAL_EVALUATOR_REPOSITORY",
     "BaselineMode",
+    "GatedNearResidualAutoencoder",
     "LightweightNearAutoencoder",
     "OfficialCompatibleAutoencoder",
     "approximate_parameter_count",
@@ -35,8 +36,10 @@ def __getattr__(name: str) -> Any:
     if name in {
         "LightweightNearAutoencoder",
         "OfficialCompatibleAutoencoder",
+        "GatedNearResidualAutoencoder",
         "approximate_parameter_count",
     }:
+        from care_asd.models.gated_fusion import GatedNearResidualAutoencoder
         from care_asd.models.mvp_autoencoder import (
             LightweightNearAutoencoder,
             approximate_parameter_count,
@@ -46,6 +49,7 @@ def __getattr__(name: str) -> Any:
         return {
             "LightweightNearAutoencoder": LightweightNearAutoencoder,
             "OfficialCompatibleAutoencoder": OfficialCompatibleAutoencoder,
+            "GatedNearResidualAutoencoder": GatedNearResidualAutoencoder,
             "approximate_parameter_count": approximate_parameter_count,
         }[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

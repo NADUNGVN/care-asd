@@ -95,3 +95,8 @@ def test_phase8_analysis_command_is_exposed_in_help() -> None:
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
     assert "care-residual-analysis-dev" in result.stdout
+
+
+def test_phase9_fusion_commands_are_exposed_in_help() -> None:
+    assert "gated-fusion-dev" in runner.invoke(app, ["--help"]).stdout
+    assert "build-reliability-index" in runner.invoke(app, ["data", "--help"]).stdout

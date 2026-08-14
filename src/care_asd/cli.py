@@ -24,6 +24,7 @@ from care_asd.data import (
     build_dcase2026_manifest,
     build_neural_feature_cache,
     build_official_vector_cache,
+    build_reliability_index,
     dcase2026_manifest_path,
     download_dcase2026_split,
     extract_dcase2026_split,
@@ -471,6 +472,27 @@ def data_cache_care_residual_vectors(
     )
 
 
+@data_app.command("build-reliability-index")
+def data_build_reliability_index(
+    neural_cache_directory: Annotated[Path, typer.Option("--neural-cache-dir")],
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    workers: Annotated[int, typer.Option("--workers", min=1)] = 1,
+) -> None:
+    """Freeze one normal-label-free CARE path-confidence value per clip."""
+    try:
+        result = build_reliability_index(
+            neural_cache_directory=neural_cache_directory,
+            output_directory=output_directory,
+            workers=workers,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, ValueError) as exc:
+        console.print(f"[red]Reliability index failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        f"[green]Reliability index complete.[/green] clips={result.clips} values={result.values_path}"
+    )
+
+
 @baseline_app.command("checkout")
 def baseline_checkout(
     baseline_dir: Annotated[
@@ -776,9 +798,7 @@ def mvp_neural_screening_dev(
     except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
         console.print(f"[red]MVP neural screening failed:[/red] {exc}")
         raise typer.Exit(code=1) from exc
-    console.print(
-        "[green]MVP neural screening completed.[/green] " f"summary={result.summary_path}"
-    )
+    console.print(f"[green]MVP neural screening completed.[/green] summary={result.summary_path}")
 
 
 @app.command("mvp-neural-replication-dev")
@@ -809,9 +829,7 @@ def mvp_neural_replication_dev(
     except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
         console.print(f"[red]MVP neural replication failed:[/red] {exc}")
         raise typer.Exit(code=1) from exc
-    console.print(
-        "[green]MVP neural replication completed.[/green] " f"summary={result.summary_path}"
-    )
+    console.print(f"[green]MVP neural replication completed.[/green] summary={result.summary_path}")
 
 
 @app.command("official-alignment-dev")
@@ -834,9 +852,7 @@ def official_alignment_dev(
     except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
         console.print(f"[red]Official alignment failed:[/red] {exc}")
         raise typer.Exit(code=1) from exc
-    console.print(
-        "[green]Official alignment completed.[/green] " f"summary={result.summary_path}"
-    )
+    console.print(f"[green]Official alignment completed.[/green] summary={result.summary_path}")
 
 
 @app.command("care-residual-alignment-dev")
@@ -862,7 +878,7 @@ def care_residual_alignment_dev(
         console.print(f"[red]CARE residual alignment failed:[/red] {exc}")
         raise typer.Exit(code=1) from exc
     console.print(
-        "[green]CARE residual alignment completed.[/green] " f"summary={result.summary_path}"
+        f"[green]CARE residual alignment completed.[/green] summary={result.summary_path}"
     )
 
 
@@ -888,9 +904,34 @@ def care_residual_analysis_dev(
     except (FileNotFoundError, FileExistsError, OSError, ValueError) as exc:
         console.print(f"[red]CARE residual analysis failed:[/red] {exc}")
         raise typer.Exit(code=1) from exc
-    console.print(
-        "[green]CARE residual analysis completed.[/green] " f"report={result.report_path}"
-    )
+    console.print(f"[green]CARE residual analysis completed.[/green] report={result.report_path}")
+
+
+@app.command("gated-fusion-dev")
+def gated_fusion_dev(
+    near_cache_directory: Annotated[Path, typer.Option("--near-cache-dir")],
+    residual_cache_directory: Annotated[Path, typer.Option("--residual-cache-dir")],
+    reliability_index_path: Annotated[Path, typer.Option("--reliability-index")],
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    checkpoint_directory: Annotated[Path, typer.Option("--checkpoint-dir")],
+    config: Annotated[Path | None, typer.Option("--config", "-c")] = None,
+) -> None:
+    """Run the preregistered B02 near-primary gated CARE residual comparison."""
+    try:
+        from care_asd.evaluation.gated_fusion import run_gated_fusion_development
+
+        result = run_gated_fusion_development(
+            near_cache_directory=near_cache_directory,
+            residual_cache_directory=residual_cache_directory,
+            reliability_index_path=reliability_index_path,
+            output_directory=output_directory,
+            checkpoint_directory=checkpoint_directory,
+            config=validate_config(load_config(config)),
+        )
+    except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]B02 gated fusion failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[green]B02 gated fusion completed.[/green] summary={result.summary_path}")
 
 
 @app.command("mvp-ensemble")

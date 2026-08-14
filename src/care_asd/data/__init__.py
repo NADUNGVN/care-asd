@@ -22,6 +22,7 @@ from care_asd.data.official_vector_cache import (
     OfficialVectorCache,
     build_official_vector_cache,
 )
+from care_asd.data.reliability_index import ReliabilityIndex, build_reliability_index
 
 __all__ = [
     "BASE_CHANNELS",
@@ -33,11 +34,13 @@ __all__ = [
     "ExtractionSummary",
     "NeuralFeatureCache",
     "OfficialVectorCache",
+    "ReliabilityIndex",
     "audit_dcase2026_manifest",
     "build_care_residual_vector_cache",
     "build_dcase2026_manifest",
     "build_neural_feature_cache",
     "build_official_vector_cache",
+    "build_reliability_index",
     "dcase2026_manifest_path",
     "download_dcase2026_split",
     "extract_dcase2026_split",
