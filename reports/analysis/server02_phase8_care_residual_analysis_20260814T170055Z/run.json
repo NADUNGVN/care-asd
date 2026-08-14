@@ -1,0 +1,7 @@
+{
+  "candidate_scores": "reports/alignment/server02_phase7_care_residual_20260814T095459Z/scores.csv",
+  "near_cache": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/official_vector_cache/server02_phase6_alignment_20260813T052435Z",
+  "purpose": "post_hoc_explanation_only_not_model_selection",
+  "reference_scores": "reports/alignment/server02_phase6_alignment_20260813T061557Z/scores.csv",
+  "residual_cache": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/care_residual_vector_cache/server02_phase7_care_residual_20260814T095459Z"
+}
