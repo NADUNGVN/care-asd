@@ -37,6 +37,44 @@ def run_official_alignment_development(
     config: CareASDConfig,
 ) -> OfficialAlignmentResult:
     """Train the pinned AE contract on exact cache vectors and score clip MSE."""
+    return _run_official_vector_development(
+        cache_directory=cache_directory,
+        output_directory=output_directory,
+        checkpoint_directory=checkpoint_directory,
+        config=config,
+        frontend_name="official_compatible_near",
+        model_id="official_compatible_dcase2026_ae_mse",
+    )
+
+
+def run_care_residual_alignment_development(
+    *,
+    cache_directory: str | Path,
+    output_directory: str | Path,
+    checkpoint_directory: str | Path,
+    config: CareASDConfig,
+) -> OfficialAlignmentResult:
+    """Run the locked official AE protocol on a bounded CARE-residual cache."""
+    return _run_official_vector_development(
+        cache_directory=cache_directory,
+        output_directory=output_directory,
+        checkpoint_directory=checkpoint_directory,
+        config=config,
+        frontend_name="care_residual_official_stack",
+        model_id="care_residual_official_compatible_dcase2026_ae_mse",
+    )
+
+
+def _run_official_vector_development(
+    *,
+    cache_directory: str | Path,
+    output_directory: str | Path,
+    checkpoint_directory: str | Path,
+    config: CareASDConfig,
+    frontend_name: str,
+    model_id: str,
+) -> OfficialAlignmentResult:
+    """Internal common runner; public wrappers lock the permissible input contracts."""
     cache = Path(cache_directory)
     output = Path(output_directory)
     checkpoints = Path(checkpoint_directory)
@@ -91,7 +129,7 @@ def run_official_alignment_development(
                     "domain": str(row.domain),
                     "condition": str(row.condition),
                     "anomaly_score": score,
-                    "model_id": "official_compatible_dcase2026_ae_mse",
+                    "model_id": model_id,
                     "experiment_id": config.experiment.id,
                 }
             )
@@ -113,7 +151,7 @@ def run_official_alignment_development(
     metrics_path = output / "metrics.json"
     calculate_development_auc_metrics(score_path, metrics_path)
     summary_path = output / "summary.csv"
-    _write_summary(metrics_path, summary_path)
+    _write_summary(metrics_path, summary_path, frontend_name)
     (output / "model_card.json").write_text(
         json.dumps(cards, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -210,13 +248,13 @@ def _set_official_seed(seed: int) -> None:
     torch.use_deterministic_algorithms(True)
 
 
-def _write_summary(metrics_path: Path, output: Path) -> None:
+def _write_summary(metrics_path: Path, output: Path, frontend_name: str) -> None:
     metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
     groups = list(metrics["groups"].values())
     pd.DataFrame(
         [
             {
-                "frontend": "official_compatible_near",
+                "frontend": frontend_name,
                 "mean_auc_all": float(np.mean([group["auc_all"] for group in groups])),
                 "mean_pauc_all_max_fpr_0_1": float(
                     np.mean([group["pauc_all_max_fpr_0_1"] for group in groups])

@@ -32,9 +32,10 @@ Target journal: *Digital Signal Processing* (Elsevier).
 | 1 | Dataset download & audit | **complete** |
 | 2 | Official baseline reproduction | **complete** |
 | 3 | Signal-processing baselines | **complete** |
-| 4 | CARE acoustic-path front-end | **implemented; awaiting controlled development benchmark** |
-| 5 | MVP embedding & anomaly scoring | **implemented; awaiting GPU screening** |
-| 6 | Reliability calibration | planned |
+| 4 | CARE acoustic-path front-end | **implemented; deterministic control complete** |
+| 5 | MVP embedding & anomaly scoring | **complete; not retained as the primary result** |
+| 6 | Official baseline alignment | **complete; passed** |
+| 7 | Baseline-aligned CARE residual test | **implemented; awaiting server run** |
 | 7 | Causal streaming | planned |
 | 8 | Experiment orchestration | planned |
 | 9 | Evaluation freeze | planned |

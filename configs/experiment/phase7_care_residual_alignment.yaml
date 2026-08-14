@@ -1,0 +1,32 @@
+# Phase 7 B01: CARE residual-only input under the Phase 6 official AE protocol.
+experiment:
+  id: care_residual_alignment_seed13711
+  seed: 13711
+  notes: "B01: bounded causal CARE residual; official 640-vector AE and scoring remain locked."
+
+training:
+  epochs: 100
+  batch_size: 256
+  learning_rate: 1.0e-3
+  num_workers: 0
+  device: cuda
+  mixed_precision: false
+
+# The only intentionally varied component: causal, bounded CARE residual creation.
+frontend:
+  name: care_residual
+  transfer:
+    mode: causal_ema
+    alpha: 0.95
+    reg_floor: 1.0e-5
+    frequency_smoothing_bins: 1
+  gate:
+    mode: semi_parametric
+    min_value: 0.0
+    max_value: 0.9
+    coherence_weight: 4.0
+    snr_weight: -0.5
+    bias: 0.0
+    bypass: false
+  residual:
+    max_removed_energy_ratio: 0.8

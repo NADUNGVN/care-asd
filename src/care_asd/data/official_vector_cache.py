@@ -122,8 +122,18 @@ def official_file_to_vectors(audio_path: str | Path) -> np.ndarray:
     signal, sample_rate = librosa.load(str(audio_path), sr=None, mono=False)
     if signal.ndim != 2 or signal.shape[0] < 2:
         raise ValueError(f"Expected stereo audio for official channel-0 feature: {audio_path}")
+    return official_waveform_to_vectors(signal[0], int(sample_rate))
+
+
+def official_waveform_to_vectors(waveform: np.ndarray, sample_rate: int) -> np.ndarray:
+    """Apply the locked official Mel/vector stack to one time-domain waveform."""
+    if waveform.ndim != 1 or waveform.size == 0:
+        raise ValueError("Official vectorisation requires one non-empty mono waveform")
+    if sample_rate < 1:
+        raise ValueError("sample_rate must be positive")
+    librosa = _require_librosa()
     mel = librosa.feature.melspectrogram(
-        y=signal[0],
+        y=np.asarray(waveform, dtype=np.float64),
         sr=sample_rate,
         n_fft=1024,
         hop_length=512,

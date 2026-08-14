@@ -79,3 +79,13 @@ def test_data_download_dry_run() -> None:
 def test_train_stub() -> None:
     result = runner.invoke(app, ["train", "--dry-run"])
     assert result.exit_code == 0
+
+
+def test_phase7_commands_are_exposed_in_help() -> None:
+    result = runner.invoke(app, ["--help"])
+    assert result.exit_code == 0
+    assert "care-residual-alignment-dev" in result.stdout
+
+    result = runner.invoke(app, ["data", "--help"])
+    assert result.exit_code == 0
+    assert "cache-care-residual-vectors" in result.stdout

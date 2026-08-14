@@ -1,5 +1,9 @@
 """Dataset acquisition, manifests, and loaders (Phase 1+)."""
 
+from care_asd.data.care_residual_vector_cache import (
+    CareResidualVectorCache,
+    build_care_residual_vector_cache,
+)
 from care_asd.data.dcase2026 import (
     DatasetAudit,
     DatasetSplit,
@@ -22,6 +26,7 @@ from care_asd.data.official_vector_cache import (
 __all__ = [
     "BASE_CHANNELS",
     "OFFICIAL_FEATURE_DIM",
+    "CareResidualVectorCache",
     "DatasetAudit",
     "DatasetSplit",
     "DownloadedArchive",
@@ -29,6 +34,7 @@ __all__ = [
     "NeuralFeatureCache",
     "OfficialVectorCache",
     "audit_dcase2026_manifest",
+    "build_care_residual_vector_cache",
     "build_dcase2026_manifest",
     "build_neural_feature_cache",
     "build_official_vector_cache",

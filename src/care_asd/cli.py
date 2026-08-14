@@ -20,6 +20,7 @@ from care_asd import __version__
 from care_asd.config import config_hash, default_config, load_config, validate_config
 from care_asd.data import (
     audit_dcase2026_manifest,
+    build_care_residual_vector_cache,
     build_dcase2026_manifest,
     build_neural_feature_cache,
     build_official_vector_cache,
@@ -442,6 +443,34 @@ def data_cache_official_vectors(
     )
 
 
+@data_app.command("cache-care-residual-vectors")
+def data_cache_care_residual_vectors(
+    manifest: Annotated[Path, typer.Option("--manifest")],
+    audio_root: Annotated[Path, typer.Option("--audio-root")],
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    config: Annotated[Path | None, typer.Option("--config", "-c")] = None,
+    workers: Annotated[int, typer.Option("--workers", min=1)] = 1,
+) -> None:
+    """Build CARE residual vectors using the otherwise unchanged official stack."""
+    try:
+        cfg = validate_config(load_config(config))
+        result = build_care_residual_vector_cache(
+            manifest_path=manifest,
+            audio_root=audio_root,
+            output_directory=output_directory,
+            signal=cfg.signal,
+            frontend=cfg.frontend,
+            workers=workers,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]CARE residual vector cache failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]CARE residual vector cache complete.[/green] "
+        f"clips={result.clips} index={result.index_path}"
+    )
+
+
 @baseline_app.command("checkout")
 def baseline_checkout(
     baseline_dir: Annotated[
@@ -807,6 +836,33 @@ def official_alignment_dev(
         raise typer.Exit(code=1) from exc
     console.print(
         "[green]Official alignment completed.[/green] " f"summary={result.summary_path}"
+    )
+
+
+@app.command("care-residual-alignment-dev")
+def care_residual_alignment_dev(
+    cache_directory: Annotated[Path, typer.Option("--cache-dir")],
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    checkpoint_directory: Annotated[Path, typer.Option("--checkpoint-dir")],
+    config: Annotated[Path | None, typer.Option("--config", "-c")] = None,
+) -> None:
+    """Run Phase 7 CARE residual-only test under the locked official AE protocol."""
+    try:
+        from care_asd.evaluation.official_alignment import (
+            run_care_residual_alignment_development,
+        )
+
+        result = run_care_residual_alignment_development(
+            cache_directory=cache_directory,
+            output_directory=output_directory,
+            checkpoint_directory=checkpoint_directory,
+            config=validate_config(load_config(config)),
+        )
+    except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]CARE residual alignment failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]CARE residual alignment completed.[/green] " f"summary={result.summary_path}"
     )
 
 
