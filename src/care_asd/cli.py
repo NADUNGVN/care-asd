@@ -866,6 +866,33 @@ def care_residual_alignment_dev(
     )
 
 
+@app.command("care-residual-analysis-dev")
+def care_residual_analysis_dev(
+    near_cache_directory: Annotated[Path, typer.Option("--near-cache-dir")],
+    residual_cache_directory: Annotated[Path, typer.Option("--residual-cache-dir")],
+    reference_scores: Annotated[Path, typer.Option("--reference-scores")],
+    candidate_scores: Annotated[Path, typer.Option("--candidate-scores")],
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+) -> None:
+    """Explain frozen B00/B01 changes without selecting another model."""
+    try:
+        from care_asd.evaluation.care_residual_analysis import analyze_care_residual_development
+
+        result = analyze_care_residual_development(
+            near_cache_directory=near_cache_directory,
+            residual_cache_directory=residual_cache_directory,
+            reference_scores=reference_scores,
+            candidate_scores=candidate_scores,
+            output_directory=output_directory,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, ValueError) as exc:
+        console.print(f"[red]CARE residual analysis failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]CARE residual analysis completed.[/green] " f"report={result.report_path}"
+    )
+
+
 @app.command("mvp-ensemble")
 def mvp_ensemble(
     scores: Annotated[list[Path], typer.Option("--scores")],

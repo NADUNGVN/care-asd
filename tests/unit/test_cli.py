@@ -89,3 +89,9 @@ def test_phase7_commands_are_exposed_in_help() -> None:
     result = runner.invoke(app, ["data", "--help"])
     assert result.exit_code == 0
     assert "cache-care-residual-vectors" in result.stdout
+
+
+def test_phase8_analysis_command_is_exposed_in_help() -> None:
+    result = runner.invoke(app, ["--help"])
+    assert result.exit_code == 0
+    assert "care-residual-analysis-dev" in result.stdout

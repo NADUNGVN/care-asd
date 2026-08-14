@@ -36,6 +36,7 @@ Target journal: *Digital Signal Processing* (Elsevier).
 | 5 | MVP embedding & anomaly scoring | **complete; not retained as the primary result** |
 | 6 | Official baseline alignment | **complete; passed** |
 | 7 | Baseline-aligned CARE residual test | **implemented; awaiting server run** |
+| 8 | Frozen B00/B01 residual failure analysis | **implemented; awaiting server run** |
 | 7 | Causal streaming | planned |
 | 8 | Experiment orchestration | planned |
 | 9 | Evaluation freeze | planned |
