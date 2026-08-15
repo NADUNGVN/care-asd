@@ -159,7 +159,7 @@ def calibrate_reference_safety_policy(
     benefit_candidates = np.unique(
         np.percentile(calibration["estimated_noise_reduction_db"], percentiles)
     )
-    candidates: list[tuple[bool, float, float, float, float]] = []
+    candidates: list[tuple[bool, float, float, float, float, float]] = []
     for risk_max in risk_candidates:
         for benefit_min in benefit_candidates:
             accepted = (calibration["risk_score"] <= risk_max) & (
@@ -168,17 +168,37 @@ def calibrate_reference_safety_policy(
             accepted_count = int(accepted.sum())
             false_safe = int((accepted & ~calibration["is_safe"]).sum())
             rate = false_safe / max(accepted_count, 1)
+            upper = _wilson_upper(false_safe, accepted_count)
             coverage = accepted_count / len(calibration)
-            is_feasible = rate <= config.simulation.false_safe_max
-            candidates.append((is_feasible, coverage, -rate, float(risk_max), float(benefit_min)))
+            is_feasible = bool(
+                accepted_count > 0
+                and rate <= config.simulation.false_safe_max
+                and upper <= config.simulation.false_safe_upper_ci_max
+            )
+            candidates.append(
+                (
+                    is_feasible,
+                    coverage,
+                    -upper,
+                    -rate,
+                    float(risk_max),
+                    float(benefit_min),
+                )
+            )
     if not candidates:
         raise ValueError("Synthetic calibration produced no threshold candidates")
     feasible_candidates = [item for item in candidates if item[0]]
-    pool = feasible_candidates or candidates
-    _, coverage, negative_rate, risk_max, benefit_min = max(
-        pool,
-        key=lambda item: (item[0], item[1], item[2], -item[3], item[4]),
-    )
+    if feasible_candidates:
+        selected = max(
+            feasible_candidates,
+            key=lambda item: (item[1], item[2], item[3], -item[4], item[5]),
+        )
+    else:
+        selected = max(
+            candidates,
+            key=lambda item: (item[2], item[1], item[3], -item[4], item[5]),
+        )
+    _, coverage, _, negative_rate, risk_max, benefit_min = selected
     calibration_count = round(len(calibration) / config.simulation.calibration_fraction)
     return ReferenceSafetyPolicy(
         risk_max=risk_max,
@@ -210,8 +230,11 @@ def evaluate_reference_safety_policy(
     policy_loss = np.where(accepted, frame["anomaly_loss"], 0.0)
     policy_tail = float(np.quantile(policy_loss, 0.95))
     tail_reduction = 1.0 - policy_tail / max(unconditional_tail, 1.0e-12)
+    safe_cases = int(frame["is_safe"].sum())
     return {
         "cases": len(frame),
+        "safe_cases": safe_cases,
+        "safe_prevalence": safe_cases / len(frame),
         "accepted": accepted_count,
         "coverage": accepted_count / len(frame),
         "false_safe_count": false_safe,
@@ -229,16 +252,17 @@ def _simulate_cases(
     config: ReferenceSafetyExperimentConfig,
     cases: int,
 ) -> pd.DataFrame:
-    dimensions = 10
+    dimensions = 11
     exponent = math.ceil(math.log2(cases))
     samples = qmc.Sobol(d=dimensions, scramble=True, seed=config.simulation.seed).random_base2(
         exponent
     )[:cases]
     records: list[dict[str, float | int | str | bool]] = []
     for index, point in enumerate(samples):
-        carrier = sources[min(int(point[0] * len(sources)), len(sources) - 1)][0]
+        carrier_index = min(int(point[0] * len(sources)), len(sources) - 1)
+        carrier = sources[carrier_index][0]
         noise_index = min(int(point[1] * len(sources)), len(sources) - 1)
-        if noise_index == min(int(point[0] * len(sources)), len(sources) - 1):
+        if noise_index == carrier_index:
             noise_index = (noise_index + 1) % len(sources)
         noise = sources[noise_index][1]
         snr_db = -10.0 + 20.0 * point[2]
@@ -246,20 +270,27 @@ def _simulate_cases(
         coherence = point[4]
         delay_ms = 20.0 * point[5]
         gain_db = -12.0 + 24.0 * point[6]
-        anomaly_far_ratio = point[7]
-        family_index = min(int(point[8] * 4), 3)
-        severity = 0.05 + 0.45 * point[9]
+        profile_carrier_index = min(int(point[7] * len(sources)), len(sources) - 1)
+        if profile_carrier_index == carrier_index:
+            profile_carrier_index = (profile_carrier_index + 1) % len(sources)
+        profile_noise_index = min(int(point[8] * len(sources)), len(sources) - 1)
+        if profile_noise_index == noise_index:
+            profile_noise_index = (profile_noise_index + 1) % len(sources)
+        family_index = min(int(point[9] * 4), 3)
+        severity = 0.05 + 0.45 * point[10]
         anomaly_family = ("impulsive", "sideband", "rubbing", "speed_drift")[family_index]
         record = _simulate_one(
             carrier=carrier,
             noise=noise,
+            profile_carrier=sources[profile_carrier_index][0],
+            profile_noise=sources[profile_noise_index][1],
             sample_rate=config.simulation.sample_rate,
             snr_db=snr_db,
             leakage_db=leakage_db,
             coherence=coherence,
             delay_ms=delay_ms,
             gain_db=gain_db,
-            anomaly_far_ratio=anomaly_far_ratio,
+            anomaly_far_ratio=1.0,
             anomaly_family=anomaly_family,
             severity=severity,
             phase=2.0 * np.pi * ((index * 0.61803398875) % 1.0),
@@ -273,6 +304,8 @@ def _simulate_one(
     *,
     carrier: FloatArray,
     noise: FloatArray,
+    profile_carrier: FloatArray,
+    profile_noise: FloatArray,
     sample_rate: int,
     snr_db: float,
     leakage_db: float,
@@ -287,25 +320,39 @@ def _simulate_one(
 ) -> dict[str, float | str | bool]:
     carrier = _unit_rms(carrier)
     noise = _unit_rms(noise)
-    shared_noise = coherence * noise + math.sqrt(max(1.0 - coherence**2, 0.0)) * np.roll(
-        noise, len(noise) // 3
+    profile_carrier = _unit_rms(profile_carrier)
+    profile_noise = _unit_rms(profile_noise)
+    normal_near, normal_far = _normal_pair(
+        carrier,
+        noise,
+        snr_db=snr_db,
+        leakage_db=leakage_db,
+        coherence=coherence,
+        delay_ms=delay_ms,
+        gain_db=gain_db,
+        sample_rate=sample_rate,
     )
-    noise_scale = 10.0 ** (-snr_db / 20.0)
+    profile_near, profile_far = _normal_pair(
+        profile_carrier,
+        profile_noise,
+        snr_db=snr_db,
+        leakage_db=leakage_db,
+        coherence=coherence,
+        delay_ms=delay_ms,
+        gain_db=gain_db,
+        sample_rate=sample_rate,
+    )
     leakage_gain = 10.0 ** (leakage_db / 20.0)
-    far_gain = 10.0 ** (gain_db / 20.0)
     delay = round(delay_ms * sample_rate / 1000.0)
-    delayed_carrier = _delay(carrier, delay)
     anomaly = _anomaly_waveform(
         anomaly_family, len(carrier), sample_rate, severity=severity, phase=phase
     )
     delayed_anomaly = _delay(anomaly, delay)
-    normal_near = carrier + noise_scale * noise
-    normal_far = far_gain * shared_noise + leakage_gain * delayed_carrier
     anomaly_near = normal_near + anomaly
     anomaly_far = normal_far + leakage_gain * anomaly_far_ratio * delayed_anomaly
 
-    near_floor = noise_floor_spectrum(normal_near, sample_rate, config.stft, config.refsub)[None, :]
-    far_floor = noise_floor_spectrum(normal_far, sample_rate, config.stft, config.refsub)[None, :]
+    near_floor = noise_floor_spectrum(profile_near, sample_rate, config.stft, config.refsub)[None, :]
+    far_floor = noise_floor_spectrum(profile_far, sample_rate, config.stft, config.refsub)[None, :]
     transfer = estimate_noise_transfer(near_floor, far_floor, config.stft, config.refsub)
     enhanced_normal = apply_reference_subtraction(
         normal_near, normal_far, sample_rate, transfer, config.stft, config.refsub
@@ -355,6 +402,30 @@ def _simulate_one(
         "true_noise_reduction_db": true_noise_reduction,
         "is_safe": is_safe,
     }
+
+
+def _normal_pair(
+    carrier: FloatArray,
+    noise: FloatArray,
+    *,
+    snr_db: float,
+    leakage_db: float,
+    coherence: float,
+    delay_ms: float,
+    gain_db: float,
+    sample_rate: int,
+) -> tuple[FloatArray, FloatArray]:
+    """Mix one normal pair for either profile fitting or held-out diagnosis."""
+    shared_noise = coherence * noise + math.sqrt(max(1.0 - coherence**2, 0.0)) * np.roll(
+        noise, len(noise) // 3
+    )
+    noise_scale = 10.0 ** (-snr_db / 20.0)
+    leakage_gain = 10.0 ** (leakage_db / 20.0)
+    far_gain = 10.0 ** (gain_db / 20.0)
+    delay = round(delay_ms * sample_rate / 1000.0)
+    normal_near = carrier + noise_scale * noise
+    normal_far = far_gain * shared_noise + leakage_gain * _delay(carrier, delay)
+    return normal_near, normal_far
 
 
 def _prepare_source(

@@ -36,3 +36,12 @@ def test_gpu_repair_reinstalls_matching_torch_packages() -> None:
     assert "'torch==2.6.0+cu118'" in setup
     assert "'torchaudio==2.6.0+cu118'" in setup
     assert "--reinstall-package torch --reinstall-package torchaudio" in setup
+
+
+def test_phase10_reuses_immutable_vector_cache() -> None:
+    phase10 = (SERVER_SCRIPTS / "run_phase10_reference_safety.sh").read_text(encoding="utf-8")
+    phase11 = (SERVER_SCRIPTS / "run_phase11_reference_safety.sh").read_text(encoding="utf-8")
+    assert "LATEST_CACHE_METADATA=" in phase10
+    assert 'CACHE_REUSED=true' in phase10
+    assert '"cache_dir"' in phase10
+    assert 'RUN_META="reports/reference_safety/$SOURCE_RUN/run.json"' in phase11

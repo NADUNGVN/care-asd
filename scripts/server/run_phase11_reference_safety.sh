@@ -10,9 +10,10 @@ export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_TH
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
 
 SOURCE_RUN="$(find reports/reference_safety -path '*/simulation/policy.yaml' -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n1 | cut -d' ' -f2- | xargs -r dirname | xargs -r dirname | xargs -r basename)"
-CACHE_DIR="$DATA_ROOT/reference_safety_cache/dev/$SOURCE_RUN"
 POLICY="reports/reference_safety/$SOURCE_RUN/simulation/policy.yaml"
 SIM_GATE="reports/reference_safety/$SOURCE_RUN/simulation/gate.json"
+RUN_META="reports/reference_safety/$SOURCE_RUN/run.json"
+CACHE_DIR="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["cache_dir"])' "$RUN_META" 2>/dev/null || printf '%s' "$DATA_ROOT/reference_safety_cache/dev/$SOURCE_RUN")"
 JOB_DIR="outputs/reference_safety/$RUN_ID"
 STATE="$JOB_DIR/state.env"
 LOG="$JOB_DIR/phase11.log"

@@ -98,19 +98,22 @@ def test_policy_calibration_is_deterministic() -> None:
     assert first == second
     assert metrics["coverage"] > 0.0
     assert metrics["false_safe_rate"] <= config.simulation.false_safe_max
+    assert metrics["safe_cases"] == 50
+    assert metrics["safe_prevalence"] == 0.5
 
 
 def test_simulation_writes_policy_and_gate(tmp_path: Path) -> None:
     sample_rate = 8_000
     time = np.arange(sample_rate, dtype=np.float64) / sample_rate
+    random = np.random.default_rng(2026)
     source_a = (
-        np.sin(2.0 * np.pi * 220.0 * time),
-        np.sin(2.0 * np.pi * 900.0 * time),
+        np.sin(2.0 * np.pi * 220.0 * time) + 0.1 * random.normal(size=len(time)),
+        np.sin(2.0 * np.pi * 900.0 * time) + 0.1 * random.normal(size=len(time)),
         sample_rate,
     )
     source_b = (
-        np.sin(2.0 * np.pi * 330.0 * time),
-        np.sin(2.0 * np.pi * 1200.0 * time),
+        np.sin(2.0 * np.pi * 330.0 * time) + 0.1 * random.normal(size=len(time)),
+        np.sin(2.0 * np.pi * 1200.0 * time) + 0.1 * random.normal(size=len(time)),
         sample_rate,
     )
     config = ReferenceSafetyExperimentConfig(
@@ -123,4 +126,7 @@ def test_simulation_writes_policy_and_gate(tmp_path: Path) -> None:
 
     assert result.policy_path.is_file()
     assert result.gate_path.is_file()
-    assert len(pd.read_parquet(result.cases_path)) == 32
+    cases = pd.read_parquet(result.cases_path)
+    assert len(cases) == 32
+    assert cases["anomaly_far_ratio"].eq(1.0).all()
+    assert cases["transfer_instability"].max() > 0.0

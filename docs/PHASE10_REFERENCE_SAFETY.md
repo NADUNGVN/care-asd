@@ -18,6 +18,12 @@ RefSub uses `n_fft=1024`, `hop_length=512`, a 10th-percentile normal-training
 noise floor, `alpha=1.5`, and floor `beta=0.10`. S00 makes one decision per
 machine/section; it never interpolates scores or tunes on DCASE anomaly labels.
 
+Synthetic calibration fits the transfer on an independent normal source pair
+and diagnoses a held-out normal pair under the same acoustic path. Anomalies are
+treated conservatively as originating at the machine, so their far/near path is
+the same as the normal machine component; no hidden anomaly-path variable is
+available to or randomized behind the normal-only gate.
+
 ## Leakage boundary
 
 `reference-safety eval` intentionally has no evaluator or ground-truth option.
@@ -60,6 +66,11 @@ Cache work uses 12 processes with BLAS threads fixed to one. AE training uses
 the GPU and the exact official 100-epoch, batch-256 contract. Low GPU utilization
 during the cache stage is expected and is not a hang; `state.env` and the log
 tail are the authoritative progress indicators.
+
+A repeated Phase 10 run reuses the newest completed immutable development cache
+and reruns only calibration. The report records the exact cache path in
+`run.json`, which Phase 11 resolves instead of assuming that cache and simulation
+must share a run ID.
 
 Server wrappers use `uv run --no-sync`, so a research job never replaces the
 verified GPU runtime while starting. Phase 11 and Phase 12 additionally require
