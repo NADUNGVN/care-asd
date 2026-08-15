@@ -60,21 +60,22 @@ and returns the user to the SSH prompt. Do **not** commit raw data or a huge log
 
 ## Detached long-running jobs
 
-For a task that must survive a closed SSH connection, Codex supplies one line
-that ends the `nohup ... &` launch with `disown`. `disown` only removes the job
-from the interactive shell's job table; it does **not** stop the process. This
-prevents Bash from later printing a long `[n] Done ...` notification that can
-look like a stuck terminal.
+For a task that must survive a closed SSH connection, the repository must
+provide a short `start_*.sh` wrapper and a short status wrapper. Do not paste a
+full training pipeline into the interactive terminal. The start wrapper owns
+`nohup`, `setsid`, redirection, run ID creation, and state-file creation, so the
+interactive shell never owns the long-running job.
 
 ```bash
-nohup bash -lc '<immutable task, evidence commit, and push>' </dev/null >/dev/null 2>&1 & disown; printf 'detached run started\n'
+git pull --ff-only && bash scripts/server/start_<phase>.sh
+bash scripts/server/status_<task>.sh
 ```
 
-After `detached run started`, the SSH prompt is immediately available for new
-commands. Do not press `Ctrl+C` merely because a detached task has no terminal
-output; inspect its process and named log instead. Completion is determined by
-the durable artifact commit and `TASK_STATUS=0`, not by an interactive-shell
-notification.
+The start command must return the run ID and PID immediately. Status is read
+from `state.env` (`RUNNING`, `DONE`, or `FAILED`) and the latest log tail; it
+must not contain a polling sleep. Completion is determined by `DONE`,
+`task_status=0`, and the durable report commit, not by GPU utilization or an
+interactive-shell notification.
 
 ## Dataset-specific rules
 

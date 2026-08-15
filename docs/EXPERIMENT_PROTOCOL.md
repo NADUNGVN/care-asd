@@ -29,11 +29,13 @@
 
 | Split | Allowed uses |
 |-------|----------------|
-| Development | Feature design, architecture, HPs, ablation, LOMO, calibration method comparison |
+| Development | Feature design, architecture, HPs, ablation, LOMO, calibration method comparison; SAFE-REF uses it only as a fixed gate |
 | Additional training | Normal training, source/target adaptation, prototypes/memory banks |
 | Evaluation | Only after freeze of feature/model/scoring/calibration/aggregation/threshold policy |
 
 ## Freeze file
 
-Official evaluation requires a freeze YAML (see plan §11.4). Commands that
-target evaluation must refuse to run without a valid freeze file.
+Official evaluation requires a freeze YAML. Commands that target evaluation
+must refuse to run without a valid freeze file. SAFE-REF scoring additionally
+has no ground-truth argument and writes a sealed score-completion artifact
+before the separate official-evaluator command can run.

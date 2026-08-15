@@ -24,11 +24,19 @@ This project treats leakage prevention as a first-class acceptance criterion.
 
 - Choose one config, one calibration procedure, one aggregation, locked seeds.
 - Write freeze YAML with config hash, manifest hash, git commit, date.
+- Although the post-challenge evaluator now publishes evaluation ground truth,
+  the scoring command must not accept or discover its path. Generate all frozen
+  score CSVs first and seal their hashes in `score_complete.json`.
+- Clone/open the evaluator and compute evaluation metrics only after the sealed
+  score artifact exists.
 - Any post-evaluation change requires a **new freeze ID** and must be labeled
   as post-evaluation analysis.
 
-## Automated checks (target)
+## Automated checks
 
 - Tests that calibrators reject anomaly-labeled scores.
 - Evaluation CLI requires `--freeze-file`.
 - Config mismatch between freeze file and runtime config fails hard.
+- Evaluation test manifests with known normal/anomaly conditions fail hard.
+- Official scoring re-hashes every sealed score file before reading ground
+  truth and verifies the pinned evaluator commit.

@@ -146,6 +146,7 @@ module = [
     "soundfile.*",
     "torchaudio.*",
     "librosa.*",
+    "scipy.*",
     "sklearn.*",
     "onnxruntime.*",
 ]

@@ -1,0 +1,49 @@
+schema_version: 1
+experiment_id: phase10_reference_safety
+
+stft:
+  n_fft: 1024
+  hop_length: 512
+  window: hann
+  eps: 1.0e-8
+
+refsub:
+  noise_quantile: 0.10
+  alpha: 1.5
+  beta: 0.10
+  transfer_min: 0.10
+  transfer_max: 10.0
+
+profile:
+  upper_quantile: 0.95
+  lower_quantile: 0.05
+  decision_scope: machine_section
+
+simulation:
+  cases: 4096
+  calibration_fraction: 0.50
+  duration_seconds: 2.0
+  sample_rate: 16000
+  seed: 2026
+  safe_retention_min: 0.90
+  safe_noise_reduction_min_db: 1.0
+  false_safe_max: 0.05
+  false_safe_upper_ci_max: 0.10
+  minimum_coverage: 0.20
+  minimum_risk_spearman: 0.60
+  minimum_tail_loss_reduction: 0.50
+  percentile_step: 5
+
+training:
+  epochs: 100
+  batch_size: 256
+  learning_rate: 1.0e-3
+  device: cuda
+  screening_seeds: [13711, 42, 2026]
+  replication_seeds: [13711, 42, 2026, 3407, 777, 11, 23, 101, 314, 2718]
+
+development_gate:
+  macro_noninferiority_margin: 0.005
+  machine_harm_margin: 0.005
+  maximum_machine_drop: 0.010
+  minimum_harm_reduction: 0.50

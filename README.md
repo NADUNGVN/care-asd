@@ -2,23 +2,23 @@
 
 > Workspace path: `Teacher_Vu/CARE_ASD/` (one research track under the multi-paper Teacher_Vu workspace).
 
-**Causal Acoustic-Path and Reliability-Calibrated Anomalous Sound Detection
-for Unseen Machines at the Edge**
+**SAFE-REF: Normal-only Risk-Controlled Reference-Microphone Use for
+Anomalous Sound Detection**
 
 Research codebase for unsupervised anomalous sound detection on
 [DCASE 2026 Challenge Task 2](https://dcase.community/challenge2026/task-first-shot-unsupervised-anomalous-sound-detection-for-machine-condition-monitoring)
 stereo (near/far) machine audio, with:
 
-1. **Causal acoustic-path estimation** between near and far microphones  
-2. **Reliability-calibrated** anomaly scores and selective `abstain`  
-3. **Unseen-machine / target-domain** adaptation from normal samples only  
-4. **Selective edge inference** (after hardware profile is fixed)
+1. Fixed minimum-statistics far-reference subtraction
+2. Normal-only reference-risk profiling and conservative near-only fallback
+3. Semi-synthetic mechanism validation followed by frozen unseen-machine testing
+4. Selective edge inference after the research gate is passed
 
 Target journal: *Digital Signal Processing* (Elsevier).
 
-> Implementation follows
-> [`CARE_ASD_CODEX_IMPLEMENTATION_PLAN.md`](CARE_ASD_CODEX_IMPLEMENTATION_PLAN.md)
-> as the binding technical specification.
+> The current publication direction follows
+> [`docs/RESEARCH_SCOPE.md`](docs/RESEARCH_SCOPE.md); the original implementation
+> plan remains historical context for Phases 0--9.
 >
 > Server collaboration follows
 > [`docs/COLLABORATION_PROTOCOL.md`](docs/COLLABORATION_PROTOCOL.md). Commands
@@ -35,12 +35,13 @@ Target journal: *Digital Signal Processing* (Elsevier).
 | 4 | CARE acoustic-path front-end | **implemented; deterministic control complete** |
 | 5 | MVP embedding & anomaly scoring | **complete; not retained as the primary result** |
 | 6 | Official baseline alignment | **complete; passed** |
-| 7 | Baseline-aligned CARE residual test | **implemented; awaiting server run** |
-| 8 | Frozen B00/B01 residual failure analysis | **implemented; awaiting server run** |
-| 7 | Causal streaming | planned |
-| 8 | Experiment orchestration | planned |
-| 9 | Evaluation freeze | planned |
-| 10 | Hardware deployment | blocked on hardware profile |
+| 7 | Baseline-aligned CARE residual test | **complete; rejected** |
+| 8 | Frozen B00/B01 residual failure analysis | **complete** |
+| 9 | Capacity-matched gated fusion | **complete; rejected** |
+| 10 | SAFE-REF synthetic calibration | **implemented; awaiting server run** |
+| 11 | SAFE-REF development screening/replication | **implemented; gated by Phase 10** |
+| 12 | Frozen unseen-machine evaluation | **implemented; gated by Phase 11** |
+| 13 | DSP paper artifacts and Jetson board-kit study | gated by Phase 12 |
 
 ## Quick start
 

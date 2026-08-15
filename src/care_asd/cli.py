@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
-from typing import Annotated, cast
+from typing import Annotated, Literal, cast
 
 import typer
 from omegaconf import OmegaConf
@@ -68,6 +68,10 @@ baseline_app = typer.Typer(help="Pinned official DCASE 2026 baseline reproductio
 app.add_typer(baseline_app, name="baseline")
 dsp_app = typer.Typer(help="Phase 3 deterministic stereo DSP controls.")
 app.add_typer(dsp_app, name="dsp")
+reference_safety_app = typer.Typer(
+    help="SAFE-REF normal-only reference-risk calibration and evaluation."
+)
+app.add_typer(reference_safety_app, name="reference-safety")
 
 console = Console(stderr=True)
 
@@ -490,6 +494,43 @@ def data_build_reliability_index(
         raise typer.Exit(code=1) from exc
     console.print(
         f"[green]Reliability index complete.[/green] clips={result.clips} values={result.values_path}"
+    )
+
+
+@data_app.command("cache-reference-safety-vectors")
+def data_cache_reference_safety_vectors(
+    train_manifest: Annotated[Path, typer.Option("--train-manifest")],
+    train_audio_root: Annotated[Path, typer.Option("--train-audio-root")],
+    test_manifest: Annotated[Path, typer.Option("--test-manifest")],
+    test_audio_root: Annotated[Path, typer.Option("--test-audio-root")],
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    config: Annotated[Path, typer.Option("--config", "-c")] = Path(
+        "configs/experiment/phase10_reference_safety.yaml"
+    ),
+    workers: Annotated[int, typer.Option("--workers", min=1)] = 1,
+) -> None:
+    """Cache paired official vectors and normal-only group safety profiles."""
+    try:
+        from care_asd.data.reference_safety_cache import (
+            build_reference_safety_vector_cache,
+        )
+        from care_asd.reference_safety_config import load_reference_safety_config
+
+        result = build_reference_safety_vector_cache(
+            train_manifest_path=train_manifest,
+            train_audio_root=train_audio_root,
+            test_manifest_path=test_manifest,
+            test_audio_root=test_audio_root,
+            output_directory=output_directory,
+            config=load_reference_safety_config(config),
+            workers=workers,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]SAFE-REF vector cache failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        f"[green]SAFE-REF vector cache complete.[/green] clips={result.clips} "
+        f"profiles={result.profiles_path}"
     )
 
 
@@ -932,6 +973,175 @@ def gated_fusion_dev(
         console.print(f"[red]B02 gated fusion failed:[/red] {exc}")
         raise typer.Exit(code=1) from exc
     console.print(f"[green]B02 gated fusion completed.[/green] summary={result.summary_path}")
+
+
+@reference_safety_app.command("simulate")
+def reference_safety_simulate(
+    manifest: Annotated[Path, typer.Option("--manifest")],
+    audio_root: Annotated[Path, typer.Option("--audio-root")],
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    config: Annotated[Path, typer.Option("--config", "-c")] = Path(
+        "configs/experiment/phase10_reference_safety.yaml"
+    ),
+    cases: Annotated[int | None, typer.Option("--cases", min=32)] = None,
+    source_clips: Annotated[int, typer.Option("--source-clips", min=2)] = 64,
+) -> None:
+    """Calibrate and holdout-test SAFE-REF on semi-synthetic cases."""
+    try:
+        from care_asd.reference_safety_config import load_reference_safety_config
+        from care_asd.signal.reference_safety_simulation import (
+            load_normal_stereo_sources,
+            run_reference_safety_simulation,
+        )
+
+        cfg = load_reference_safety_config(config)
+        sources = load_normal_stereo_sources(
+            manifest_path=manifest, audio_root=audio_root, limit=source_clips
+        )
+        result = run_reference_safety_simulation(
+            sources=sources,
+            output_directory=output_directory,
+            config=cfg,
+            cases=cases,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]SAFE-REF simulation failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    status = "passed" if result.passed else "failed"
+    console.print(
+        f"[green]SAFE-REF simulation completed.[/green] gate={status} summary={result.summary_path}"
+    )
+    if not result.passed:
+        raise typer.Exit(code=2)
+
+
+@reference_safety_app.command("dev")
+def reference_safety_dev(
+    cache_directory: Annotated[Path, typer.Option("--cache-dir")],
+    policy: Annotated[Path, typer.Option("--policy")],
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    checkpoint_directory: Annotated[Path, typer.Option("--checkpoint-dir")],
+    config: Annotated[Path, typer.Option("--config", "-c")] = Path(
+        "configs/experiment/phase10_reference_safety.yaml"
+    ),
+    stage: Annotated[str, typer.Option("--stage", help="screening | replication")] = "screening",
+) -> None:
+    """Run capacity-matched development screening or replication."""
+    if stage not in {"screening", "replication"}:
+        console.print("[red]SAFE-REF stage must be screening or replication.[/red]")
+        raise typer.Exit(code=1)
+    try:
+        from care_asd.evaluation.reference_safety import run_reference_safety_development
+        from care_asd.reference_safety_config import load_reference_safety_config
+
+        result = run_reference_safety_development(
+            cache_directory=cache_directory,
+            policy_path=policy,
+            output_directory=output_directory,
+            checkpoint_directory=checkpoint_directory,
+            config=load_reference_safety_config(config),
+            stage=cast(Literal["screening", "replication"], stage),
+        )
+    except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]SAFE-REF development failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    status = "passed" if result.passed else "failed"
+    console.print(
+        f"[green]SAFE-REF development completed.[/green] gate={status} "
+        f"summary={result.summary_path}"
+    )
+    if not result.passed:
+        raise typer.Exit(code=2)
+
+
+@reference_safety_app.command("freeze")
+def reference_safety_freeze(
+    policy: Annotated[Path, typer.Option("--policy")],
+    development_gate: Annotated[Path, typer.Option("--development-gate")],
+    development_manifest: Annotated[Path, typer.Option("--development-manifest")],
+    output: Annotated[Path, typer.Option("--output")],
+    config: Annotated[Path, typer.Option("--config", "-c")] = Path(
+        "configs/experiment/phase10_reference_safety.yaml"
+    ),
+) -> None:
+    """Freeze config, policy, seeds, code, and development evidence before evaluation."""
+    try:
+        from care_asd.evaluation.reference_safety import create_reference_safety_freeze
+        from care_asd.reference_safety_config import load_reference_safety_config
+
+        result = create_reference_safety_freeze(
+            config_path=config,
+            policy_path=policy,
+            development_gate_path=development_gate,
+            development_manifest_path=development_manifest,
+            output_path=output,
+            config=load_reference_safety_config(config),
+        )
+    except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]SAFE-REF freeze failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[green]SAFE-REF freeze written:[/green] {result}")
+
+
+@reference_safety_app.command("eval")
+def reference_safety_eval(
+    cache_directory: Annotated[Path, typer.Option("--cache-dir")],
+    policy: Annotated[Path, typer.Option("--policy")],
+    freeze: Annotated[Path, typer.Option("--freeze-file")],
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    checkpoint_directory: Annotated[Path, typer.Option("--checkpoint-dir")],
+    config: Annotated[Path, typer.Option("--config", "-c")] = Path(
+        "configs/experiment/phase10_reference_safety.yaml"
+    ),
+) -> None:
+    """Generate frozen evaluation scores without accepting a ground-truth path."""
+    try:
+        from care_asd.evaluation.reference_safety import run_reference_safety_evaluation
+        from care_asd.reference_safety_config import load_reference_safety_config
+
+        result = run_reference_safety_evaluation(
+            cache_directory=cache_directory,
+            policy_path=policy,
+            freeze_path=freeze,
+            config_path=config,
+            output_directory=output_directory,
+            checkpoint_directory=checkpoint_directory,
+            config=load_reference_safety_config(config),
+        )
+    except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]SAFE-REF evaluation failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[green]SAFE-REF evaluation scores complete.[/green] {result.complete_path}")
+
+
+@reference_safety_app.command("official-score")
+def reference_safety_official_score(
+    evaluation_output_directory: Annotated[Path, typer.Option("--evaluation-output-dir")],
+    evaluator_directory: Annotated[Path, typer.Option("--evaluator-dir")],
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+) -> None:
+    """Run the pinned official evaluator after score hashes have been sealed."""
+    try:
+        from care_asd.evaluation.reference_safety import (
+            run_official_reference_safety_scoring,
+        )
+
+        result = run_official_reference_safety_scoring(
+            evaluation_output_directory=evaluation_output_directory,
+            evaluator_directory=evaluator_directory,
+            output_directory=output_directory,
+        )
+    except (
+        FileNotFoundError,
+        FileExistsError,
+        OSError,
+        RuntimeError,
+        ValueError,
+        subprocess.CalledProcessError,
+    ) as exc:
+        console.print(f"[red]SAFE-REF official scoring failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[green]SAFE-REF official scores written:[/green] {result}")
 
 
 @app.command("mvp-ensemble")
