@@ -60,3 +60,9 @@ Cache work uses 12 processes with BLAS threads fixed to one. AE training uses
 the GPU and the exact official 100-epoch, batch-256 contract. Low GPU utilization
 during the cache stage is expected and is not a hang; `state.env` and the log
 tail are the authoritative progress indicators.
+
+Server wrappers use `uv run --no-sync`, so a research job never replaces the
+verified GPU runtime while starting. Phase 11 and Phase 12 additionally require
+exactly PyTorch `2.6.0+cu118`, CUDA runtime 11.8, and a visible GPU. If this
+preflight fails, repair the runtime with
+`bash scripts/server/setup_phase5_torch.sh` before continuing.

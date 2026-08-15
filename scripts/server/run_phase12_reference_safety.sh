@@ -61,25 +61,25 @@ if [ "$TASK_STATUS" -eq 0 ]; then uv run care-asd data validate --split evaluati
 
 if [ "$TASK_STATUS" -eq 0 ]; then
     write_state RUNNING cache 99
-    uv run --extra torch --extra official-alignment --extra ml care-asd data cache-reference-safety-vectors --train-manifest "$ADD_MANIFEST" --train-audio-root "$ADD_AUDIO" --test-manifest "$EVAL_MANIFEST" --test-audio-root "$EVAL_AUDIO" --output-dir "$CACHE_DIR" --config "$CONFIG" --workers "$WORKERS" >>"$LOG" 2>&1 || TASK_STATUS=$?
+    uv run --no-sync care-asd data cache-reference-safety-vectors --train-manifest "$ADD_MANIFEST" --train-audio-root "$ADD_AUDIO" --test-manifest "$EVAL_MANIFEST" --test-audio-root "$EVAL_AUDIO" --output-dir "$CACHE_DIR" --config "$CONFIG" --workers "$WORKERS" >>"$LOG" 2>&1 || TASK_STATUS=$?
 fi
 if [ "$TASK_STATUS" -eq 0 ]; then
     write_state RUNNING freeze 99
-    uv run --extra torch care-asd reference-safety freeze --policy "$POLICY" --development-gate "$DEV_GATE" --development-manifest "$DEV_MANIFEST" --output "$FREEZE" --config "$CONFIG" >>"$LOG" 2>&1 || TASK_STATUS=$?
+    uv run --no-sync care-asd reference-safety freeze --policy "$POLICY" --development-gate "$DEV_GATE" --development-manifest "$DEV_MANIFEST" --output "$FREEZE" --config "$CONFIG" >>"$LOG" 2>&1 || TASK_STATUS=$?
 fi
 if [ "$TASK_STATUS" -eq 0 ]; then
     LD_LIBRARY_PATH="" git add "$FREEZE" && LD_LIBRARY_PATH="" git commit -m "experiment: freeze $RUN_ID" && LD_LIBRARY_PATH="" git pull --rebase origin main && LD_LIBRARY_PATH="" git push origin main || TASK_STATUS=$?
 fi
 if [ "$TASK_STATUS" -eq 0 ]; then
     write_state RUNNING scoring 99
-    uv run --extra torch --extra official-alignment --extra ml care-asd reference-safety eval --cache-dir "$CACHE_DIR" --policy "$POLICY" --freeze-file "$FREEZE" --output-dir "$EVAL_DIR" --checkpoint-dir "$CHECKPOINT_DIR" --config "$CONFIG" >>"$LOG" 2>&1 || TASK_STATUS=$?
+    uv run --no-sync care-asd reference-safety eval --cache-dir "$CACHE_DIR" --policy "$POLICY" --freeze-file "$FREEZE" --output-dir "$EVAL_DIR" --checkpoint-dir "$CHECKPOINT_DIR" --config "$CONFIG" >>"$LOG" 2>&1 || TASK_STATUS=$?
 fi
 if [ "$TASK_STATUS" -eq 0 ]; then
     write_state RUNNING evaluator 99
     uv run care-asd baseline checkout >>"$LOG" 2>&1 || TASK_STATUS=$?
 fi
 if [ "$TASK_STATUS" -eq 0 ]; then
-    uv run --extra torch --extra ml care-asd reference-safety official-score --evaluation-output-dir "$EVAL_DIR" --evaluator-dir external/dcase2026_task2_evaluator --output-dir "$REPORT_DIR/official" >>"$LOG" 2>&1 || TASK_STATUS=$?
+    uv run --no-sync care-asd reference-safety official-score --evaluation-output-dir "$EVAL_DIR" --evaluator-dir external/dcase2026_task2_evaluator --output-dir "$REPORT_DIR/official" >>"$LOG" 2>&1 || TASK_STATUS=$?
 fi
 if [ "$TASK_STATUS" -eq 0 ]; then
     mkdir -p "$REPORT_DIR/frozen_scores"

@@ -39,7 +39,7 @@ elif ! python3 -c 'import json,sys; sys.exit(0 if json.load(open(sys.argv[1]))["
     TASK_STATUS=1
 fi
 if [ "$TASK_STATUS" -eq 0 ]; then
-    uv run --extra torch --extra official-alignment --extra ml care-asd reference-safety dev --cache-dir "$CACHE_DIR" --policy "$POLICY" --output-dir "$REPORT_DIR" --checkpoint-dir "$CHECKPOINT_DIR" --config "$CONFIG" --stage "$STAGE" >>"$LOG" 2>&1 || TASK_STATUS=$?
+    uv run --no-sync care-asd reference-safety dev --cache-dir "$CACHE_DIR" --policy "$POLICY" --output-dir "$REPORT_DIR" --checkpoint-dir "$CHECKPOINT_DIR" --config "$CONFIG" --stage "$STAGE" >>"$LOG" 2>&1 || TASK_STATUS=$?
 fi
 
 FINAL_STATUS=DONE
