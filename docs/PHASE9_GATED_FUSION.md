@@ -16,3 +16,7 @@ the reconstruction target and primary branch; CARE residual is auxiliary only.
 
 This is one prospective test. The Phase 8 output is explanatory only and does
 not tune its gate or architecture.
+
+The server wrapper defaults to 12 cache workers on the 28-logical-CPU server,
+leaving at least 16 logical CPUs free. Set `CARE_ASD_RELIABILITY_WORKERS` only
+when a different resource reservation is explicitly required.
