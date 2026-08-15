@@ -1,0 +1,35 @@
+{
+  "calibration": {
+    "accepted": 0,
+    "cases": 2048,
+    "coverage": 0.0,
+    "false_safe_count": 0,
+    "false_safe_rate": 0.0,
+    "false_safe_upper_ci": 1.0,
+    "policy_loss_q95": 0.0,
+    "risk_spearman": 0.20660679036834212,
+    "tail_loss_reduction": 1.0,
+    "unconditional_loss_q95": 0.6447413652551617
+  },
+  "criteria": {
+    "false_safe_max": 0.05,
+    "false_safe_upper_ci_max": 0.1,
+    "minimum_coverage": 0.2,
+    "minimum_risk_spearman": 0.6,
+    "minimum_tail_loss_reduction": 0.5
+  },
+  "holdout": {
+    "accepted": 0,
+    "cases": 2048,
+    "coverage": 0.0,
+    "false_safe_count": 0,
+    "false_safe_rate": 0.0,
+    "false_safe_upper_ci": 1.0,
+    "policy_loss_q95": 0.0,
+    "risk_spearman": 0.21085671719285318,
+    "tail_loss_reduction": 1.0,
+    "unconditional_loss_q95": 0.6627202014550306
+  },
+  "passed": false,
+  "schema_version": 1
+}

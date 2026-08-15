@@ -1,0 +1,8 @@
+benefit_min_db: 8.852535325232289
+calibration_cases: 2048
+calibration_coverage: 0.0
+calibration_false_safe_rate: 0.0
+holdout_cases: 2048
+risk_max: 0.2243846830224602
+schema_version: 1
+source: semi_synthetic_only

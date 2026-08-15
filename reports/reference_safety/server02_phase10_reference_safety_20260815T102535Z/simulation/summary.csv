@@ -1,0 +1,3 @@
+split,cases,accepted,coverage,false_safe_count,false_safe_rate,false_safe_upper_ci,risk_spearman,tail_loss_reduction,unconditional_loss_q95,policy_loss_q95,passed
+calibration,2048,0,0.0,0,0.0,1.0,0.20660679036834212,1.0,0.6447413652551617,0.0,False
+holdout,2048,0,0.0,0,0.0,1.0,0.21085671719285318,1.0,0.6627202014550306,0.0,False
