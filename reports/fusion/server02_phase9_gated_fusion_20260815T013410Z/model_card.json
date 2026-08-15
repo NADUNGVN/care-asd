@@ -1,0 +1,65 @@
+[
+  {
+    "b00_parameters": 267928,
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/gated_fusion/server02_phase9_gated_fusion_20260815T013410Z/b02_gated_fusion_ToyCar_seed13711.pt",
+    "final_train_loss": 9.181771296233133,
+    "machine_type": "ToyCar",
+    "parameters": 267928,
+    "reliability_mean_train": 0.13302356757968664,
+    "train_feature_vectors": 306000
+  },
+  {
+    "b00_parameters": 267928,
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/gated_fusion/server02_phase9_gated_fusion_20260815T013410Z/b02_gated_fusion_ToyCarEmu_seed13711.pt",
+    "final_train_loss": 9.400670450636705,
+    "machine_type": "ToyCarEmu",
+    "parameters": 267928,
+    "reliability_mean_train": 0.22822437159717082,
+    "train_feature_vectors": 334800
+  },
+  {
+    "b00_parameters": 267928,
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/gated_fusion/server02_phase9_gated_fusion_20260815T013410Z/b02_gated_fusion_bearingEmu_seed13711.pt",
+    "final_train_loss": 8.706350650588456,
+    "machine_type": "bearingEmu",
+    "parameters": 267928,
+    "reliability_mean_train": 0.22352661111950875,
+    "train_feature_vectors": 278100
+  },
+  {
+    "b00_parameters": 267928,
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/gated_fusion/server02_phase9_gated_fusion_20260815T013410Z/b02_gated_fusion_fan_seed13711.pt",
+    "final_train_loss": 8.546998176259216,
+    "machine_type": "fan",
+    "parameters": 267928,
+    "reliability_mean_train": 0.0522200118675828,
+    "train_feature_vectors": 278100
+  },
+  {
+    "b00_parameters": 267928,
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/gated_fusion/server02_phase9_gated_fusion_20260815T013410Z/b02_gated_fusion_gearboxEmu_seed13711.pt",
+    "final_train_loss": 8.473194304832834,
+    "machine_type": "gearboxEmu",
+    "parameters": 267928,
+    "reliability_mean_train": 0.24744149281084538,
+    "train_feature_vectors": 278100
+  },
+  {
+    "b00_parameters": 267928,
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/gated_fusion/server02_phase9_gated_fusion_20260815T013410Z/b02_gated_fusion_sliderEmu_seed13711.pt",
+    "final_train_loss": 10.305136192593373,
+    "machine_type": "sliderEmu",
+    "parameters": 267928,
+    "reliability_mean_train": 0.18894890604913234,
+    "train_feature_vectors": 278100
+  },
+  {
+    "b00_parameters": 267928,
+    "checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/checkpoints/gated_fusion/server02_phase9_gated_fusion_20260815T013410Z/b02_gated_fusion_valveEmu_seed13711.pt",
+    "final_train_loss": 9.800218895353545,
+    "machine_type": "valveEmu",
+    "parameters": 267928,
+    "reliability_mean_train": 0.17127082090079784,
+    "train_feature_vectors": 278100
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "candidate": "reports/fusion/server02_phase9_gated_fusion_20260815T013410Z/scores.csv",
+  "iterations": 5000,
+  "metric_delta_candidate_minus_reference": {
+    "mean_auc": {
+      "ci95_high": 0.005957142857142775,
+      "ci95_low": -0.009686071428571443,
+      "mean": -0.0019184771428571406
+    },
+    "mean_pauc_max_fpr_0_1": {
+      "ci95_high": 0.0032349624060151187,
+      "ci95_low": -0.013984962406014878,
+      "mean": -0.005399879699248118
+    }
+  },
+  "reference": "reports/alignment/server02_phase6_alignment_20260813T061557Z/scores.csv",
+  "seed": 2026,
+  "stratification": "machine_type/section/condition"
+}
