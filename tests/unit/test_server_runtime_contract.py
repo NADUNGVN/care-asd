@@ -29,3 +29,10 @@ def test_gpu_phases_enforce_the_verified_server_runtime() -> None:
     ):
         launcher = (SERVER_SCRIPTS / name).read_text(encoding="utf-8")
         assert "bash scripts/server/check_gpu_runtime.sh" in launcher
+
+
+def test_gpu_repair_reinstalls_matching_torch_packages() -> None:
+    setup = (SERVER_SCRIPTS / "setup_phase5_torch.sh").read_text(encoding="utf-8")
+    assert "'torch==2.6.0+cu118'" in setup
+    assert "'torchaudio==2.6.0+cu118'" in setup
+    assert "--reinstall-package torch --reinstall-package torchaudio" in setup

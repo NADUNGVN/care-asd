@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install the pinned CUDA-enabled PyTorch runtime used by Phase 5, then record it.
+# Install the pinned CUDA-enabled PyTorch runtime used by GPU research phases.
 set -uo pipefail
 
 REPO_DIR="${CARE_ASD_REPO_DIR:-$HOME/Dung_TDTU/CARE_ASD}"
@@ -9,10 +9,10 @@ LOG_PATH="outputs/neural/$RUN_ID.log"
 REPORT="reports/server/$RUN_ID.md"
 mkdir -p outputs/neural reports/server
 
-uv pip install --python .venv/bin/python --index-url https://download.pytorch.org/whl/cu118 'torch==2.6.0+cu118' >"$LOG_PATH" 2>&1
+uv pip install --python .venv/bin/python --index-url https://download.pytorch.org/whl/cu118 --reinstall-package torch --reinstall-package torchaudio 'torch==2.6.0+cu118' 'torchaudio==2.6.0+cu118' >"$LOG_PATH" 2>&1
 TASK_STATUS=$?
 if [ "$TASK_STATUS" -eq 0 ]; then
-    .venv/bin/python -c 'import torch; assert torch.cuda.is_available(); print(f"torch={torch.__version__}"); print(f"cuda_runtime={torch.version.cuda}"); print(f"gpu={torch.cuda.get_device_name(0)}")' >>"$LOG_PATH" 2>&1
+    .venv/bin/python -c 'import torch,torchaudio; assert str(torch.__version__) == "2.6.0+cu118"; assert str(torchaudio.__version__) == "2.6.0+cu118"; assert str(torch.version.cuda) == "11.8"; assert torch.cuda.is_available(); print(f"torch={torch.__version__}"); print(f"torchaudio={torchaudio.__version__}"); print(f"cuda_runtime={torch.version.cuda}"); print(f"gpu={torch.cuda.get_device_name(0)}")' >>"$LOG_PATH" 2>&1
     TASK_STATUS=$?
 fi
 
