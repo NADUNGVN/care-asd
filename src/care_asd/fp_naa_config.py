@@ -41,6 +41,20 @@ class FPBackendConfig(BaseModel):
     eps: float = Field(gt=0.0)
 
 
+class FPAugmentationConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    seed: int = Field(ge=0)
+    noise_snr_db_min: float
+    noise_snr_db_max: float
+    fault_delta_level_db_min: float
+    fault_delta_level_db_max: float
+    train_fault_families: list[str]
+    heldout_fault_family: str
+    heldout_fraction: float = Field(gt=0.0, lt=1.0)
+    peak_limit: float = Field(gt=0.0, le=1.0)
+
+
 class FPAdapterConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -101,6 +115,7 @@ class FPNAAConfig(BaseModel):
     provenance: ProvenanceConfig
     frontend: FPFrontendConfig
     backend: FPBackendConfig
+    augmentation: FPAugmentationConfig
     adapter: FPAdapterConfig
     objective: FPObjectiveConfig
     training: FPTrainingConfig
@@ -120,5 +135,25 @@ def load_fp_naa_config(path: str | Path) -> FPNAAConfig:
         raise ValueError("FP-NAA v1 requires channels [near, far] in that order")
     if config.frontend.cache_dtype != "float16":
         raise ValueError("FP-NAA v1 cache_dtype must be float16")
+    if config.augmentation.noise_snr_db_min > config.augmentation.noise_snr_db_max:
+        raise ValueError("noise_snr_db_min must not exceed noise_snr_db_max")
+    if config.augmentation.fault_delta_level_db_min > config.augmentation.fault_delta_level_db_max:
+        raise ValueError("fault_delta_level_db_min must not exceed fault_delta_level_db_max")
+    allowed_faults = {
+        "periodic_resonance",
+        "amplitude_modulation",
+        "frequency_modulation",
+        "friction_burst",
+    }
+    train_faults = set(config.augmentation.train_fault_families)
+    if not train_faults or not train_faults.issubset(allowed_faults):
+        raise ValueError("train_fault_families contains an unsupported family")
+    if len(train_faults) != len(config.augmentation.train_fault_families):
+        raise ValueError("train_fault_families must not contain duplicates")
+    if config.augmentation.heldout_fault_family not in allowed_faults:
+        raise ValueError("heldout_fault_family is unsupported")
+    if config.augmentation.heldout_fault_family in train_faults:
+        raise ValueError("heldout_fault_family must not appear in train_fault_families")
+    if config.adapter.hidden_dim % config.adapter.attention_heads != 0:
+        raise ValueError("adapter hidden_dim must be divisible by attention_heads")
     return config
-

@@ -79,12 +79,12 @@ def build_beats_token_cache(
     index_path = output / "index.parquet"
     manifest_sha = _sha256(manifest_source)
     config_sha = _sha256(config_source)
+    frontend_contract_sha = _frontend_contract_sha(config)
     if metadata_path.exists():
         return _load_completed_cache(
             output,
             manifest_sha=manifest_sha,
-            config_sha=config_sha,
-            checkpoint_sha=config.provenance.checkpoint_sha256,
+            config=config,
         )
 
     frame = pd.read_parquet(manifest_source)
@@ -187,6 +187,7 @@ def build_beats_token_cache(
         "dtype": "float16",
         "manifest_sha256": manifest_sha,
         "config_sha256": config_sha,
+        "frontend_contract_sha256": frontend_contract_sha,
         "beats_repository": str(config.provenance.beats_repository),
         "beats_commit": config.provenance.beats_commit,
         "checkpoint_sha256": config.provenance.checkpoint_sha256,
@@ -268,16 +269,17 @@ def _load_completed_cache(
     output: Path,
     *,
     manifest_sha: str,
-    config_sha: str,
-    checkpoint_sha: str,
+    config: FPNAAConfig,
 ) -> BEATsCache:
     metadata_path = output / "cache.json"
     index_path = output / "index.parquet"
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     expected = {
         "manifest_sha256": manifest_sha,
-        "config_sha256": config_sha,
-        "checkpoint_sha256": checkpoint_sha,
+        "checkpoint_sha256": config.provenance.checkpoint_sha256,
+        "beats_commit": config.provenance.beats_commit,
+        "duration_seconds": config.frontend.duration_seconds,
+        "sample_rate": config.frontend.sample_rate,
     }
     for key, value in expected.items():
         if metadata.get(key) != value:
@@ -288,6 +290,21 @@ def _load_completed_cache(
     if len(token_shape) != 3:
         raise ValueError("Invalid token_shape in completed BEATs cache")
     return BEATsCache(output, index_path, metadata_path, int(metadata["clips"]), token_shape)
+
+
+def _frontend_contract_sha(config: FPNAAConfig) -> str:
+    payload = {
+        "schema_version": config.schema_version,
+        "provenance": {
+            "beats_repository": str(config.provenance.beats_repository),
+            "beats_commit": config.provenance.beats_commit,
+            "checkpoint_sha256": config.provenance.checkpoint_sha256,
+        },
+        "frontend": config.frontend.model_dump(mode="json"),
+        "mixed_precision": config.training.mixed_precision,
+    }
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    return hashlib.sha256(canonical).hexdigest()
 
 
 def _write_progress(output: Path, *, completed: int, total: int, stage: str) -> None:
@@ -315,4 +332,3 @@ def _sha256(path: Path) -> str:
 def _chunks(items: list[_AudioTask], size: int) -> Iterator[list[_AudioTask]]:
     for start in range(0, len(items), size):
         yield items[start : start + size]
-

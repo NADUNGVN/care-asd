@@ -44,6 +44,27 @@ BEAM, relative-deviation pooling (RDP), and variance-minimizing score rescaling 
 comparator. Any gain attributed to FP-NAA must therefore survive a capacity-matched MSE-only
 adapter comparison.
 
+### 2.1 Frozen counterfactual augmentation protocol
+
+Only normal `dev_train` recordings are augmentation sources. For every target clip, a deterministic
+different normal clip from the same machine/section supplies the far-channel noise reference. One
+shared, scaled reference waveform is added to the clean and pseudo-fault target, so their waveform
+difference is exactly the injected fault perturbation before the frozen BEATs encoder. The noise SNR
+is sampled uniformly from -10 to +10 dB and the fault perturbation RMS is sampled uniformly from
+-24 to -12 dB relative to the clean target RMS. Shared peak limiting is used; independent clipping
+of the pair is prohibited because it would invalidate the counterfactual identity.
+
+The training fault families are frozen before observing C1/C2 results:
+
+- periodic impacts exciting a decaying resonance (localized bearing/gear impact proxy);
+- amplitude modulation (load, mesh, or rotating-envelope sideband proxy);
+- small periodic time warp/frequency modulation (speed-fluctuation sideband proxy).
+
+Ten percent of normal training clips, chosen by a stable hash, additionally receive a broadband
+friction-burst fault. This fourth family is never used by the C2 optimizer and is the pre-registered
+out-of-family retention test. These signals are diagnostic probes, not claims of a complete physical
+fault simulator. Development anomalies are never used to create, select, or scale pseudo-faults.
+
 Not novel and not claimed:
 
 - BEATs or frequency-preserving BEATs tokens;
@@ -162,4 +183,3 @@ most 12 preprocessing workers by default so at least 25% of SERVER-02 CPU capaci
 - [Variance-minimizing anomaly-score rescaling](https://dcase.community/documents/workshop2025/proceedings/DCASE2025Workshop_Matsumoto_12.pdf)
 - [OS-SCL feature perturbation](https://arxiv.org/abs/2509.13853)
 - [Official Microsoft BEATs implementation](https://github.com/microsoft/unilm/tree/master/beats)
-

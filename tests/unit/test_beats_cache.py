@@ -49,6 +49,21 @@ def _write_config(path: Path, checkpoint_sha: str) -> None:
             "score_rescaling": "variance_minimization_train_all",
             "eps": 1.0e-12,
         },
+        "augmentation": {
+            "seed": 2608,
+            "noise_snr_db_min": -10.0,
+            "noise_snr_db_max": 10.0,
+            "fault_delta_level_db_min": -24.0,
+            "fault_delta_level_db_max": -12.0,
+            "train_fault_families": [
+                "periodic_resonance",
+                "amplitude_modulation",
+                "frequency_modulation",
+            ],
+            "heldout_fault_family": "friction_burst",
+            "heldout_fraction": 0.1,
+            "peak_limit": 0.999,
+        },
         "adapter": {
             "hidden_dim": 8,
             "attention_heads": 2,

@@ -24,6 +24,7 @@ from care_asd.data import (
     build_beats_token_cache,
     build_care_residual_vector_cache,
     build_dcase2026_manifest,
+    build_fp_naa_augmentation_cache,
     build_neural_feature_cache,
     build_official_vector_cache,
     build_reliability_index,
@@ -1460,6 +1461,38 @@ def fp_naa_baseline_dev(
     console.print(
         f"[green]FP-NAA C0 baseline complete.[/green] gate={status} "
         f"official_score={100.0 * result.c0_official_score:.3f} summary={result.summary_path}"
+    )
+
+
+@fp_naa_app.command("cache-augmentation")
+def fp_naa_cache_augmentation(
+    base_cache_dir: Annotated[Path, typer.Option("--base-cache-dir")],
+    audio_root: Annotated[Path, typer.Option("--audio-root")],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    config: Annotated[Path, typer.Option("--config")],
+    beats_source: Annotated[Path, typer.Option("--beats-source")],
+    checkpoint: Annotated[Path, typer.Option("--checkpoint")],
+    workers: Annotated[int, typer.Option("--workers", min=0, max=16)] = 12,
+    device: Annotated[str, typer.Option("--device")] = "cuda",
+) -> None:
+    """Cache paired normal/noisy/pseudo-fault BEATs grids without anomaly labels."""
+    try:
+        result = build_fp_naa_augmentation_cache(
+            base_cache_directory=base_cache_dir,
+            audio_root=audio_root,
+            output_directory=output_dir,
+            config_path=config,
+            beats_source_directory=beats_source,
+            checkpoint_path=checkpoint,
+            workers=workers,
+            device=device,
+        )
+    except (FileNotFoundError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]FP-NAA augmentation cache failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]FP-NAA augmentation cache complete.[/green] "
+        f"clips={result.clips} heldout={result.heldout_clips} index={result.index_path}"
     )
 
 

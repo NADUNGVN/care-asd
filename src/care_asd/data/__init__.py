@@ -17,6 +17,10 @@ from care_asd.data.dcase2026 import (
     extract_dcase2026_split,
     normalize_split,
 )
+from care_asd.data.fp_naa_augmentation_cache import (
+    FPNaaAugmentationCache,
+    build_fp_naa_augmentation_cache,
+)
 from care_asd.data.neural_cache import BASE_CHANNELS, NeuralFeatureCache, build_neural_feature_cache
 from care_asd.data.official_vector_cache import (
     OFFICIAL_FEATURE_DIM,
@@ -34,6 +38,7 @@ __all__ = [
     "DatasetSplit",
     "DownloadedArchive",
     "ExtractionSummary",
+    "FPNaaAugmentationCache",
     "NeuralFeatureCache",
     "OfficialVectorCache",
     "ReliabilityIndex",
@@ -41,6 +46,7 @@ __all__ = [
     "build_beats_token_cache",
     "build_care_residual_vector_cache",
     "build_dcase2026_manifest",
+    "build_fp_naa_augmentation_cache",
     "build_neural_feature_cache",
     "build_official_vector_cache",
     "build_reliability_index",
