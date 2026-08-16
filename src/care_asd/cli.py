@@ -1127,6 +1127,55 @@ def audit_synthesize(
     )
 
 
+@audit_app.command("literature")
+def audit_literature(
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    config: Annotated[Path, typer.Option("--config", "-c")] = Path(
+        "configs/research/audit_literature_v1.yaml"
+    ),
+    repository_root: Annotated[Path, typer.Option("--repo-root")] = Path("."),
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Validate sources and claim links without writing."),
+    ] = False,
+) -> None:
+    """Generate the immutable Audit-A1 literature and claim-boundary package."""
+    try:
+        from care_asd.evaluation.literature_audit import (
+            literature_audit_plan,
+            load_literature_audit_config,
+            run_literature_audit,
+        )
+
+        cfg = load_literature_audit_config(config)
+        if dry_run:
+            typer.echo(
+                json.dumps(
+                    literature_audit_plan(
+                        cfg,
+                        repository_root=repository_root,
+                        config_path=config,
+                    ),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return
+        result = run_literature_audit(
+            output_directory=output_directory,
+            config=cfg,
+            repository_root=repository_root,
+            config_path=config,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, TypeError, ValueError) as exc:
+        console.print(f"[red]Literature audit failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]Literature audit completed.[/green] "
+        f"matrix={result.matrix_path} boundary={result.boundary_path}"
+    )
+
+
 @reference_safety_app.command("dev")
 def reference_safety_dev(
     cache_directory: Annotated[Path, typer.Option("--cache-dir")],

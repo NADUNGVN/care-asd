@@ -1,0 +1,298 @@
+schema_version: 1
+study_id: care_asd_literature_audit_v1
+cutoff_date: 2026-08-16
+source_policy: primary_sources_only
+
+working_title: "When the Noise Reference Contains the Machine: A Controlled Safety Audit for Anomalous Sound Detection"
+central_question: "Do deterministic normal-only transformations of a contaminated far-microphone reference remove environmental noise without suppressing unknown fault evidence?"
+contribution_statement: "An ASD-specific, frozen known-component safety audit that separates downstream anomaly-score effects from physical noise attenuation and injected-fault retention for deterministic normal-only contaminated-reference processing."
+
+sources:
+  - source_id: dcase2026_task
+    year: 2026
+    title: "DCASE 2026 Task 2: Noise-aware Unsupervised Anomalous Sound Detection for Machine Condition Monitoring"
+    authors: "DCASE 2026 Task 2 organizers"
+    venue: "DCASE 2026 Challenge"
+    publication_type: benchmark_specification
+    review_status: official_specification
+    url: "https://dcase.community/challenge2026/task-first-shot-unsupervised-anomalous-sound-detection-for-machine-condition-monitoring"
+    cluster: task_context
+    method_family: benchmark_definition
+    normal_only_asd: true
+    signal_level_transformation: false
+    evaluates_asd_metrics: true
+    evaluates_known_component_safety: false
+    reports_reference_contamination: true
+    result_direction: context
+    key_finding: "Defines synchronized near/far recordings, normal-only training, unseen evaluation machines, and AUC/pAUC evaluation."
+    audit_relationship: "Fixes the benchmark scope and prevents claims beyond the development machine types or official metric protocol."
+
+  - source_id: nishida2026_task_description
+    year: 2026
+    title: "Description and Discussion on DCASE 2026 Challenge Task 2: Noise-aware Unsupervised Anomalous Sound Detection for Machine Condition Monitoring"
+    authors: "Tomoya Nishida; Noboru Harada; Daiki Takeuchi; Daisuke Niizumi; Keisuke Imoto; Kota Dohi; Harsh Purohit; Takashi Endo; Yohei Kawaguchi"
+    venue: "arXiv"
+    publication_type: arxiv_preprint
+    review_status: not_peer_reviewed
+    url: "https://arxiv.org/abs/2606.01578"
+    cluster: task_context
+    method_family: benchmark_definition
+    normal_only_asd: true
+    signal_level_transformation: false
+    evaluates_asd_metrics: true
+    evaluates_known_component_safety: false
+    reports_reference_contamination: true
+    result_direction: context
+    key_finding: "Motivates the far microphone as relatively noise-dominant rather than an observed clean noise reference."
+    audit_relationship: "Supports treating reference purity as an empirical question and not as a benchmark guarantee."
+
+  - source_id: dcase2026_submission_policy
+    year: 2026
+    title: "DCASE 2026 Challenge Submission and Technical Report Policy"
+    authors: "DCASE 2026 organizers"
+    venue: "DCASE 2026 Challenge"
+    publication_type: benchmark_specification
+    review_status: official_specification
+    url: "https://dcase.community/challenge2026/submission"
+    cluster: task_context
+    method_family: benchmark_definition
+    normal_only_asd: false
+    signal_level_transformation: false
+    evaluates_asd_metrics: false
+    evaluates_known_component_safety: false
+    reports_reference_contamination: false
+    result_direction: context
+    key_finding: "Officially states that challenge technical reports are not peer reviewed and distinguishes them from workshop papers."
+    audit_relationship: "Controls evidence labeling so current challenge reports are not misrepresented as peer-reviewed publications."
+
+  - source_id: fujimura2026_na_ssl
+    year: 2026
+    title: "Anomalous Sound Detection Meets Noise-Aware Self-Supervised Learning"
+    authors: "Takuya Fujimura; Gordon Wichern; Yoshiki Masuyama; Christoph Boeddeker; Kohei Saijo; Julius Richter; Takahiro Edo; Jonathan Le Roux"
+    venue: "arXiv"
+    publication_type: arxiv_preprint
+    review_status: not_peer_reviewed
+    url: "https://arxiv.org/abs/2608.00447"
+    cluster: direct_asd
+    method_family: learned_dual_channel_representation
+    normal_only_asd: true
+    signal_level_transformation: false
+    evaluates_asd_metrics: true
+    evaluates_known_component_safety: false
+    reports_reference_contamination: true
+    result_direction: benefit
+    key_finding: "Simulated dual-channel pretraining improves several SSL frontends and the reported NA-BEATs system won DCASE 2026 Task 2."
+    audit_relationship: "A decisive counterexample to any claim that dual-microphone information or contaminated references are generally ineffective for ASD."
+
+  - source_id: kim2026_reference_denoising
+    year: 2026
+    title: "Noise-Aware Reference Denoising for First-Shot Anomalous Sound Detection"
+    authors: "Nam Kyun Kim"
+    venue: "DCASE 2026 Challenge technical report"
+    publication_type: challenge_technical_report
+    review_status: not_peer_reviewed
+    url: "https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Kim_91_t2.pdf"
+    cluster: direct_asd
+    method_family: deterministic_signal_subtraction
+    normal_only_asd: true
+    signal_level_transformation: true
+    evaluates_asd_metrics: true
+    evaluates_known_component_safety: false
+    reports_reference_contamination: true
+    result_direction: benefit
+    key_finding: "Minimum-statistics noise transfer plus floored spectral subtraction improves reported development performance while limiting aggressive subtraction."
+    audit_relationship: "Closest direct prior; it evaluates ASD scores but not separate known-component fault retention and noise attenuation."
+
+  - source_id: morita2026_stereo_spatial
+    year: 2026
+    title: "Memory Bank-Based Unsupervised Anomalous Sound Detection Exploiting Stereo Spatial Information"
+    authors: "Ryo Morita; Ryoya Kozai; Shota Sekino; Yusuke Kishi"
+    venue: "DCASE 2026 Challenge technical report"
+    publication_type: challenge_technical_report
+    review_status: not_peer_reviewed
+    url: "https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Morita_50_t2.pdf"
+    cluster: direct_asd
+    method_family: spatial_masking
+    normal_only_asd: true
+    signal_level_transformation: true
+    evaluates_asd_metrics: true
+    evaluates_known_component_safety: false
+    reports_reference_contamination: true
+    result_direction: mixed
+    key_finding: "A coherence-weighted signal route and spatial descriptors provide reported gains, while globally low coherence limits the mask effect."
+    audit_relationship: "Shows spatial processing can help while also exposing weak observability; no component-level fault-preservation endpoint is reported."
+
+  - source_id: ozeki2026_simple_noise_reduction
+    year: 2026
+    title: "Anomalous Sound Detection Method with Simple Noise Reduction"
+    authors: "Kosei Ozeki; Takeru Shiraga; Hideaki Terashima; Nobuaki Tanaka; Takahiko Masuzaki"
+    venue: "DCASE 2026 Challenge technical report"
+    publication_type: challenge_technical_report
+    review_status: not_peer_reviewed
+    url: "https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Ozeki_101_t2.pdf"
+    cluster: direct_asd
+    method_family: deterministic_signal_subtraction
+    normal_only_asd: true
+    signal_level_transformation: true
+    evaluates_asd_metrics: true
+    evaluates_known_component_safety: false
+    reports_reference_contamination: false
+    result_direction: benefit
+    key_finding: "Uses the far channel as a noise reference and a linear filter to cancel near-channel noise before several ASD backends."
+    audit_relationship: "A close deterministic comparator whose noise-reference assumption is precisely what the controlled safety audit tests."
+
+  - source_id: qian2026_spectral_subtraction
+    year: 2026
+    title: "Anomalous Sound Detection System for DCASE 2026 Task 2 Using Dual-Channel Spectral Subtraction and Efficient Audio Transformer"
+    authors: "Fan Chu; Mengui Qian"
+    venue: "DCASE 2026 Challenge technical report"
+    publication_type: challenge_technical_report
+    review_status: not_peer_reviewed
+    url: "https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Qian_65_t2.pdf"
+    cluster: direct_asd
+    method_family: deterministic_signal_subtraction
+    normal_only_asd: true
+    signal_level_transformation: true
+    evaluates_asd_metrics: true
+    evaluates_known_component_safety: false
+    reports_reference_contamination: false
+    result_direction: benefit
+    key_finding: "Applies far-reference spectral subtraction before a fine-tuned Efficient Audio Transformer and k-nearest-neighbor anomaly scoring."
+    audit_relationship: "Confirms practical interest in the exact frontend family while reporting task metrics rather than known-component fault retention."
+
+  - source_id: kim2026_residual_view
+    year: 2026
+    title: "Residual View and Prototype Selection for Noise-Aware Anomalous Sound Detection"
+    authors: "JeongSik Kim; JongWoo Sung; HyeonJun Bae; BoRyeon Kim; JiAn Lee"
+    venue: "DCASE 2026 Challenge technical report"
+    publication_type: challenge_technical_report
+    review_status: not_peer_reviewed
+    url: "https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Kim_27_t2.pdf"
+    cluster: direct_asd
+    method_family: embedding_residual
+    normal_only_asd: true
+    signal_level_transformation: false
+    evaluates_asd_metrics: true
+    evaluates_known_component_safety: false
+    reports_reference_contamination: true
+    result_direction: benefit
+    key_finding: "Scaled far-channel subtraction in a pretrained embedding space improves the reported development score for selected encoders and layers."
+    audit_relationship: "Bounds the audit to signal-level deterministic cancellation; embedding residuals and representation selection remain viable alternatives."
+
+  - source_id: lei2026_task_adapted_dual_mic
+    year: 2026
+    title: "Task-Adapted Dual-Microphone Representations with Domain-Conditioned Local-Density Fusion"
+    authors: "Jialong Lei"
+    venue: "DCASE 2026 Challenge technical report"
+    publication_type: challenge_technical_report
+    review_status: not_peer_reviewed
+    url: "https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Lei_23_t2.pdf"
+    cluster: direct_asd
+    method_family: learned_dual_channel_representation
+    normal_only_asd: true
+    signal_level_transformation: false
+    evaluates_asd_metrics: true
+    evaluates_known_component_safety: false
+    reports_reference_contamination: true
+    result_direction: benefit
+    key_finding: "Treats the far channel as a mixed observation and uses task-adapted dual-microphone representations rather than direct subtraction."
+    audit_relationship: "Independently recognizes the fault-suppression risk but addresses it through learned representation and calibration, not a known-component safety audit."
+
+  - source_id: alkindi1989_signal_leakage
+    year: 1989
+    title: "Improved Adaptive Noise Cancellation in the Presence of Signal Leakage on the Noise Reference Channel"
+    authors: "M. J. Al-Kindi; J. Dunlop"
+    venue: "Signal Processing"
+    publication_type: journal_article
+    review_status: peer_reviewed
+    url: "https://doi.org/10.1016/0165-1684(89)90005-4"
+    cluster: adjacent_signal_processing
+    method_family: adaptive_cancellation
+    normal_only_asd: false
+    signal_level_transformation: true
+    evaluates_asd_metrics: false
+    evaluates_known_component_safety: false
+    reports_reference_contamination: true
+    result_direction: risk_mitigation
+    key_finding: "Cross-coupled adaptive cancellers address desired-signal leakage in a noise reference and can limit distortion under stated conditions."
+    audit_relationship: "Establishes that contaminated-reference cancellation is old prior art; novelty must lie in the ASD-specific frozen safety evaluation."
+
+  - source_id: xiao2024_target_delay_anc
+    year: 2024
+    title: "Effect of Target Signals and Delays on Spatially Selective Active Noise Control for Open-Fitting Hearables"
+    authors: "Tong Xiao; Simon Doclo"
+    venue: "ICASSP 2024"
+    publication_type: conference_paper
+    review_status: peer_reviewed
+    url: "https://doi.org/10.1109/ICASSP48485.2024.10445843"
+    cluster: adjacent_signal_processing
+    method_family: active_noise_control
+    normal_only_asd: false
+    signal_level_transformation: true
+    evaluates_asd_metrics: false
+    evaluates_known_component_safety: true
+    reports_reference_contamination: true
+    result_direction: risk_mitigation
+    key_finding: "Target definition and causal delay change the trade-off among desired-signal quality, noise reduction, and control effort."
+    audit_relationship: "Provides component-aware evaluation precedent outside ASD and motivates reporting preservation jointly with attenuation."
+
+  - source_id: zhao2025_aux_reference_aec
+    year: 2025
+    title: "Why Not Put a Microphone Near the Loudspeaker? A New Paradigm for Acoustic Echo Cancellation"
+    authors: "Fei Zhao; Zhong-Qiu Wang"
+    venue: "arXiv"
+    publication_type: arxiv_preprint
+    review_status: not_peer_reviewed
+    url: "https://arxiv.org/abs/2511.03244"
+    cluster: adjacent_signal_processing
+    method_family: learned_reference_purification
+    normal_only_asd: false
+    signal_level_transformation: true
+    evaluates_asd_metrics: false
+    evaluates_known_component_safety: false
+    reports_reference_contamination: true
+    result_direction: benefit
+    key_finding: "A learned Wiener-mask module purifies an auxiliary reference contaminated by near-end speech before linear echo cancellation."
+    audit_relationship: "Shows that learned purification with task supervision can handle contamination and is outside the deterministic normal-only audit claim."
+
+supported_claims:
+  - claim_id: contaminated_reference_is_real
+    text: "The far microphone is a mixed observation rather than a guaranteed noise-only reference, creating a plausible fault-suppression risk for direct subtraction."
+    source_ids: [nishida2026_task_description, kim2026_reference_denoising, lei2026_task_adapted_dual_mic]
+    evidence_scope: "DCASE 2026 task framing and independent participant method descriptions."
+
+  - claim_id: metric_gain_is_not_safety_evidence
+    text: "Published ASD score gains from reference processing do not by themselves establish component-level fault preservation."
+    source_ids: [kim2026_reference_denoising, morita2026_stereo_spatial, ozeki2026_simple_noise_reduction, qian2026_spectral_subtraction, kim2026_residual_view]
+    evidence_scope: "The reviewed reports provide AUC-style endpoints but no injected-fault retention endpoint."
+
+  - claim_id: audit_gap
+    text: "The reviewed direct ASD sources do not jointly report known-component noise attenuation, fault retention, aligned anomaly-score effects, and frozen stop decisions."
+    source_ids: [fujimura2026_na_ssl, kim2026_reference_denoising, morita2026_stereo_spatial, ozeki2026_simple_noise_reduction, qian2026_spectral_subtraction, kim2026_residual_view, lei2026_task_adapted_dual_mic]
+    evidence_scope: "A bounded claim over the primary direct-ASD sources reviewed through the cutoff date."
+
+  - claim_id: adjacent_precedent
+    text: "Desired-signal leakage and preservation-versus-attenuation trade-offs are established signal-processing problems outside anomalous sound detection."
+    source_ids: [alkindi1989_signal_leakage, xiao2024_target_delay_anc, zhao2025_aux_reference_aec]
+    evidence_scope: "Adjacent adaptive cancellation, active control, and acoustic echo cancellation literature."
+
+prohibited_claims:
+  - claim_id: no_dual_mic_benefit
+    text: "Do not claim that dual-microphone information is generally ineffective or harmful for anomalous sound detection."
+    source_ids: [fujimura2026_na_ssl, kim2026_reference_denoising, morita2026_stereo_spatial, ozeki2026_simple_noise_reduction, qian2026_spectral_subtraction, kim2026_residual_view]
+    evidence_scope: "Multiple direct ASD counterexamples report benefit from learned, signal-level, spatial, or embedding-space use."
+
+  - claim_id: contamination_is_novel
+    text: "Do not claim that contaminated-reference cancellation or desired-signal leakage is itself a new problem."
+    source_ids: [alkindi1989_signal_leakage, xiao2024_target_delay_anc]
+    evidence_scope: "Peer-reviewed signal-processing prior art predates this ASD study."
+
+  - claim_id: universal_impossibility
+    text: "Do not claim a universal impossibility theorem for safe normal-only reference use or generalize beyond the tested controllers and controlled mixtures."
+    source_ids: [fujimura2026_na_ssl, zhao2025_aux_reference_aec]
+    evidence_scope: "Learned methods and alternative supervision or simulation regimes are explicit counter-scopes."
+
+  - claim_id: peer_reviewed_dcase_reports
+    text: "Do not describe DCASE challenge technical reports or the current arXiv papers as peer-reviewed journal evidence."
+    source_ids: [dcase2026_submission_policy, kim2026_reference_denoising, morita2026_stereo_spatial, ozeki2026_simple_noise_reduction, qian2026_spectral_subtraction, kim2026_residual_view, lei2026_task_adapted_dual_mic, fujimura2026_na_ssl]
+    evidence_scope: "DCASE explicitly distinguishes non-peer-reviewed challenge reports from workshop papers; arXiv is a preprint venue."

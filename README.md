@@ -50,6 +50,7 @@ Target journal: *Digital Signal Processing* (Elsevier).
 | AP-G4 | Frozen unseen-machine evaluation | **prohibited by AP-G1** |
 | AP-G5 | Jetson board-kit study | **not part of the retained claim** |
 | Audit-A0 | Frozen Phase 7--10 + AP-G1 evidence synthesis | **implemented locally** |
+| Audit-A1 | Primary-source literature matrix and claim boundary | **implemented locally** |
 
 ## Quick start
 

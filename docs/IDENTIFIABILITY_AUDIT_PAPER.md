@@ -16,6 +16,17 @@ The working paper question is:
 The result is an empirical boundary under the tested DCASE-compatible and
 controlled conditions. It is not a distribution-free impossibility theorem.
 
+After Audit-A1, the working title is:
+
+> **When the Noise Reference Contains the Machine: A Controlled Safety Audit
+> for Anomalous Sound Detection**
+
+The frozen literature matrix and claim boundary are documented in
+`docs/LITERATURE_MATRIX_AUDIT_A1.md`. Positive DCASE 2026 dual-microphone
+results explicitly rule out a generic claim against far-microphone use. The
+retained scope is deterministic, normal-only, signal-level contaminated-reference
+processing and its component-level safety evaluation.
+
 ## Frozen evidence chain
 
 | Stage | Test | Result | Interpretation |
@@ -83,7 +94,7 @@ Unsupported claims:
 | Milestone | Work | Compute | Stop rule |
 |---|---|---|---|
 | Audit-A0 | Frozen evidence package and figures | Local CPU | Artifact/hash audit |
-| Audit-A1 | Literature matrix and novelty positioning | None | Claim/citation audit |
+| Audit-A1 | Literature matrix and novelty positioning | None | **Complete; claim boundary frozen** |
 | Audit-A2 | Machine/domain robustness appendix from frozen scores | Local CPU | No new tuning |
 | Audit-A3 | Manuscript methods, results, limitations | None | Internal consistency |
 | Audit-A4 | Reproducibility bundle and submission checklist | None | All claims trace to artifacts |

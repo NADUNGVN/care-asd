@@ -149,3 +149,26 @@ def test_audit_synthesis_dry_run_is_exposed_and_side_effect_free(tmp_path: Path)
     assert result.exit_code == 0
     assert '"publication_route": "identifiability_audit"' in result.stdout
     assert not output.exists()
+
+
+def test_literature_audit_dry_run_is_exposed_and_side_effect_free(tmp_path: Path) -> None:
+    root = Path(__file__).resolve().parents[2]
+    output = tmp_path / "must-not-exist"
+    result = runner.invoke(
+        app,
+        [
+            "audit",
+            "literature",
+            "--config",
+            str(root / "configs" / "research" / "audit_literature_v1.yaml"),
+            "--repo-root",
+            str(root),
+            "--output-dir",
+            str(output),
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert '"source_count": 13' in result.stdout
+    assert not output.exists()
