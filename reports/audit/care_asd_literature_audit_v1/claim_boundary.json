@@ -1,0 +1,103 @@
+{
+  "central_question": "Do deterministic normal-only transformations of a contaminated far-microphone reference remove environmental noise without suppressing unknown fault evidence?",
+  "contribution_statement": "An ASD-specific, frozen known-component safety audit that separates downstream anomaly-score effects from physical noise attenuation and injected-fault retention for deterministic normal-only contaminated-reference processing.",
+  "cutoff_date": "2026-08-16",
+  "prohibited_claims": [
+    {
+      "claim_id": "no_dual_mic_benefit",
+      "evidence_scope": "Multiple direct ASD counterexamples report benefit from learned, signal-level, spatial, or embedding-space use.",
+      "source_ids": [
+        "fujimura2026_na_ssl",
+        "kim2026_reference_denoising",
+        "morita2026_stereo_spatial",
+        "ozeki2026_simple_noise_reduction",
+        "qian2026_spectral_subtraction",
+        "kim2026_residual_view"
+      ],
+      "text": "Do not claim that dual-microphone information is generally ineffective or harmful for anomalous sound detection."
+    },
+    {
+      "claim_id": "contamination_is_novel",
+      "evidence_scope": "Peer-reviewed signal-processing prior art predates this ASD study.",
+      "source_ids": [
+        "alkindi1989_signal_leakage",
+        "xiao2024_target_delay_anc"
+      ],
+      "text": "Do not claim that contaminated-reference cancellation or desired-signal leakage is itself a new problem."
+    },
+    {
+      "claim_id": "universal_impossibility",
+      "evidence_scope": "Learned methods and alternative supervision or simulation regimes are explicit counter-scopes.",
+      "source_ids": [
+        "fujimura2026_na_ssl",
+        "zhao2025_aux_reference_aec"
+      ],
+      "text": "Do not claim a universal impossibility theorem for safe normal-only reference use or generalize beyond the tested controllers and controlled mixtures."
+    },
+    {
+      "claim_id": "peer_reviewed_dcase_reports",
+      "evidence_scope": "DCASE explicitly distinguishes non-peer-reviewed challenge reports from workshop papers; arXiv is a preprint venue.",
+      "source_ids": [
+        "dcase2026_submission_policy",
+        "kim2026_reference_denoising",
+        "morita2026_stereo_spatial",
+        "ozeki2026_simple_noise_reduction",
+        "qian2026_spectral_subtraction",
+        "kim2026_residual_view",
+        "lei2026_task_adapted_dual_mic",
+        "fujimura2026_na_ssl"
+      ],
+      "text": "Do not describe DCASE challenge technical reports or the current arXiv papers as peer-reviewed journal evidence."
+    }
+  ],
+  "study_id": "care_asd_literature_audit_v1",
+  "supported_claims": [
+    {
+      "claim_id": "contaminated_reference_is_real",
+      "evidence_scope": "DCASE 2026 task framing and independent participant method descriptions.",
+      "source_ids": [
+        "nishida2026_task_description",
+        "kim2026_reference_denoising",
+        "lei2026_task_adapted_dual_mic"
+      ],
+      "text": "The far microphone is a mixed observation rather than a guaranteed noise-only reference, creating a plausible fault-suppression risk for direct subtraction."
+    },
+    {
+      "claim_id": "metric_gain_is_not_safety_evidence",
+      "evidence_scope": "The reviewed reports provide AUC-style endpoints but no injected-fault retention endpoint.",
+      "source_ids": [
+        "kim2026_reference_denoising",
+        "morita2026_stereo_spatial",
+        "ozeki2026_simple_noise_reduction",
+        "qian2026_spectral_subtraction",
+        "kim2026_residual_view"
+      ],
+      "text": "Published ASD score gains from reference processing do not by themselves establish component-level fault preservation."
+    },
+    {
+      "claim_id": "audit_gap",
+      "evidence_scope": "A bounded claim over the primary direct-ASD sources reviewed through the cutoff date.",
+      "source_ids": [
+        "fujimura2026_na_ssl",
+        "kim2026_reference_denoising",
+        "morita2026_stereo_spatial",
+        "ozeki2026_simple_noise_reduction",
+        "qian2026_spectral_subtraction",
+        "kim2026_residual_view",
+        "lei2026_task_adapted_dual_mic"
+      ],
+      "text": "The reviewed direct ASD sources do not jointly report known-component noise attenuation, fault retention, aligned anomaly-score effects, and frozen stop decisions."
+    },
+    {
+      "claim_id": "adjacent_precedent",
+      "evidence_scope": "Adjacent adaptive cancellation, active control, and acoustic echo cancellation literature.",
+      "source_ids": [
+        "alkindi1989_signal_leakage",
+        "xiao2024_target_delay_anc",
+        "zhao2025_aux_reference_aec"
+      ],
+      "text": "Desired-signal leakage and preservation-versus-attenuation trade-offs are established signal-processing problems outside anomalous sound detection."
+    }
+  ],
+  "working_title": "When the Noise Reference Contains the Machine: A Controlled Safety Audit for Anomalous Sound Detection"
+}

@@ -1,0 +1,19 @@
+{
+  "artifacts": {
+    "claim_boundary.json": "c15e9e8dcde7bd3bbbe22929f50aff32f5a17dd131b3aaad4c078795699af383",
+    "literature_audit.md": "fbf8c8286afc4ae4d0aa49201e1036aec8bbb6efa07409603fe730be24c18fec",
+    "literature_matrix.csv": "f8669a8b1c6414c4beb63b9d8a79c49a86b7779267312a7eefb6c7808ed5fd06"
+  },
+  "config": {
+    "path": "configs/research/audit_literature_v1.yaml",
+    "sha256": "d421445c2c895020de2d8eff8d5c707ddf62ea5fe7e1be76b8dde15801e84b60"
+  },
+  "cutoff_date": "2026-08-16",
+  "git_commit": "4bd0c63d06bce2b3b402ebc2b0672d1d8f8b2300",
+  "prohibited_claim_count": 4,
+  "schema_version": 1,
+  "source_count": 13,
+  "source_policy": "primary_sources_only",
+  "study_id": "care_asd_literature_audit_v1",
+  "supported_claim_count": 4
+}
