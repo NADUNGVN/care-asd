@@ -1,0 +1,60 @@
+{
+  "artifacts": {
+    "ap_care_holdout_diagnostics.csv": "cccb93fc4a38ac199526ce89616f5a7dcbf92bca7c6c5f3ef7bc474a3f1639ab",
+    "ap_care_mechanism_frontier.svg": "24f12422b402ac1be870018c8ac5118826e974700966a9122ba42ea2f7c597cf",
+    "audit_summary.md": "7b1a5e8d591d00886611d4c2ac73ff58b91fa48a608ebfdfb38d9c116f0c0362",
+    "decision.json": "c852ac7232aad112173ce437c4c25c25984f67fdc328e377fb04b8355d797e36",
+    "identifiability_evidence.csv": "e827ccac9cd8c0afd7177702fafb6e00a3af034cf02fd77378d926381a38032e",
+    "identifiability_gates.svg": "f48c671cbda840fc8724bbf8c61bd5bd577d50b4c7d9cc32363b063d64c1cff0",
+    "performance_deltas.svg": "d565221ea8bc385f567756360fe93195502b3b6a8d0a6feab02ab8efabfa7870",
+    "performance_evidence.csv": "67fb4f54bf565b76fa7fe41102926c61d728d851839713a0bac3b33fe6b17848"
+  },
+  "decisions": {
+    "evaluation_access": "prohibited",
+    "gpu_replication": "prohibited",
+    "method_route": "stopped",
+    "publication_route": "identifiability_audit"
+  },
+  "git_commit": "6c9aa955974d8a755e01857e8e0662e2387cc987",
+  "hash_mode": "LF-normalized UTF-8 for text; raw bytes for binary",
+  "schema_version": 1,
+  "source_hashes": {
+    "ap_care_cases": {
+      "path": "reports\\ap_care\\server02_ap_care_g1_20260816T105721Z\\synthetic_cases.parquet",
+      "sha256": "4d295455992abce67f98e9b47c3b49e67bb687788f96fce967db88e635dcdc5a"
+    },
+    "ap_care_gate": {
+      "path": "reports\\ap_care\\server02_ap_care_g1_20260816T105721Z\\gate.json",
+      "sha256": "cdeb3540ce77562947343f7a4f2316f0531d8920cc49f0bf8b5caddf2e91deb4"
+    },
+    "b00_summary": {
+      "path": "reports\\alignment\\server02_phase6_alignment_20260813T061557Z\\summary.csv",
+      "sha256": "6cbfa34942f0ae74cdad89e42de35853ffc9464d4c30f1ed161264dc5469fb68"
+    },
+    "b01_bootstrap": {
+      "path": "reports\\alignment\\server02_phase7_care_residual_20260814T095459Z\\paired_bootstrap_b01_vs_b00.json",
+      "sha256": "5d60a05ad060db5777669e146597cea09275825663e9dfdf1f6fcd303e75d0a3"
+    },
+    "b01_summary": {
+      "path": "reports\\alignment\\server02_phase7_care_residual_20260814T095459Z\\summary.csv",
+      "sha256": "bee08d7a54e122a854311f2e12b9e780e4dbe9ad8ceeb4dc9486632671f7f426"
+    },
+    "b02_bootstrap": {
+      "path": "reports\\fusion\\server02_phase9_gated_fusion_20260815T013410Z\\paired_bootstrap_b02_vs_b00.json",
+      "sha256": "a8ad0621cf8b42f6b11dd7a898394901fe8b7fd7135517bc880392e8263b5975"
+    },
+    "b02_summary": {
+      "path": "reports\\fusion\\server02_phase9_gated_fusion_20260815T013410Z\\summary.csv",
+      "sha256": "0e62d74d88944227ea3262ef81ad6f4ddcf1cf8abd599d01936ade8950196d9f"
+    },
+    "phase8_correlations": {
+      "path": "reports\\analysis\\server02_phase8_care_residual_analysis_20260814T170055Z\\correlations.csv",
+      "sha256": "9aad1f9aca97cafaed2e9ea26e202213eb30f636165e239f64fc81eca2f46d16"
+    },
+    "safe_ref_gate": {
+      "path": "reports\\reference_safety\\server02_phase10_reference_safety_20260815T145112Z\\simulation\\gate.json",
+      "sha256": "c053736f35642dca6f6d433ba0b699d54db04aa6bcd6737f35b3acb96c3e1533"
+    }
+  },
+  "study_id": "care_asd_identifiability_audit_v1"
+}

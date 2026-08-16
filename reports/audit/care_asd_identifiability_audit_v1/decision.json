@@ -1,0 +1,38 @@
+{
+  "claim_boundary": "Normal-only contaminated-reference heuristics did not identify a reliable safe cancellation regime under the tested assumptions; this is an empirical audit, not a distribution-free impossibility theorem.",
+  "decision": {
+    "evaluation_access": "prohibited",
+    "gpu_replication": "prohibited",
+    "method_route": "stopped",
+    "publication_route": "identifiability_audit"
+  },
+  "failed_method_gates": [
+    "SAFE-REF Phase 10",
+    "AP-CARE G1"
+  ],
+  "headline_evidence": {
+    "ap_care_holdout_cases": 256,
+    "ap_care_holdout_cases_ge_1db": 0,
+    "ap_care_leakage_spearman": 0.5325617990386815,
+    "ap_care_noise_attenuation_median_db": -0.03968772485057449,
+    "ap_care_uncertainty_spearman": 0.4059603170061798,
+    "b01_pauc_ci95": [
+      -0.03270676691729313,
+      -0.0028571428571428914
+    ],
+    "b01_pauc_delta": -0.01740075187969925,
+    "b02_pauc_delta": -0.005399879699248118,
+    "phase8_displacement_score_rho": -0.5524156506493846,
+    "safe_ref_false_safe_rate": 0.928490990990991,
+    "safe_ref_risk_spearman": 0.039958643563944324
+  },
+  "prohibited_next_actions": [
+    "retune AP-CARE thresholds on the frozen G1 holdout",
+    "run AP-G2 or AP-G3 GPU experiments",
+    "access unseen evaluation labels or scores",
+    "run Jetson claims as a substitute for method evidence"
+  ],
+  "schema_version": 1,
+  "stop_rule_satisfied": true,
+  "study_id": "care_asd_identifiability_audit_v1"
+}

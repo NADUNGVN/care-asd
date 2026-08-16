@@ -1,0 +1,7 @@
+test,observed,threshold,ci95_low,passed,unit
+SAFE-REF risk tracking,0.039958643563944324,0.6,,False,Spearman rho
+AP-CARE leakage tracking,0.5325617990386815,0.6,0.4250488413461966,False,Spearman rho
+AP-CARE uncertainty tracking,0.4059603170061798,0.6,0.296747708585316,False,Spearman rho
+AP-CARE eligible attenuation,-0.03968772485057449,1.0,,False,dB
+AP-CARE matched retention improvement,0.052579697099390754,0.1,0.028134033442963835,False,ratio
+AP-CARE in-support retention median,1.0001197059997353,0.9,,True,ratio
