@@ -1,0 +1,22 @@
+schema_version: 1
+experiment_id: fp_naa_reference_safety_v1
+
+population: heldout_friction_burst_only
+unmatched_reference_seed: 8602
+leakage_machine_to_noise_db:
+  low: -20.0
+  medium: -10.0
+  high: 0.0
+
+conditions:
+  - matched
+  - unmatched
+  - dropout
+  - channel_swap
+  - leakage_low
+  - leakage_medium
+  - leakage_high
+
+gate:
+  retention_median_minimum: 0.85
+  retention_worst_seed_q05_minimum: 0.65

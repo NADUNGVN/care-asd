@@ -1533,6 +1533,46 @@ def fp_naa_screen_dev(
     )
 
 
+@fp_naa_app.command("cache-reference-safety")
+def fp_naa_cache_reference_safety(
+    base_cache_dir: Annotated[Path, typer.Option("--base-cache-dir")],
+    augmentation_cache_dir: Annotated[Path, typer.Option("--augmentation-cache-dir")],
+    audio_root: Annotated[Path, typer.Option("--audio-root")],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    config: Annotated[Path, typer.Option("--config")],
+    safety_config: Annotated[Path, typer.Option("--safety-config")],
+    beats_source: Annotated[Path, typer.Option("--beats-source")],
+    checkpoint: Annotated[Path, typer.Option("--checkpoint")],
+    workers: Annotated[int, typer.Option("--workers", min=0, max=16)] = 12,
+    device: Annotated[str, typer.Option("--device")] = "cuda",
+) -> None:
+    """Cache waveform-grounded held-out reference leakage for the frozen G3 safety gate."""
+    try:
+        from care_asd.data.fp_naa_reference_safety_cache import (
+            build_fp_naa_reference_safety_cache,
+        )
+
+        result = build_fp_naa_reference_safety_cache(
+            base_cache_directory=base_cache_dir,
+            augmentation_cache_directory=augmentation_cache_dir,
+            audio_root=audio_root,
+            output_directory=output_dir,
+            config_path=config,
+            safety_config_path=safety_config,
+            beats_source_directory=beats_source,
+            checkpoint_path=checkpoint,
+            workers=workers,
+            device=device,
+        )
+    except (FileNotFoundError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]FP-NAA reference-safety cache failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        f"[green]FP-NAA reference-safety cache complete.[/green] clips={result.clips} "
+        f"index={result.index_path}"
+    )
+
+
 @fp_naa_app.command("lomo-dev")
 def fp_naa_lomo_dev(
     base_cache_dir: Annotated[Path, typer.Option("--base-cache-dir")],
@@ -1671,6 +1711,51 @@ def fp_naa_confirm_lomo_dev(
     console.print(
         f"[green]FP-NAA confirmatory LOMO complete.[/green] gate={status} "
         f"summary={result.summary_path}"
+    )
+
+
+@fp_naa_app.command("reference-safety-dev")
+def fp_naa_reference_safety_dev(
+    base_cache_dir: Annotated[Path, typer.Option("--base-cache-dir")],
+    augmentation_cache_dir: Annotated[Path, typer.Option("--augmentation-cache-dir")],
+    safety_cache_dir: Annotated[Path, typer.Option("--safety-cache-dir")],
+    screening_checkpoint_dir: Annotated[Path, typer.Option("--screening-checkpoint-dir")],
+    confirmatory_checkpoint_dir: Annotated[Path, typer.Option("--confirmatory-checkpoint-dir")],
+    confirmatory_dir: Annotated[Path, typer.Option("--confirmatory-dir")],
+    confirmatory_lomo_dir: Annotated[Path, typer.Option("--confirmatory-lomo-dir")],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    config: Annotated[Path, typer.Option("--config")],
+    safety_config: Annotated[Path, typer.Option("--safety-config")],
+    experiment_id: Annotated[str, typer.Option("--experiment-id")],
+    device: Annotated[str, typer.Option("--device")] = "cuda",
+    preload_workers: Annotated[int, typer.Option("--preload-workers", min=1, max=16)] = 12,
+) -> None:
+    """Run the five-seed G3 reference-safety stress gate for C2."""
+    try:
+        from care_asd.evaluation.fp_naa_reference_safety import run_fp_naa_reference_safety
+
+        result = run_fp_naa_reference_safety(
+            base_cache_directory=base_cache_dir,
+            augmentation_cache_directory=augmentation_cache_dir,
+            safety_cache_directory=safety_cache_dir,
+            screening_checkpoint_directory=screening_checkpoint_dir,
+            confirmatory_checkpoint_directory=confirmatory_checkpoint_dir,
+            confirmatory_directory=confirmatory_dir,
+            confirmatory_lomo_directory=confirmatory_lomo_dir,
+            output_directory=output_dir,
+            config_path=config,
+            safety_config_path=safety_config,
+            experiment_id=experiment_id,
+            device=device,
+            preload_workers=preload_workers,
+        )
+    except (FileNotFoundError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]FP-NAA reference-safety evaluation failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    status = "passed" if result.passed else "failed"
+    console.print(
+        f"[green]FP-NAA reference-safety evaluation complete.[/green] gate={status} "
+        f"c3_permitted={result.c3_permitted} summary={result.summary_path}"
     )
 
 

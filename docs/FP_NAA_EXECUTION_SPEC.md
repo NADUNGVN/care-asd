@@ -135,6 +135,34 @@ seeds, two candidates) and trains only the 28 missing seed/fold/candidate models
 then recomputed over all five seeds; the gate remains positive C2 - C1 change on at least six of
 seven held-out machines.
 
+### 4.1 Frozen reference-safety protocol
+
+The far microphone is not assumed to be noise-only. DCASE 2026 work explicitly notes that it can
+contain weaker machine sound and that using its full spectrum as a noise estimate can remove the
+machine signal. Reference safety is therefore evaluated on only the deterministically reserved 10%
+of normal training clips carrying the never-trained friction-burst pseudo-fault. No development
+anomaly is used by this protocol.
+
+Reference leakage is constructed at waveform level before the pinned BEATs encoder. The same far
+noise waveform is mixed with the clean or faulty target at machine-to-noise ratios -20, -10, and
+0 dB (low, medium, high). Each clean/fault reference pair uses one gain and one shared peak scale,
+so the reference-side counterfactual difference is not distorted by independent clipping. The five
+frozen C2 seeds are tested in this order:
+
+1. matched donor reference;
+2. deterministic reference from a different machine type;
+3. zero-waveform microphone dropout, encoded by BEATs rather than represented by an artificial
+   zero token;
+4. channel-swap stress, precisely defined as the reference socket receiving the primary clean or
+   faulty channel while the primary input remains available for measuring output fault retention;
+5. low, medium, and high target leakage in the far reference.
+
+For each condition, median retention must be at least 0.85 and the minimum across the five seeds of
+the clip-level 5th percentile must be at least 0.65. If matched retention passes but a corrupted
+reference condition fails, reference reliability is the active registered failure mode and one C3
+revision is permitted. If matched retention itself fails, C2 is closed without a C3 rescue. This
+distinction prevents a general fault-preservation failure from being relabeled as reference risk.
+
 ## 5. Pass/fail gates
 
 ### G0 — implementation and provenance
@@ -202,6 +230,7 @@ most 12 preprocessing workers by default so at least 25% of SERVER-02 CPU capaci
 
 - [DCASE 2026 Task 2 setup and exact metric](https://arxiv.org/abs/2606.01578)
 - [Anomalous Sound Detection Meets Noise-Aware SSL](https://arxiv.org/abs/2608.00447)
+- [Noise-Aware Reference Denoising for First-Shot ASD](https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Kim_91_t2.pdf)
 - [NABEATs: Noise-Aware Audio Representation Learning](https://arxiv.org/abs/2607.16688)
 - [BEAM sub-band matching](https://arxiv.org/abs/2603.13749)
 - [Relative-deviation pooling](https://arxiv.org/abs/2603.04605)
