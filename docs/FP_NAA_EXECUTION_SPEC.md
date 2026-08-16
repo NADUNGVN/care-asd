@@ -111,6 +111,18 @@ Development labels may be used only for method selection on the seven developmen
 All candidate decisions additionally use leave-one-machine-out (LOMO) analysis. Evaluation-machine
 labels are never used.
 
+For each LOMO fold, the adapter optimizer sees counterfactual pairs from six machine types only.
+The held-out machine still supplies its normal `dev_train` clips to the frozen RDP8+BEAM memory,
+because normal-only machine onboarding is part of the DCASE task rather than supervised adapter
+training. C1 and C2 are retrained from the same initialization for all three screening seeds; the
+fold decision uses their mean official score and counts a fold as positive only when C2 > C1.
+
+The confirmatory confidence interval is a paired percentile bootstrap of the **official harmonic
+score**, not a confidence interval for legacy mean AUC. Sampling is with replacement inside each
+machine/section/domain/condition stratum, uses identical sampled clip indices for C1 and C2, and
+recomputes every source AUC, target AUC, pooled pAUC, and the final harmonic mean in each of 10,000
+replicates.
+
 ## 5. Pass/fail gates
 
 ### G0 — implementation and provenance

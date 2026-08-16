@@ -11,7 +11,11 @@ import yaml
 
 torch = pytest.importorskip("torch")
 
-from care_asd.evaluation.fp_naa_candidate import _load_or_train_model, _TrainingArrays
+from care_asd.evaluation.fp_naa_candidate import (
+    _exclude_machine,
+    _load_or_train_model,
+    _TrainingArrays,
+)
 from care_asd.fp_naa_config import FPNAAConfig
 
 
@@ -52,6 +56,7 @@ def test_candidate_training_writes_resumable_checkpoint(
                 "file_id": [f"clip-{index}" for index in range(4)],
                 "fault_family": ["periodic_resonance"] * 4,
                 "heldout": [False] * 4,
+                "machine_type": ["fan", "fan", "gearbox", "gearbox"],
             }
         ),
         noisy_clean=noisy_clean,
@@ -82,3 +87,8 @@ def test_candidate_training_writes_resumable_checkpoint(
     assert json.loads(json.dumps(payload["config"]))["training"]["epochs"] == 1
     output = model(torch.from_numpy(noisy_clean[:1]), torch.from_numpy(reference[:1]))
     assert output.shape == torch.Size((1, 2, 2, 8))
+
+    fold = _exclude_machine(arrays, "fan")
+    assert len(fold.frame) == 2
+    assert set(fold.frame["machine_type"]) == {"gearbox"}
+    assert fold.noisy_clean.shape[0] == 2

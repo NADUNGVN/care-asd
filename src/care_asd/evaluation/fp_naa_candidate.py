@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
@@ -38,6 +39,14 @@ class FPNaaScreeningResult:
     summary_path: Path
     gate_path: Path
     core_gate_passed: bool
+
+
+@dataclass(frozen=True)
+class FPNaaLomoResult:
+    output_directory: Path
+    summary_path: Path
+    gate_path: Path
+    gate_passed: bool
 
 
 @dataclass(frozen=True)
@@ -115,6 +124,18 @@ def run_fp_naa_screening(
         raise FileNotFoundError(f"C0 score file not found: {c0_scores}")
     output.mkdir(parents=True, exist_ok=True)
     checkpoints.mkdir(parents=True, exist_ok=True)
+    _ensure_contract(
+        output,
+        {
+            "schema_version": 1,
+            "kind": "fp_naa_screening",
+            "experiment_id": experiment_id,
+            "config": config.model_dump(mode="json"),
+            "base_cache_metadata_sha256": _sha256(base_cache / "cache.json"),
+            "augmentation_cache_metadata_sha256": _sha256(augmentation_cache / "cache.json"),
+            "c0_scores_sha256": _sha256(c0_scores),
+        },
+    )
     completed_gate = output / "gate.json"
     completed_summary = output / "screening_summary.csv"
     if completed_gate.is_file() and completed_summary.is_file():
@@ -251,6 +272,158 @@ def run_fp_naa_screening(
     )
 
 
+def run_fp_naa_lomo(
+    *,
+    base_cache_directory: str | Path,
+    augmentation_cache_directory: str | Path,
+    screening_directory: str | Path,
+    output_directory: str | Path,
+    checkpoint_directory: str | Path,
+    config_path: str | Path,
+    experiment_id: str,
+    device: str = "cuda",
+    preload_workers: int | None = None,
+) -> FPNaaLomoResult:
+    """Run leave-one-machine-out adapter training after the core screening gate passes."""
+    base_cache = Path(base_cache_directory).resolve()
+    augmentation_cache = Path(augmentation_cache_directory).resolve()
+    screening = Path(screening_directory).resolve()
+    output = Path(output_directory).resolve()
+    checkpoints = Path(checkpoint_directory).resolve()
+    config = load_fp_naa_config(Path(config_path).resolve())
+    workers = config.training.workers if preload_workers is None else preload_workers
+    if not 1 <= workers <= 16:
+        raise ValueError("preload_workers must be in [1, 16]")
+    core_gate_path = screening / "gate.json"
+    if not core_gate_path.is_file():
+        raise FileNotFoundError(f"Core screening gate not found: {core_gate_path}")
+    core_gate = json.loads(core_gate_path.read_text(encoding="utf-8"))
+    if not bool(core_gate["checks"]["core_screening"]):
+        raise ValueError("LOMO is blocked because the preregistered core screening gate failed")
+    torch_device = _cuda_device(device)
+    _validate_caches(base_cache, augmentation_cache, config)
+    output.mkdir(parents=True, exist_ok=True)
+    checkpoints.mkdir(parents=True, exist_ok=True)
+    _ensure_contract(
+        output,
+        {
+            "schema_version": 1,
+            "kind": "fp_naa_lomo",
+            "experiment_id": experiment_id,
+            "config": config.model_dump(mode="json"),
+            "base_cache_metadata_sha256": _sha256(base_cache / "cache.json"),
+            "augmentation_cache_metadata_sha256": _sha256(augmentation_cache / "cache.json"),
+            "screening_gate_sha256": _sha256(core_gate_path),
+        },
+    )
+    summary_path = output / "lomo_summary.csv"
+    gate_path = output / "gate.json"
+    if summary_path.is_file() and gate_path.is_file():
+        gate = json.loads(gate_path.read_text(encoding="utf-8"))
+        return FPNaaLomoResult(output, summary_path, gate_path, bool(gate["passed"]))
+    _write_progress(output, stage="preload_base", completed=0, total=1)
+    base_store = _preload_base_store(base_cache, workers=workers)
+    _write_progress(output, stage="preload_augmentation", completed=0, total=1)
+    training = _preload_training_arrays(augmentation_cache, base_store, workers=workers)
+    machines = sorted(training.frame["machine_type"].astype(str).unique())
+    if len(machines) != 7:
+        raise ValueError(
+            f"Preregistered DCASE development LOMO requires 7 machines, found {len(machines)}"
+        )
+    total_runs = len(machines) * len(config.training.screening_seeds) * len(CANDIDATES)
+    run_number = 0
+    rows: list[dict[str, object]] = []
+    for heldout_machine in machines:
+        fold_training = _exclude_machine(training, heldout_machine)
+        for seed in config.training.screening_seeds:
+            for candidate in CANDIDATES:
+                run_number += 1
+                variant = output / heldout_machine / f"seed{seed}" / candidate
+                variant.mkdir(parents=True, exist_ok=True)
+                checkpoint = checkpoints / heldout_machine / f"seed{seed}" / f"{candidate}.pt"
+                checkpoint.parent.mkdir(parents=True, exist_ok=True)
+                _write_progress(
+                    output,
+                    stage=f"lomo:{heldout_machine}:{seed}:{candidate}",
+                    completed=run_number - 1,
+                    total=total_runs,
+                )
+                model = _load_or_train_model(
+                    checkpoint=checkpoint,
+                    history_path=variant / "training_history.csv",
+                    arrays=fold_training,
+                    candidate=candidate,
+                    seed=seed,
+                    config=config,
+                    device=torch_device,
+                    progress_output=output,
+                    run_number=run_number,
+                    total_runs=total_runs,
+                )
+                score_path = variant / "scores.csv"
+                metrics_path = variant / "metrics.json"
+                if metrics_path.is_file() and not score_path.is_file():
+                    raise ValueError(f"Metrics exist without scores: {variant}")
+                if score_path.is_file() and not metrics_path.is_file():
+                    calculate_dcase2026_official_metrics(score_path, metrics_path)
+                elif not score_path.is_file():
+                    _score_adapter(
+                        model=model,
+                        base_store=base_store,
+                        score_path=score_path,
+                        metrics_path=metrics_path,
+                        model_id=f"fp_naa_lomo_{candidate}_{heldout_machine}_seed{seed}",
+                        experiment_id=experiment_id,
+                        config=config,
+                        device=torch_device,
+                        machine_filter=heldout_machine,
+                    )
+                rows.append(
+                    {
+                        "heldout_machine": heldout_machine,
+                        "seed": seed,
+                        "candidate": candidate,
+                        "official_score": read_official_score(metrics_path),
+                        "official_score_percent": 100.0 * read_official_score(metrics_path),
+                        "train_machines": len(machines) - 1,
+                        "train_clips": len(fold_training.frame),
+                    }
+                )
+                _write_progress(
+                    output,
+                    stage=f"complete:{heldout_machine}:{seed}:{candidate}",
+                    completed=run_number,
+                    total=total_runs,
+                )
+    summary = pd.DataFrame(rows)
+    _atomic_csv(summary_path, summary)
+    pivot = summary.pivot_table(
+        index="heldout_machine",
+        columns="candidate",
+        values="official_score",
+        aggfunc="mean",
+    )
+    pivot["delta_c2_minus_c1"] = pivot["c2_fault_preserving"] - pivot["c1_mse"]
+    fold_deltas = {
+        str(machine): float(value) for machine, value in pivot["delta_c2_minus_c1"].items()
+    }
+    positive_folds = int((pivot["delta_c2_minus_c1"] > 0.0).sum())
+    lomo_passed = positive_folds >= config.gates.screening_positive_lomo_folds_minimum
+    gate = {
+        "schema_version": 1,
+        "gate": "G2_screening_lomo",
+        "screening_core_passed": True,
+        "fold_delta_c2_minus_c1": fold_deltas,
+        "positive_folds": positive_folds,
+        "minimum_positive_folds": config.gates.screening_positive_lomo_folds_minimum,
+        "passed": lomo_passed,
+    }
+    _atomic_json(gate_path, gate)
+    _atomic_csv(output / "lomo_fold_means.csv", pivot.reset_index())
+    _write_progress(output, stage="complete", completed=total_runs, total=total_runs)
+    return FPNaaLomoResult(output, summary_path, gate_path, lomo_passed)
+
+
 def _load_or_train_model(
     *,
     checkpoint: Path,
@@ -269,6 +442,8 @@ def _load_or_train_model(
         payload = torch.load(checkpoint, map_location=device, weights_only=True)
         if payload.get("candidate") != candidate or int(payload.get("seed", -1)) != seed:
             raise ValueError(f"Checkpoint contract mismatch: {checkpoint}")
+        if payload.get("config") != config.model_dump(mode="json"):
+            raise ValueError(f"Checkpoint config mismatch: {checkpoint}")
         model.load_state_dict(payload["model_state"])
         return model.eval()
     _set_seed(seed)
@@ -489,10 +664,16 @@ def _score_adapter(
     experiment_id: str,
     config: FPNAAConfig,
     device: torch.device,
+    machine_filter: str | None = None,
 ) -> None:
     frame = base_store.frame
     train = frame.loc[frame["dataset_split"] == "dev_train"]
     test = frame.loc[frame["dataset_split"] == "dev_test"].reset_index(drop=True)
+    if machine_filter is not None:
+        train = train.loc[train["machine_type"].astype(str) == machine_filter]
+        test = test.loc[test["machine_type"].astype(str) == machine_filter].reset_index(drop=True)
+    if train.empty or test.empty:
+        raise ValueError(f"No train/test rows for machine filter: {machine_filter}")
     scores = np.full(len(test), np.nan, dtype=np.float64)
     groups = sorted(
         set(zip(test["machine_type"].astype(str), test["section"].astype(str), strict=True))
@@ -692,6 +873,21 @@ def _preload_training_arrays(
     return _TrainingArrays(frame, values[0], values[1], teacher_clean, values[2], values[3])
 
 
+def _exclude_machine(arrays: _TrainingArrays, machine: str) -> _TrainingArrays:
+    mask = arrays.frame["machine_type"].astype(str).to_numpy() != machine
+    frame = arrays.frame.loc[mask].reset_index(drop=True)
+    if frame.empty or machine in set(frame["machine_type"].astype(str)):
+        raise ValueError(f"Failed to construct LOMO training fold for {machine}")
+    return _TrainingArrays(
+        frame=frame,
+        noisy_clean=arrays.noisy_clean[mask],
+        reference=arrays.reference[mask],
+        teacher_clean=arrays.teacher_clean[mask],
+        fault_noisy=arrays.fault_noisy[mask],
+        teacher_fault=arrays.teacher_fault[mask],
+    )
+
+
 def _load_named_augmentation_arrays(
     cache: Path,
     frame: pd.DataFrame,
@@ -790,3 +986,21 @@ def _atomic_json(path: Path, payload: dict[str, object]) -> None:
     temporary = path.with_suffix(path.suffix + ".tmp")
     temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     os.replace(temporary, path)
+
+
+def _ensure_contract(output: Path, contract: dict[str, object]) -> None:
+    path = output / "contract.json"
+    if path.is_file():
+        existing = json.loads(path.read_text(encoding="utf-8"))
+        if existing != contract:
+            raise ValueError(f"Immutable run contract mismatch: {path}")
+        return
+    _atomic_json(path, contract)
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()

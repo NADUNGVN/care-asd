@@ -1533,6 +1533,67 @@ def fp_naa_screen_dev(
     )
 
 
+@fp_naa_app.command("lomo-dev")
+def fp_naa_lomo_dev(
+    base_cache_dir: Annotated[Path, typer.Option("--base-cache-dir")],
+    augmentation_cache_dir: Annotated[Path, typer.Option("--augmentation-cache-dir")],
+    screening_dir: Annotated[Path, typer.Option("--screening-dir")],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    checkpoint_dir: Annotated[Path, typer.Option("--checkpoint-dir")],
+    config: Annotated[Path, typer.Option("--config")],
+    experiment_id: Annotated[str, typer.Option("--experiment-id")],
+    device: Annotated[str, typer.Option("--device")] = "cuda",
+    preload_workers: Annotated[int, typer.Option("--preload-workers", min=1, max=16)] = 12,
+) -> None:
+    """Run the seven-fold LOMO gate only after core C1/C2 screening passes."""
+    try:
+        from care_asd.evaluation.fp_naa_candidate import run_fp_naa_lomo
+
+        result = run_fp_naa_lomo(
+            base_cache_directory=base_cache_dir,
+            augmentation_cache_directory=augmentation_cache_dir,
+            screening_directory=screening_dir,
+            output_directory=output_dir,
+            checkpoint_directory=checkpoint_dir,
+            config_path=config,
+            experiment_id=experiment_id,
+            device=device,
+            preload_workers=preload_workers,
+        )
+    except (FileNotFoundError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]FP-NAA LOMO failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    status = "passed" if result.gate_passed else "failed"
+    console.print(
+        f"[green]FP-NAA LOMO complete.[/green] gate={status} summary={result.summary_path}"
+    )
+
+
+@fp_naa_app.command("bootstrap-exact")
+def fp_naa_bootstrap_exact(
+    reference_scores: Annotated[Path, typer.Option("--reference-scores")],
+    candidate_scores: Annotated[Path, typer.Option("--candidate-scores")],
+    output: Annotated[Path, typer.Option("--output")],
+    iterations: Annotated[int, typer.Option("--iterations", min=100)] = 10_000,
+    seed: Annotated[int, typer.Option("--seed", min=0)] = 2608,
+) -> None:
+    """Compute a paired CI for the exact DCASE 2026 official-score delta."""
+    try:
+        from care_asd.evaluation.fp_naa_statistics import write_exact_official_paired_bootstrap
+
+        result = write_exact_official_paired_bootstrap(
+            reference_scores=reference_scores,
+            candidate_scores=candidate_scores,
+            output_path=output,
+            iterations=iterations,
+            seed=seed,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, ValueError) as exc:
+        console.print(f"[red]FP-NAA exact bootstrap failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[green]FP-NAA exact bootstrap complete.[/green] output={result}")
+
+
 @app.command("train")
 def train(
     config: Annotated[
