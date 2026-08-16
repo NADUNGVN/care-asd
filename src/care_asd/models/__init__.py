@@ -2,6 +2,13 @@
 
 from typing import Any
 
+from care_asd.models.beats_frontend import (
+    BEATS_COMMIT,
+    BEATS_ITER3_SHA256,
+    BEATS_REPOSITORY,
+    OfficialBEATsFrontend,
+    fixed_duration_waveform,
+)
 from care_asd.models.official_baseline import (
     OFFICIAL_BASELINE_COMMIT,
     OFFICIAL_BASELINE_REPOSITORY,
@@ -15,6 +22,9 @@ from care_asd.models.official_baseline import (
 )
 
 __all__ = [
+    "BEATS_COMMIT",
+    "BEATS_ITER3_SHA256",
+    "BEATS_REPOSITORY",
     "OFFICIAL_BASELINE_COMMIT",
     "OFFICIAL_BASELINE_REPOSITORY",
     "OFFICIAL_EVALUATOR_COMMIT",
@@ -22,9 +32,11 @@ __all__ = [
     "BaselineMode",
     "GatedNearResidualAutoencoder",
     "LightweightNearAutoencoder",
+    "OfficialBEATsFrontend",
     "OfficialCompatibleAutoencoder",
     "approximate_parameter_count",
     "checkout_pinned_reference",
+    "fixed_duration_waveform",
     "run_official_development_baseline",
     "stage_official_development_data",
     "verify_pinned_reference",

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+REPO_DIR="${CARE_ASD_REPO_DIR:-$HOME/Dung_TDTU/CARE_ASD}"; DATA_ROOT="${CARE_ASD_DATA_ROOT:-$HOME/Dung_TDTU/data/CARE_ASD}"; cd "$REPO_DIR"
+COMMIT="833df7e7832e5064a281131ee64a481afa8e5b95"; CHECKPOINT_SHA="8d1b234032a9ccff353612dc6c20982346dc2968b205b79d97303eb5e77bfb34"; EXTERNAL_ROOT="$DATA_ROOT/external/fp_naa"; SOURCE_ROOT="$EXTERNAL_ROOT/unilm_${COMMIT:0:12}"; SOURCE_DIR="$SOURCE_ROOT/beats"; CHECKPOINT="$EXTERNAL_ROOT/BEATs_iter3.pt"; CHECKPOINT_URL="https://huggingface.co/lpepino/beats_ckpts/resolve/a2ddb6b0411c39942ae144a6414872e14e5a4329/BEATs_iter3.pt"; mkdir -p "$EXTERNAL_ROOT"
+if [ ! -d "$SOURCE_ROOT/.git" ]; then TEMP_SOURCE="$EXTERNAL_ROOT/.unilm_${COMMIT:0:12}.tmp.$$"; env -u LD_LIBRARY_PATH -u LD_PRELOAD git clone --filter=blob:none --no-checkout https://github.com/microsoft/unilm.git "$TEMP_SOURCE"; env -u LD_LIBRARY_PATH -u LD_PRELOAD git -C "$TEMP_SOURCE" sparse-checkout set beats; env -u LD_LIBRARY_PATH -u LD_PRELOAD git -C "$TEMP_SOURCE" checkout --detach "$COMMIT"; mv "$TEMP_SOURCE" "$SOURCE_ROOT"; fi
+ACTUAL_COMMIT="$(env -u LD_LIBRARY_PATH -u LD_PRELOAD git -C "$SOURCE_ROOT" rev-parse HEAD)"; [ "$ACTUAL_COMMIT" = "$COMMIT" ] || { printf 'Pinned BEATs source mismatch: %s\n' "$ACTUAL_COMMIT"; exit 1; }
+if [ ! -f "$CHECKPOINT" ] || ! printf '%s  %s\n' "$CHECKPOINT_SHA" "$CHECKPOINT" | sha256sum --check --status; then curl --fail --location --retry 5 --retry-delay 5 --continue-at - --output "$CHECKPOINT.part" "$CHECKPOINT_URL"; printf '%s  %s\n' "$CHECKPOINT_SHA" "$CHECKPOINT.part" | sha256sum --check; mv "$CHECKPOINT.part" "$CHECKPOINT"; fi
+uv run --no-sync python -c "import torch, torchaudio; assert torch.__version__ == '2.6.0+cu118', torch.__version__; assert torch.version.cuda == '11.8', torch.version.cuda; assert torch.cuda.is_available(); print(f'torch={torch.__version__} torchaudio={torchaudio.__version__} gpu={torch.cuda.get_device_name(0)}')"
+printf 'BEATS_SOURCE=%s\nBEATS_CHECKPOINT=%s\nBEATS_COMMIT=%s\nBEATS_CHECKPOINT_SHA256=%s\n' "$SOURCE_DIR" "$CHECKPOINT" "$COMMIT" "$CHECKPOINT_SHA" > "$EXTERNAL_ROOT/runtime.env"
+printf 'FP-NAA BEATs runtime ready. source=%s checkpoint=%s\n' "$SOURCE_DIR" "$CHECKPOINT"
+

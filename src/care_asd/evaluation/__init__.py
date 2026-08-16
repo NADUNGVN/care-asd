@@ -7,11 +7,16 @@ from care_asd.evaluation.audit_synthesis import (
     load_audit_synthesis_config,
     run_audit_synthesis,
 )
+from care_asd.evaluation.dcase2026_metrics import (
+    calculate_dcase2026_official_metrics,
+    read_official_score,
+)
 from care_asd.evaluation.dsp_benchmark import (
     DspBenchmarkResult,
     run_care_development_benchmark,
     run_dsp_development_benchmark,
 )
+from care_asd.evaluation.fp_naa_baseline import FPNaaBaselineResult, run_fp_naa_baseline
 from care_asd.evaluation.literature_audit import (
     LiteratureAuditConfig,
     LiteratureAuditResult,
@@ -42,22 +47,26 @@ __all__ = [
     "AuditSynthesisConfig",
     "AuditSynthesisResult",
     "DspBenchmarkResult",
+    "FPNaaBaselineResult",
     "LiteratureAuditConfig",
     "LiteratureAuditResult",
     "RobustnessAppendixConfig",
     "RobustnessAppendixResult",
     "ScoreMode",
     "audit_synthesis_plan",
+    "calculate_dcase2026_official_metrics",
     "calculate_development_auc_metrics",
     "literature_audit_plan",
     "load_audit_synthesis_config",
     "load_literature_audit_config",
     "load_robustness_appendix_config",
     "normalize_official_development_scores",
+    "read_official_score",
     "robustness_appendix_plan",
     "run_audit_synthesis",
     "run_care_development_benchmark",
     "run_dsp_development_benchmark",
+    "run_fp_naa_baseline",
     "run_literature_audit",
     "run_robustness_appendix",
     "write_paired_bootstrap_comparison",

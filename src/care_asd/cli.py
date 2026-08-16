@@ -21,6 +21,7 @@ from care_asd import __version__
 from care_asd.config import config_hash, default_config, load_config, validate_config
 from care_asd.data import (
     audit_dcase2026_manifest,
+    build_beats_token_cache,
     build_care_residual_vector_cache,
     build_dcase2026_manifest,
     build_neural_feature_cache,
@@ -38,6 +39,7 @@ from care_asd.evaluation import (
     normalize_official_development_scores,
     run_care_development_benchmark,
     run_dsp_development_benchmark,
+    run_fp_naa_baseline,
     write_paired_bootstrap_comparison,
     write_seed_ensemble_scores,
 )
@@ -77,6 +79,8 @@ ap_care_app = typer.Typer(help="AP-CARE v2 bounded-cancellation mechanism valida
 app.add_typer(ap_care_app, name="ap-care")
 audit_app = typer.Typer(help="Frozen CARE-ASD identifiability/audit paper synthesis.")
 app.add_typer(audit_app, name="audit")
+fp_naa_app = typer.Typer(help="Fault-Preserving Noise-Aware Adapter successor experiments.")
+app.add_typer(fp_naa_app, name="fp-naa")
 
 console = Console(stderr=True)
 
@@ -1398,6 +1402,65 @@ def mvp_bootstrap(
         console.print(f"[red]MVP bootstrap failed:[/red] {exc}")
         raise typer.Exit(code=1) from exc
     console.print(f"[green]Paired bootstrap complete:[/green] {result}")
+
+
+@fp_naa_app.command("cache-beats")
+def fp_naa_cache_beats(
+    manifest: Annotated[Path, typer.Option("--manifest")],
+    audio_root: Annotated[Path, typer.Option("--audio-root")],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    config: Annotated[Path, typer.Option("--config")],
+    beats_source: Annotated[Path, typer.Option("--beats-source")],
+    checkpoint: Annotated[Path, typer.Option("--checkpoint")],
+    workers: Annotated[int, typer.Option("--workers", min=0, max=16)] = 12,
+    device: Annotated[str, typer.Option("--device")] = "cuda",
+) -> None:
+    """Build the immutable stereo BEATs token cache used by all FP-NAA comparators."""
+    try:
+        result = build_beats_token_cache(
+            manifest_path=manifest,
+            audio_root=audio_root,
+            output_directory=output_dir,
+            config_path=config,
+            beats_source_directory=beats_source,
+            checkpoint_path=checkpoint,
+            workers=workers,
+            device=device,
+        )
+    except (FileNotFoundError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]FP-NAA BEATs cache failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]FP-NAA BEATs cache complete.[/green] "
+        f"clips={result.clips} shape={result.token_shape} index={result.index_path}"
+    )
+
+
+@fp_naa_app.command("baseline-dev")
+def fp_naa_baseline_dev(
+    cache_dir: Annotated[Path, typer.Option("--cache-dir")],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    config: Annotated[Path, typer.Option("--config")],
+    experiment_id: Annotated[str, typer.Option("--experiment-id")],
+    device: Annotated[str, typer.Option("--device")] = "cuda",
+) -> None:
+    """Run C0 backend reproduction with the exact DCASE 2026 metric."""
+    try:
+        result = run_fp_naa_baseline(
+            cache_directory=cache_dir,
+            output_directory=output_dir,
+            config_path=config,
+            experiment_id=experiment_id,
+            device=device,
+        )
+    except (FileNotFoundError, FileExistsError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]FP-NAA C0 baseline failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    status = "passed" if result.gate_passed else "failed"
+    console.print(
+        f"[green]FP-NAA C0 baseline complete.[/green] gate={status} "
+        f"official_score={100.0 * result.c0_official_score:.3f} summary={result.summary_path}"
+    )
 
 
 @app.command("train")

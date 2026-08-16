@@ -1,5 +1,6 @@
 """Dataset acquisition, manifests, and loaders (Phase 1+)."""
 
+from care_asd.data.beats_cache import BEATsCache, build_beats_token_cache
 from care_asd.data.care_residual_vector_cache import (
     CareResidualVectorCache,
     build_care_residual_vector_cache,
@@ -27,6 +28,7 @@ from care_asd.data.reliability_index import ReliabilityIndex, build_reliability_
 __all__ = [
     "BASE_CHANNELS",
     "OFFICIAL_FEATURE_DIM",
+    "BEATsCache",
     "CareResidualVectorCache",
     "DatasetAudit",
     "DatasetSplit",
@@ -36,6 +38,7 @@ __all__ = [
     "OfficialVectorCache",
     "ReliabilityIndex",
     "audit_dcase2026_manifest",
+    "build_beats_token_cache",
     "build_care_residual_vector_cache",
     "build_dcase2026_manifest",
     "build_neural_feature_cache",
