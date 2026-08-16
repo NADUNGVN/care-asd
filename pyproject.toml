@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "CARE-ASD: Causal Acoustic-Path and Reliability-Calibrated Anomalous Sound Detection"
 readme = "README.md"
 license = { text = "MIT" }
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
 authors = [
     { name = "CARE-ASD Research" },
 ]
@@ -39,8 +39,8 @@ dependencies = [
 
 [project.optional-dependencies]
 torch = [
-    "torch>=2.1",
-    "torchaudio>=2.1",
+    "torch==2.6.0",
+    "torchaudio==2.6.0",
 ]
 ml = [
     "scikit-learn>=1.3",
@@ -77,6 +77,19 @@ Documentation = "https://github.com/care-asd/care-asd/tree/main/docs"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu118", marker = "sys_platform == 'linux'" },
+]
+torchaudio = [
+    { index = "pytorch-cu118", marker = "sys_platform == 'linux'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu118"
+url = "https://download.pytorch.org/whl/cu118"
+explicit = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/care_asd"]
