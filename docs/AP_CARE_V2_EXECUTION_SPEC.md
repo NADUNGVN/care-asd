@@ -2,15 +2,21 @@
 
 ## Authority and status
 
-This document is the authoritative research-to-code contract for the isolated
-`research/ap-care-v2` branch. It supersedes SAFE-REF as the active method
-direction on this branch. `docs/PHASE10_REFERENCE_SAFETY.md` and Phases 7--10
-remain reproducible historical evidence; they are not instructions to continue
-SAFE-REF screening or evaluation.
+> **Stopped after AP-G1:** the immutable run
+> `server02_ap_care_g1_20260816T105721Z` completed all 512 cases and failed five
+> of six preregistered checks. AP-G2--G5 are stopped. This document is retained
+> as the historical method contract; `docs/IDENTIFIABILITY_AUDIT_PAPER.md` is
+> now the active publication plan.
+
+This document was the authoritative research-to-code contract for AP-CARE on
+the isolated `research/ap-care-v2` branch. It now records the frozen test that
+triggered the audit route. `docs/PHASE10_REFERENCE_SAFETY.md` and Phases 7--10
+remain reproducible evidence; they are not instructions to continue SAFE-REF or
+AP-CARE screening.
 
 The branch starts from clean `origin/main` commit `31286a4`, which contains the
-corrected Phase 10 report. Work on this branch must not be merged or
-cherry-picked into `main` before the AP-CARE replication gate passes.
+corrected Phase 10 report. The failed AP-CARE candidate must not be merged or
+cherry-picked into `main` as a successful method.
 
 ## Decision motivating the pivot
 
@@ -312,10 +318,10 @@ the researcher remain one physical line. Reports from this branch are pushed to
 | Pass | Tie/fail | Mechanism and limitation paper; no unseen evaluation claim |
 | Fail | Not run | Identifiability/audit paper using Phases 7--10 and G1 |
 
-The intended journal contribution is the combination of an explicit
-identifiability boundary, a causal bounded-intervention method, and controlled
-mechanistic evidence. A product of existing coherence/SNR heuristics without
-these components is incremental and is not the target contribution.
+The observed G1 outcome follows the `Fail / Not run` row. The retained journal
+contribution is therefore the identifiability/audit study based on Phases 7--10
+and AP-G1. AP-CARE thresholds are not altered and the frozen holdout is not
+rerun.
 
 ## Prior-art anchors
 

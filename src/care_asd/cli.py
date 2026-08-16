@@ -75,6 +75,8 @@ reference_safety_app = typer.Typer(
 app.add_typer(reference_safety_app, name="reference-safety")
 ap_care_app = typer.Typer(help="AP-CARE v2 bounded-cancellation mechanism validation.")
 app.add_typer(ap_care_app, name="ap-care")
+audit_app = typer.Typer(help="Frozen CARE-ASD identifiability/audit paper synthesis.")
+app.add_typer(audit_app, name="audit")
 
 console = Console(stderr=True)
 
@@ -1079,6 +1081,50 @@ def ap_care_simulate(
     )
     if not result.passed:
         raise typer.Exit(code=2)
+
+
+@audit_app.command("synthesize")
+def audit_synthesize(
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    config: Annotated[Path, typer.Option("--config", "-c")] = Path(
+        "configs/experiment/audit_paper_v1.yaml"
+    ),
+    repository_root: Annotated[Path, typer.Option("--repo-root")] = Path("."),
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Validate and hash frozen evidence without writing."),
+    ] = False,
+) -> None:
+    """Generate the immutable identifiability/audit paper evidence package."""
+    try:
+        from care_asd.evaluation.audit_synthesis import (
+            audit_synthesis_plan,
+            load_audit_synthesis_config,
+            run_audit_synthesis,
+        )
+
+        cfg = load_audit_synthesis_config(config)
+        if dry_run:
+            typer.echo(
+                json.dumps(
+                    audit_synthesis_plan(cfg, repository_root=repository_root),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return
+        result = run_audit_synthesis(
+            output_directory=output_directory,
+            config=cfg,
+            repository_root=repository_root,
+        )
+    except (FileNotFoundError, FileExistsError, KeyError, OSError, TypeError, ValueError) as exc:
+        console.print(f"[red]Audit synthesis failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]Audit synthesis completed.[/green] "
+        f"decision={result.decision_path} summary={result.summary_path}"
+    )
 
 
 @reference_safety_app.command("dev")

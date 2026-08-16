@@ -1,0 +1,19 @@
+schema_version: 1
+study_id: care_asd_identifiability_audit_v1
+
+sources:
+  b00_summary: reports/alignment/server02_phase6_alignment_20260813T061557Z/summary.csv
+  b01_summary: reports/alignment/server02_phase7_care_residual_20260814T095459Z/summary.csv
+  b01_bootstrap: reports/alignment/server02_phase7_care_residual_20260814T095459Z/paired_bootstrap_b01_vs_b00.json
+  phase8_correlations: reports/analysis/server02_phase8_care_residual_analysis_20260814T170055Z/correlations.csv
+  b02_summary: reports/fusion/server02_phase9_gated_fusion_20260815T013410Z/summary.csv
+  b02_bootstrap: reports/fusion/server02_phase9_gated_fusion_20260815T013410Z/paired_bootstrap_b02_vs_b00.json
+  safe_ref_gate: reports/reference_safety/server02_phase10_reference_safety_20260815T145112Z/simulation/gate.json
+  ap_care_gate: reports/ap_care/server02_ap_care_g1_20260816T105721Z/gate.json
+  ap_care_cases: reports/ap_care/server02_ap_care_g1_20260816T105721Z/synthetic_cases.parquet
+
+decisions:
+  method_route: stopped
+  publication_route: identifiability_audit
+  evaluation_access: prohibited
+  gpu_replication: prohibited

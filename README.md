@@ -2,22 +2,23 @@
 
 > Workspace path: `Teacher_Vu/CARE_ASD/` (one research track under the multi-paper Teacher_Vu workspace).
 
-**AP-CARE v2: Anomaly-Preserving Bounded Reference Cancellation for
-Anomalous Sound Detection**
+**CARE-ASD Identifiability Audit: Limits of Contaminated-Reference Processing
+for Anomalous Sound Detection**
 
 Research codebase for unsupervised anomalous sound detection on
 [DCASE 2026 Challenge Task 2](https://dcase.community/challenge2026/task-first-shot-unsupervised-anomalous-sound-detection-for-machine-condition-monitoring)
 stereo (near/far) machine audio, with:
 
-1. Exact near-only and capacity-matched reference-denoising controls
-2. Causal normal-only cancellation with explicit time-frequency removal budgets
-3. Controlled mechanism validation before any multi-seed DCASE training
-4. Frozen unseen-machine testing and board-kit inference only after research gates
+1. An exact near-only comparator and capacity-matched reference interventions
+2. Frozen aligned performance deltas and bootstrap confidence intervals
+3. Known-component SAFE-REF and AP-CARE identifiability holdouts
+4. Reproducible audit tables and figures generated from hashed evidence
 
 Target journal: *Digital Signal Processing* (Elsevier).
 
 > The current publication direction follows
-> [`docs/AP_CARE_V2_EXECUTION_SPEC.md`](docs/AP_CARE_V2_EXECUTION_SPEC.md) and
+> [`docs/IDENTIFIABILITY_AUDIT_PAPER.md`](docs/IDENTIFIABILITY_AUDIT_PAPER.md),
+> [`docs/AP_CARE_V2_EXECUTION_SPEC.md`](docs/AP_CARE_V2_EXECUTION_SPEC.md), and
 > [`docs/RESEARCH_SCOPE.md`](docs/RESEARCH_SCOPE.md); the original implementation
 > plan and SAFE-REF protocol remain historical context.
 >
@@ -42,20 +43,20 @@ Target journal: *Digital Signal Processing* (Elsevier).
 | 10 | SAFE-REF synthetic calibration | **complete; scientific gate failed** |
 | 11 | SAFE-REF development screening/replication | **stopped by Phase 10** |
 | 12 | SAFE-REF unseen-machine evaluation | **stopped by Phase 10** |
-| AP-G0 | AP-CARE contract, implementation, and regression tests | **complete locally** |
-| AP-G1 | Controlled mechanism validation | immutable 512-case server job ready |
-| AP-G2 | Three-seed development screening | gated by AP-G1 |
-| AP-G3 | Ten-seed replication | gated by AP-G2 |
-| AP-G4 | Frozen unseen-machine evaluation | gated by AP-G3 |
-| AP-G5 | Jetson AGX Xavier and Xavier NX board-kit study | gated by AP-G4 |
+| AP-G0 | AP-CARE contract, implementation, and regression tests | **complete** |
+| AP-G1 | Controlled mechanism validation | **complete; failed 5/6 gates** |
+| AP-G2 | Three-seed development screening | **stopped by AP-G1** |
+| AP-G3 | Ten-seed replication | **stopped by AP-G1** |
+| AP-G4 | Frozen unseen-machine evaluation | **prohibited by AP-G1** |
+| AP-G5 | Jetson board-kit study | **not part of the retained claim** |
+| Audit-A0 | Frozen Phase 7--10 + AP-G1 evidence synthesis | **implemented locally** |
 
 ## Quick start
 
-The decision-grade AP-G1 job is launched and inspected through the checked-in
-`start_ap_care_g1.sh` and `status_ap_care_g1.sh` wrappers. The default 16 CPU
-workers leave more than 25% of SERVER-02's 28 logical CPUs available. A gate
-failure is a valid completed scientific result and stops AP-G2; it is distinct
-from a runtime or report-push failure.
+AP-G1 is complete and failed. Its wrappers remain for provenance, but AP-CARE
+must not be retuned on the frozen holdout. The retained audit package is built
+with `care-asd audit synthesize`; it consumes only committed evidence and never
+starts training, accesses evaluation data, or changes a historical report.
 
 ### Requirements
 

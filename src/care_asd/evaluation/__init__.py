@@ -1,5 +1,12 @@
 """Metrics, statistical tests, and report generation (Phases 2+)."""
 
+from care_asd.evaluation.audit_synthesis import (
+    AuditSynthesisConfig,
+    AuditSynthesisResult,
+    audit_synthesis_plan,
+    load_audit_synthesis_config,
+    run_audit_synthesis,
+)
 from care_asd.evaluation.dsp_benchmark import (
     DspBenchmarkResult,
     run_care_development_benchmark,
@@ -18,10 +25,15 @@ from care_asd.evaluation.paired_bootstrap import (
 
 __all__ = [
     "SCORE_COLUMNS",
+    "AuditSynthesisConfig",
+    "AuditSynthesisResult",
     "DspBenchmarkResult",
     "ScoreMode",
+    "audit_synthesis_plan",
     "calculate_development_auc_metrics",
+    "load_audit_synthesis_config",
     "normalize_official_development_scores",
+    "run_audit_synthesis",
     "run_care_development_benchmark",
     "run_dsp_development_benchmark",
     "write_paired_bootstrap_comparison",
