@@ -260,6 +260,29 @@ method; they do not substitute for G1--G3 novelty.
 There is no Phase 11 SAFE-REF job in this path. M2 is the earliest scientific
 kill point and must finish before any long DCASE training.
 
+## Implementation checkpoint
+
+M0 and M1 are complete on `research/ap-care-v2`. The additive public contracts
+are:
+
+- `APCAREExperimentConfig` in `src/care_asd/ap_care_config.py`;
+- `APCAREController.fit`, `transform`, and `apply_frozen` in
+  `src/care_asd/signal/ap_care.py`;
+- the controlled generator and immutable artifact runner in
+  `src/care_asd/signal/ap_care_simulation.py`; and
+- `care-asd ap-care simulate`, including a side-effect-free `--dry-run`.
+
+The controller exposes its unchanged near STFT, residual candidate, realized
+cancellation filter, `r_noise`, `r_leak`, `u_H`, coherence, gain/delay mismatch,
+per-band proposed/permitted/actual removed energy, and active-bound flags. A
+diagnostic bypass proves equivalence to the declared unbounded complex
+reference proposal; it is not enabled by the frozen experiment config.
+
+Local smoke sweeps used while implementing M1 are software diagnostics only.
+They are ignored, uncommitted, and are not G1 evidence. The first decision-grade
+G1 run must start from the committed config and produce a new immutable server
+artifact after the branch commit is reviewed.
+
 ## Required artifacts
 
 Each gate writes a versioned directory containing config, config hash, git SHA,

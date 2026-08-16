@@ -7,6 +7,7 @@ phases and support ``--dry-run`` / ``--config`` conventions.
 
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 from typing import Annotated, Literal, cast
@@ -72,6 +73,8 @@ reference_safety_app = typer.Typer(
     help="SAFE-REF normal-only reference-risk calibration and evaluation."
 )
 app.add_typer(reference_safety_app, name="reference-safety")
+ap_care_app = typer.Typer(help="AP-CARE v2 bounded-cancellation mechanism validation.")
+app.add_typer(ap_care_app, name="ap-care")
 
 console = Console(stderr=True)
 
@@ -1010,6 +1013,53 @@ def reference_safety_simulate(
     status = "passed" if result.passed else "failed"
     console.print(
         f"[green]SAFE-REF simulation completed.[/green] gate={status} summary={result.summary_path}"
+    )
+    if not result.passed:
+        raise typer.Exit(code=2)
+
+
+@ap_care_app.command("simulate")
+def ap_care_simulate(
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    config: Annotated[Path, typer.Option("--config", "-c")] = Path(
+        "configs/experiment/ap_care_v2.yaml"
+    ),
+    cases: Annotated[int | None, typer.Option("--cases", min=32)] = None,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Validate and print the immutable G1 plan only."),
+    ] = False,
+) -> None:
+    """Run or dry-run the controlled AP-CARE G1 synthetic sweep."""
+    try:
+        from care_asd.ap_care_config import load_ap_care_config
+        from care_asd.signal.ap_care_simulation import (
+            ap_care_simulation_plan,
+            run_ap_care_simulation,
+        )
+
+        cfg = load_ap_care_config(config)
+        if dry_run:
+            typer.echo(json.dumps(ap_care_simulation_plan(cfg, cases), indent=2, sort_keys=True))
+            return
+        result = run_ap_care_simulation(
+            output_directory=output_directory,
+            config=cfg,
+            cases=cases,
+        )
+    except (
+        FileNotFoundError,
+        FileExistsError,
+        OSError,
+        RuntimeError,
+        TypeError,
+        ValueError,
+    ) as exc:
+        console.print(f"[red]AP-CARE simulation failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    status = "passed" if result.passed else "failed"
+    console.print(
+        f"[green]AP-CARE simulation completed.[/green] gate={status} summary={result.summary_path}"
     )
     if not result.passed:
         raise typer.Exit(code=2)

@@ -100,3 +100,26 @@ def test_phase8_analysis_command_is_exposed_in_help() -> None:
 def test_phase9_fusion_commands_are_exposed_in_help() -> None:
     assert "gated-fusion-dev" in runner.invoke(app, ["--help"]).stdout
     assert "build-reliability-index" in runner.invoke(app, ["data", "--help"]).stdout
+
+
+def test_ap_care_g1_dry_run_is_exposed_and_side_effect_free(tmp_path: Path) -> None:
+    root = Path(__file__).resolve().parents[2]
+    output = tmp_path / "must-not-exist"
+    result = runner.invoke(
+        app,
+        [
+            "ap-care",
+            "simulate",
+            "--config",
+            str(root / "configs" / "experiment" / "ap_care_v2.yaml"),
+            "--output-dir",
+            str(output),
+            "--cases",
+            "32",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert '"cases": 32' in result.stdout
+    assert not output.exists()

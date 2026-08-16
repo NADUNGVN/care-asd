@@ -42,8 +42,8 @@ Target journal: *Digital Signal Processing* (Elsevier).
 | 10 | SAFE-REF synthetic calibration | **complete; scientific gate failed** |
 | 11 | SAFE-REF development screening/replication | **stopped by Phase 10** |
 | 12 | SAFE-REF unseen-machine evaluation | **stopped by Phase 10** |
-| AP-G0 | AP-CARE contract, implementation, and regression tests | **specification frozen; implementation pending** |
-| AP-G1 | Controlled mechanism validation | pending AP-G0 implementation |
+| AP-G0 | AP-CARE contract, implementation, and regression tests | **complete locally** |
+| AP-G1 | Controlled mechanism validation | ready for immutable server wrapper/run |
 | AP-G2 | Three-seed development screening | gated by AP-G1 |
 | AP-G3 | Ten-seed replication | gated by AP-G2 |
 | AP-G4 | Frozen unseen-machine evaluation | gated by AP-G3 |

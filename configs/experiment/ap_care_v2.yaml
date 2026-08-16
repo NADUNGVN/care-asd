@@ -1,0 +1,55 @@
+schema_version: 1
+experiment_id: ap_care_v2_g1
+
+stft:
+  n_fft: 1024
+  win_length: 1024
+  hop_length: 512
+  window: hann
+  eps: 1.0e-8
+
+transfer:
+  alpha: 0.95
+  regularization: 1.0e-8
+  frequency_smoothing_bins: 5
+  max_magnitude: 10.0
+  machine_support_midpoint_db: 3.0
+  machine_support_scale_db: 1.5
+  machine_support_median_bins: 31
+
+controller:
+  max_gain: 1.0
+  far_dominance_midpoint_db: -3.0
+  far_dominance_scale_db: 6.0
+  risk_terms_bypass: false
+  budget_enabled: true
+  uncertainty_log_magnitude_scale: 0.70
+  uncertainty_delay_max_seconds: 0.020
+  max_removed_energy_ratio: 0.20
+  band_edges_hz: [0.0, 500.0, 2000.0, 8000.0]
+  warmup_frames: 2
+
+simulation:
+  cases: 512
+  calibration_fraction: 0.50
+  duration_seconds: 2.0
+  sample_rate: 16000
+  seed: 2026
+  profile_clips: 3
+  d00_alpha_grid: [0.10, 0.25, 0.5, 1.0, 1.5, 2.0, 3.0]
+  d00_floor_beta: 0.10
+
+gate:
+  leakage_spearman_min: 0.60
+  leakage_spearman_ci_low_min: 0.40
+  uncertainty_spearman_min: 0.60
+  uncertainty_spearman_ci_low_min: 0.40
+  matched_attenuation_tolerance_db: 0.25
+  retention_improvement_min: 0.10
+  fault_retention_median_min: 0.90
+  fault_retention_q05_min: 0.75
+  noise_attenuation_median_min_db: 1.0
+  active_case_fraction_min: 0.20
+  active_attenuation_median_min_db: 1.0
+  medium_high_leakage_min: 0.20
+  bootstrap_iterations: 2000
