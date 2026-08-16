@@ -1635,6 +1635,45 @@ def fp_naa_confirm_dev(
     )
 
 
+@fp_naa_app.command("confirm-lomo-dev")
+def fp_naa_confirm_lomo_dev(
+    base_cache_dir: Annotated[Path, typer.Option("--base-cache-dir")],
+    augmentation_cache_dir: Annotated[Path, typer.Option("--augmentation-cache-dir")],
+    screening_lomo_dir: Annotated[Path, typer.Option("--screening-lomo-dir")],
+    confirmatory_dir: Annotated[Path, typer.Option("--confirmatory-dir")],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    checkpoint_dir: Annotated[Path, typer.Option("--checkpoint-dir")],
+    config: Annotated[Path, typer.Option("--config")],
+    experiment_id: Annotated[str, typer.Option("--experiment-id")],
+    device: Annotated[str, typer.Option("--device")] = "cuda",
+    preload_workers: Annotated[int, typer.Option("--preload-workers", min=1, max=16)] = 12,
+) -> None:
+    """Extend a passed three-seed LOMO result to the frozen five-seed G3 gate."""
+    try:
+        from care_asd.evaluation.fp_naa_confirmatory import run_fp_naa_confirmatory_lomo
+
+        result = run_fp_naa_confirmatory_lomo(
+            base_cache_directory=base_cache_dir,
+            augmentation_cache_directory=augmentation_cache_dir,
+            screening_lomo_directory=screening_lomo_dir,
+            confirmatory_directory=confirmatory_dir,
+            output_directory=output_dir,
+            checkpoint_directory=checkpoint_dir,
+            config_path=config,
+            experiment_id=experiment_id,
+            device=device,
+            preload_workers=preload_workers,
+        )
+    except (FileNotFoundError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]FP-NAA confirmatory LOMO failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    status = "passed" if result.gate_passed else "failed"
+    console.print(
+        f"[green]FP-NAA confirmatory LOMO complete.[/green] gate={status} "
+        f"summary={result.summary_path}"
+    )
+
+
 @app.command("train")
 def train(
     config: Annotated[

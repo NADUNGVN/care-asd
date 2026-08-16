@@ -19,6 +19,7 @@ from care_asd.evaluation.fp_naa_candidate import (
     _atomic_json,
     _cuda_device,
     _ensure_contract,
+    _exclude_machine,
     _load_or_train_model,
     _machine_scores,
     _preload_base_store,
@@ -41,6 +42,14 @@ class FPNaaConfirmatoryResult:
     summary_path: Path
     gate_path: Path
     core_gate_passed: bool
+
+
+@dataclass(frozen=True)
+class FPNaaConfirmatoryLomoResult:
+    output_directory: Path
+    summary_path: Path
+    gate_path: Path
+    gate_passed: bool
 
 
 def run_fp_naa_confirmatory(
@@ -261,6 +270,240 @@ def run_fp_naa_confirmatory(
         gate_path,
         bool(gate["checks"]["core_confirmatory"]),
     )
+
+
+def run_fp_naa_confirmatory_lomo(
+    *,
+    base_cache_directory: str | Path,
+    augmentation_cache_directory: str | Path,
+    screening_lomo_directory: str | Path,
+    confirmatory_directory: str | Path,
+    output_directory: str | Path,
+    checkpoint_directory: str | Path,
+    config_path: str | Path,
+    experiment_id: str,
+    device: str = "cuda",
+    preload_workers: int | None = None,
+) -> FPNaaConfirmatoryLomoResult:
+    """Extend the passed three-seed LOMO experiment with the two new frozen seeds."""
+    base_cache = Path(base_cache_directory).resolve()
+    augmentation_cache = Path(augmentation_cache_directory).resolve()
+    screening_lomo = Path(screening_lomo_directory).resolve()
+    confirmatory = Path(confirmatory_directory).resolve()
+    output = Path(output_directory).resolve()
+    checkpoints = Path(checkpoint_directory).resolve()
+    config = load_fp_naa_config(Path(config_path).resolve())
+    workers = config.training.workers if preload_workers is None else preload_workers
+    if not 1 <= workers <= 16:
+        raise ValueError("preload_workers must be in [1, 16]")
+    screening_lomo_gate = screening_lomo / "gate.json"
+    confirmatory_gate = confirmatory / "gate.json"
+    if not screening_lomo_gate.is_file() or not confirmatory_gate.is_file():
+        raise FileNotFoundError("Confirmatory LOMO requires both prior gate artifacts")
+    screening_gate_payload = json.loads(screening_lomo_gate.read_text(encoding="utf-8"))
+    confirmatory_gate_payload = json.loads(confirmatory_gate.read_text(encoding="utf-8"))
+    if not bool(screening_gate_payload.get("passed")):
+        raise ValueError("Confirmatory LOMO is blocked because screening LOMO failed")
+    if not bool(confirmatory_gate_payload.get("checks", {}).get("core_confirmatory")):
+        raise ValueError("Confirmatory LOMO is blocked because the five-seed core gate failed")
+    _validate_caches(base_cache, augmentation_cache, config)
+    torch_device = _cuda_device(device)
+    output.mkdir(parents=True, exist_ok=True)
+    checkpoints.mkdir(parents=True, exist_ok=True)
+    _ensure_contract(
+        output,
+        {
+            "schema_version": 1,
+            "kind": "fp_naa_confirmatory_lomo",
+            "experiment_id": experiment_id,
+            "config": config.model_dump(mode="json"),
+            "base_cache_metadata_sha256": _sha256(base_cache / "cache.json"),
+            "augmentation_cache_metadata_sha256": _sha256(augmentation_cache / "cache.json"),
+            "screening_lomo_gate_sha256": _sha256(screening_lomo_gate),
+            "confirmatory_gate_sha256": _sha256(confirmatory_gate),
+        },
+    )
+    summary_path = output / "confirmatory_lomo_summary.csv"
+    gate_path = output / "gate.json"
+    if summary_path.is_file() and gate_path.is_file():
+        gate = json.loads(gate_path.read_text(encoding="utf-8"))
+        return FPNaaConfirmatoryLomoResult(
+            output,
+            summary_path,
+            gate_path,
+            bool(gate["passed"]),
+        )
+    old_summary_path = screening_lomo / "lomo_summary.csv"
+    if not old_summary_path.is_file():
+        raise FileNotFoundError(f"Screening LOMO summary not found: {old_summary_path}")
+    old_summary = pd.read_csv(old_summary_path)
+    _validate_lomo_summary(
+        old_summary,
+        expected_seeds=set(config.training.screening_seeds),
+        expected_machines=None,
+    )
+    screening_seeds = set(config.training.screening_seeds)
+    confirmatory_seeds = config.training.confirmatory_seeds
+    if not screening_seeds.issubset(confirmatory_seeds) or len(confirmatory_seeds) != 5:
+        raise ValueError("Confirmatory seeds must contain all three screening seeds and total five")
+    new_seeds = [seed for seed in confirmatory_seeds if seed not in screening_seeds]
+    if len(new_seeds) != 2:
+        raise ValueError("Confirmatory LOMO protocol requires exactly two new seeds")
+    _write_progress(output, stage="preload_base", completed=0, total=len(new_seeds) * 14)
+    base_store = _preload_base_store(base_cache, workers=workers)
+    _write_progress(output, stage="preload_augmentation", completed=0, total=len(new_seeds) * 14)
+    training = _preload_training_arrays(augmentation_cache, base_store, workers=workers)
+    machines = sorted(training.frame["machine_type"].astype(str).unique())
+    if len(machines) != 7:
+        raise ValueError(
+            f"Preregistered DCASE development LOMO requires 7 machines, found {len(machines)}"
+        )
+    _validate_lomo_summary(
+        old_summary,
+        expected_seeds=screening_seeds,
+        expected_machines=set(machines),
+    )
+    reused = old_summary.copy()
+    reused["source"] = "screening_reuse"
+    rows = reused.to_dict(orient="records")
+    total_new_runs = len(machines) * len(new_seeds) * len(CANDIDATES)
+    run_number = 0
+    for heldout_machine in machines:
+        fold_training = _exclude_machine(training, heldout_machine)
+        for seed in new_seeds:
+            for candidate in CANDIDATES:
+                run_number += 1
+                variant = output / heldout_machine / f"seed{seed}" / candidate
+                variant.mkdir(parents=True, exist_ok=True)
+                checkpoint = checkpoints / heldout_machine / f"seed{seed}" / f"{candidate}.pt"
+                checkpoint.parent.mkdir(parents=True, exist_ok=True)
+                _write_progress(
+                    output,
+                    stage=f"lomo:{heldout_machine}:{seed}:{candidate}",
+                    completed=run_number - 1,
+                    total=total_new_runs,
+                )
+                model = _load_or_train_model(
+                    checkpoint=checkpoint,
+                    history_path=variant / "training_history.csv",
+                    arrays=fold_training,
+                    candidate=candidate,
+                    seed=seed,
+                    config=config,
+                    device=torch_device,
+                    progress_output=output,
+                    run_number=run_number,
+                    total_runs=total_new_runs,
+                )
+                score_path = variant / "scores.csv"
+                metrics_path = variant / "metrics.json"
+                if metrics_path.is_file() and not score_path.is_file():
+                    raise ValueError(f"Metrics exist without scores: {variant}")
+                if score_path.is_file() and not metrics_path.is_file():
+                    calculate_dcase2026_official_metrics(score_path, metrics_path)
+                elif not score_path.is_file():
+                    _score_adapter(
+                        model=model,
+                        base_store=base_store,
+                        score_path=score_path,
+                        metrics_path=metrics_path,
+                        model_id=(
+                            f"fp_naa_confirmatory_lomo_{candidate}_{heldout_machine}_seed{seed}"
+                        ),
+                        experiment_id=experiment_id,
+                        config=config,
+                        device=torch_device,
+                        machine_filter=heldout_machine,
+                    )
+                rows.append(
+                    {
+                        "heldout_machine": heldout_machine,
+                        "seed": seed,
+                        "candidate": candidate,
+                        "official_score": read_official_score(metrics_path),
+                        "official_score_percent": 100.0 * read_official_score(metrics_path),
+                        "train_machines": len(machines) - 1,
+                        "train_clips": len(fold_training.frame),
+                        "source": "confirmatory",
+                    }
+                )
+                _write_progress(
+                    output,
+                    stage=f"complete:{heldout_machine}:{seed}:{candidate}",
+                    completed=run_number,
+                    total=total_new_runs,
+                )
+    summary = pd.DataFrame(rows).sort_values(
+        ["heldout_machine", "seed", "candidate"], kind="stable"
+    )
+    _validate_lomo_summary(
+        summary,
+        expected_seeds=set(confirmatory_seeds),
+        expected_machines=set(machines),
+    )
+    _atomic_csv(summary_path, summary)
+    pivot = summary.pivot_table(
+        index="heldout_machine",
+        columns="candidate",
+        values="official_score",
+        aggfunc="mean",
+    )
+    pivot["delta_c2_minus_c1"] = pivot["c2_fault_preserving"] - pivot["c1_mse"]
+    positive_folds = int((pivot["delta_c2_minus_c1"] > 0.0).sum())
+    passed = positive_folds >= config.gates.confirmatory_positive_lomo_folds_minimum
+    gate: dict[str, object] = {
+        "schema_version": 1,
+        "gate": "G3_confirmatory_lomo",
+        "confirmatory_core_passed": True,
+        "fold_delta_c2_minus_c1": {
+            str(machine): float(value) for machine, value in pivot["delta_c2_minus_c1"].items()
+        },
+        "positive_folds": positive_folds,
+        "minimum_positive_folds": config.gates.confirmatory_positive_lomo_folds_minimum,
+        "passed": passed,
+    }
+    _atomic_json(gate_path, gate)
+    _atomic_csv(output / "confirmatory_lomo_fold_means.csv", pivot.reset_index())
+    _atomic_json(
+        output / "run.json",
+        {
+            "schema_version": 1,
+            "experiment_id": experiment_id,
+            "created_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "screening_lomo_directory": str(screening_lomo),
+            "confirmatory_directory": str(confirmatory),
+            "reused_seeds": sorted(screening_seeds),
+            "new_seeds": new_seeds,
+            "device": str(torch_device),
+            "preload_workers": workers,
+        },
+    )
+    _write_progress(output, stage="complete", completed=total_new_runs, total=total_new_runs)
+    return FPNaaConfirmatoryLomoResult(output, summary_path, gate_path, passed)
+
+
+def _validate_lomo_summary(
+    summary: pd.DataFrame,
+    *,
+    expected_seeds: set[int],
+    expected_machines: set[str] | None,
+) -> None:
+    required = {"heldout_machine", "seed", "candidate", "official_score"}
+    missing = sorted(required.difference(summary.columns))
+    if missing:
+        raise ValueError(f"LOMO summary is missing columns: {', '.join(missing)}")
+    if summary.duplicated(["heldout_machine", "seed", "candidate"]).any():
+        raise ValueError("LOMO summary contains duplicate fold/seed/candidate rows")
+    if set(summary["seed"].astype(int)) != expected_seeds:
+        raise ValueError("LOMO summary seed coverage does not match the frozen protocol")
+    if set(summary["candidate"].astype(str)) != set(CANDIDATES):
+        raise ValueError("LOMO summary candidate coverage does not match the frozen protocol")
+    machines = set(summary["heldout_machine"].astype(str))
+    if expected_machines is not None and machines != expected_machines:
+        raise ValueError("LOMO summary machine coverage does not match the development cache")
+    expected_rows = len(machines) * len(expected_seeds) * len(CANDIDATES)
+    if len(summary) != expected_rows:
+        raise ValueError("LOMO summary does not contain the complete factorial design")
 
 
 def _validate_screening_artifacts(screening: Path, seeds: list[int]) -> None:

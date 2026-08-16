@@ -9,7 +9,11 @@ import yaml
 
 pytest.importorskip("torch")
 
-from care_asd.evaluation.fp_naa_confirmatory import _confirmatory_gate, _seed_score_path
+from care_asd.evaluation.fp_naa_confirmatory import (
+    _confirmatory_gate,
+    _seed_score_path,
+    _validate_lomo_summary,
+)
 from care_asd.fp_naa_config import FPNAAConfig
 
 
@@ -100,7 +104,7 @@ def test_confirmatory_gate_requires_exact_ci_and_all_retention_checks(tmp_path: 
                         "ci95_low": 0.001,
                         "ci95_high": 0.02,
                     }
-                }
+                },
             }
         ),
         encoding="utf-8",
@@ -129,3 +133,29 @@ def test_seed_score_path_reuses_only_registered_screening_seeds(tmp_path: Path) 
     new.touch()
     assert _seed_score_path(screening, output, 42, "c1_mse", {42}) == old
     assert _seed_score_path(screening, output, 777, "c1_mse", {42}) == new
+
+
+def test_lomo_summary_requires_complete_factorial_design() -> None:
+    rows = [
+        {
+            "heldout_machine": machine,
+            "seed": seed,
+            "candidate": candidate,
+            "official_score": 0.6,
+        }
+        for machine in ("fan", "valve")
+        for seed in (42, 777)
+        for candidate in ("c1_mse", "c2_fault_preserving")
+    ]
+    summary = pd.DataFrame(rows)
+    _validate_lomo_summary(
+        summary,
+        expected_seeds={42, 777},
+        expected_machines={"fan", "valve"},
+    )
+    with pytest.raises(ValueError, match="complete factorial"):
+        _validate_lomo_summary(
+            summary.iloc[:-1],
+            expected_seeds={42, 777},
+            expected_machines={"fan", "valve"},
+        )

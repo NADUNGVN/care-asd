@@ -130,6 +130,11 @@ paired bootstrap then compares the five-seed C2 and C1 ensembles. Run contracts 
 screening gate, LOMO gate, caches, and frozen config so artifacts from unrelated runs cannot be
 mixed. This staging changes compute cost, not the registered G3 decision rule.
 
+The confirmatory LOMO stage likewise reuses all 42 screening-fold artifacts (seven machines, three
+seeds, two candidates) and trains only the 28 missing seed/fold/candidate models. Fold deltas are
+then recomputed over all five seeds; the gate remains positive C2 - C1 change on at least six of
+seven held-out machines.
+
 ## 5. Pass/fail gates
 
 ### G0 — implementation and provenance
