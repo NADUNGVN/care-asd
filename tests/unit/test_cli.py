@@ -116,10 +116,13 @@ def test_ap_care_g1_dry_run_is_exposed_and_side_effect_free(tmp_path: Path) -> N
             str(output),
             "--cases",
             "32",
+            "--workers",
+            "2",
             "--dry-run",
         ],
     )
 
     assert result.exit_code == 0
     assert '"cases": 32' in result.stdout
+    assert '"workers": 2' in result.stdout
     assert not output.exists()

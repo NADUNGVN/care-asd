@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import json
 import math
+from collections.abc import Iterator
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
@@ -15,7 +18,7 @@ from scipy import signal as scipy_signal
 from scipy.stats import qmc, spearmanr
 
 from care_asd.ap_care_config import APCAREExperimentConfig, ap_care_config_hash
-from care_asd.reproducibility import collect_environment_report, get_git_commit
+from care_asd.reproducibility import collect_environment_report, file_sha256, get_git_commit
 from care_asd.signal.ap_care import APCAREController, causal_stft
 
 FloatArray = NDArray[np.float64]
@@ -56,6 +59,7 @@ class APCARESimulationResult:
     cases_path: Path
     summary_path: Path
     gate_path: Path
+    config_path: Path
     run_path: Path
     environment_path: Path
     passed: bool
@@ -201,11 +205,15 @@ def simulate_ap_care_case(
 def ap_care_simulation_plan(
     config: APCAREExperimentConfig,
     cases: int | None = None,
+    workers: int = 1,
 ) -> dict[str, Any]:
     """Return the validated, side-effect-free G1 execution plan."""
     case_count = config.simulation.cases if cases is None else cases
     if case_count < 32:
         raise ValueError("AP-CARE simulation requires at least 32 cases")
+    if not 1 <= workers <= 64:
+        raise ValueError("AP-CARE simulation workers must be between 1 and 64")
+    case_seeds = [config.simulation.seed + case_id * 7919 for case_id in range(case_count)]
     return {
         "schema_version": 1,
         "experiment_id": config.experiment_id,
@@ -216,6 +224,9 @@ def ap_care_simulation_plan(
         "duration_seconds": config.simulation.duration_seconds,
         "profile_clips_per_case": config.simulation.profile_clips,
         "seed": config.simulation.seed,
+        "case_seed_stride": 7919,
+        "case_seeds": case_seeds,
+        "workers": workers,
         "d00_alpha_grid": list(config.simulation.d00_alpha_grid),
     }
 
@@ -225,13 +236,21 @@ def run_ap_care_simulation(
     output_directory: str | Path,
     config: APCAREExperimentConfig,
     cases: int | None = None,
+    workers: int = 1,
+    progress_path: str | Path | None = None,
 ) -> APCARESimulationResult:
     """Run one immutable AP-CARE G1 calibration/holdout sweep."""
     output = Path(output_directory)
     if output.exists():
         raise FileExistsError(f"Refusing to overwrite AP-CARE simulation: {output}")
-    plan = ap_care_simulation_plan(config, cases)
-    frame = _simulate_cases(config, int(plan["cases"]))
+    plan = ap_care_simulation_plan(config, cases, workers)
+    environment_report = collect_environment_report()
+    frame = _simulate_cases(
+        config,
+        int(plan["cases"]),
+        workers=workers,
+        progress_path=progress_path,
+    )
     calibration_count = int(plan["calibration_cases"])
     calibration_count = min(max(calibration_count, 1), len(frame) - 1)
     frame["split"] = "holdout"
@@ -266,28 +285,40 @@ def run_ap_care_simulation(
         json.dumps(_json_ready(gate_payload), indent=2, sort_keys=True, allow_nan=False) + "\n",
         encoding="utf-8",
     )
+    config_path = output / "config.json"
+    config_path.write_text(
+        json.dumps(config.model_dump(mode="json"), indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    environment_path = output / "environment.json"
+    environment_path.write_text(
+        environment_report.to_json() + "\n",
+        encoding="utf-8",
+    )
+    artifact_paths = {
+        "cases": cases_path,
+        "summary": summary_path,
+        "gate": gate_path,
+        "config": config_path,
+        "environment": environment_path,
+    }
     run_payload = {
         **plan,
         "git_commit": get_git_commit(),
+        "manifest_sha256": None,
         "artifacts": {
-            "cases": cases_path.name,
-            "summary": summary_path.name,
-            "gate": gate_path.name,
-            "environment": "environment.json",
+            name: {"path": path.name, "sha256": file_sha256(path)}
+            for name, path in artifact_paths.items()
         },
     }
     run_path = output / "run.json"
     run_path.write_text(json.dumps(run_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    environment_path = output / "environment.json"
-    environment_path.write_text(
-        collect_environment_report().to_json() + "\n",
-        encoding="utf-8",
-    )
     return APCARESimulationResult(
         output_directory=output,
         cases_path=cases_path,
         summary_path=summary_path,
         gate_path=gate_path,
+        config_path=config_path,
         run_path=run_path,
         environment_path=environment_path,
         passed=passed,
@@ -378,42 +409,86 @@ def summarize_ap_care_cases(
     }
 
 
-def _simulate_cases(config: APCAREExperimentConfig, cases: int) -> pd.DataFrame:
+def _simulate_cases(
+    config: APCAREExperimentConfig,
+    cases: int,
+    *,
+    workers: int,
+    progress_path: str | Path | None,
+) -> pd.DataFrame:
     exponent = math.ceil(math.log2(cases))
     design = qmc.Sobol(d=10, scramble=True, seed=config.simulation.seed).random_base2(exponent)[
         :cases
     ]
+    tasks = [(case_id, point, config) for case_id, point in enumerate(design)]
+    _write_progress(progress_path, completed=0, total=cases)
+    iterator: Iterator[dict[str, float | int | str | bool]]
+    if workers == 1:
+        iterator = map(_simulate_design_point, tasks)
+        executor = None
+    else:
+        executor = ProcessPoolExecutor(max_workers=workers)
+        iterator = executor.map(_simulate_design_point, tasks, chunksize=1)
     records: list[dict[str, float | int | str | bool]] = []
-    for case_id, point in enumerate(design):
-        sample_rate = config.simulation.sample_rate
-        leakage_gain = math.exp(math.log(0.02) + point[0] * math.log(0.80 / 0.02))
-        near_snr_db = -10.0 + 20.0 * point[1]
-        far_environment_gain = 0.5 + 2.5 * point[2]
-        path_delay = round(point[3] * 0.020 * sample_rate)
-        path_gain_mismatch = math.exp(math.log(0.5) + point[4] * math.log(4.0))
-        delay_mismatch = round(point[5] * 0.020 * sample_rate)
-        fault_amplitude = 0.05 + 0.45 * point[6]
-        fault_support: FaultSupport = "in_support" if point[7] < 0.5 else "out_of_support"
-        fault_far_ratio = 0.5 + point[8]
-        base_frequency = 160.0 + 360.0 * point[9]
-        case = simulate_ap_care_case(
-            sample_rate=sample_rate,
-            duration_seconds=config.simulation.duration_seconds,
-            seed=config.simulation.seed + case_id * 7919,
-            profile_clips=config.simulation.profile_clips,
-            machine_leakage_gain=leakage_gain,
-            near_snr_db=near_snr_db,
-            far_environment_gain=far_environment_gain,
-            path_delay_samples=path_delay,
-            path_gain_mismatch=path_gain_mismatch,
-            path_delay_mismatch_samples=delay_mismatch,
-            fault_amplitude=fault_amplitude,
-            fault_support=fault_support,
-            fault_far_ratio=fault_far_ratio,
-            base_frequency_hz=base_frequency,
-        )
-        records.append({"case_id": case_id, **_measure_case(case, config)})
+    try:
+        for completed, record in enumerate(iterator, start=1):
+            records.append(record)
+            _write_progress(progress_path, completed=completed, total=cases)
+    finally:
+        if executor is not None:
+            executor.shutdown(wait=True, cancel_futures=True)
     return pd.DataFrame.from_records(records)
+
+
+def _simulate_design_point(
+    task: tuple[int, FloatArray, APCAREExperimentConfig],
+) -> dict[str, float | int | str | bool]:
+    case_id, point, config = task
+    sample_rate = config.simulation.sample_rate
+    leakage_gain = math.exp(math.log(0.02) + point[0] * math.log(0.80 / 0.02))
+    near_snr_db = -10.0 + 20.0 * point[1]
+    far_environment_gain = 0.5 + 2.5 * point[2]
+    path_delay = round(point[3] * 0.020 * sample_rate)
+    path_gain_mismatch = math.exp(math.log(0.5) + point[4] * math.log(4.0))
+    delay_mismatch = round(point[5] * 0.020 * sample_rate)
+    fault_amplitude = 0.05 + 0.45 * point[6]
+    fault_support: FaultSupport = "in_support" if point[7] < 0.5 else "out_of_support"
+    fault_far_ratio = 0.5 + point[8]
+    base_frequency = 160.0 + 360.0 * point[9]
+    case_seed = config.simulation.seed + case_id * 7919
+    case = simulate_ap_care_case(
+        sample_rate=sample_rate,
+        duration_seconds=config.simulation.duration_seconds,
+        seed=case_seed,
+        profile_clips=config.simulation.profile_clips,
+        machine_leakage_gain=leakage_gain,
+        near_snr_db=near_snr_db,
+        far_environment_gain=far_environment_gain,
+        path_delay_samples=path_delay,
+        path_gain_mismatch=path_gain_mismatch,
+        path_delay_mismatch_samples=delay_mismatch,
+        fault_amplitude=fault_amplitude,
+        fault_support=fault_support,
+        fault_far_ratio=fault_far_ratio,
+        base_frequency_hz=base_frequency,
+    )
+    return {"case_id": case_id, "case_seed": case_seed, **_measure_case(case, config)}
+
+
+def _write_progress(path: str | Path | None, *, completed: int, total: int) -> None:
+    if path is None:
+        return
+    destination = Path(path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix(destination.suffix + ".tmp")
+    temporary.write_text(
+        "stage=simulation\n"
+        f"completed_cases={completed}\n"
+        f"total_cases={total}\n"
+        f"updated_utc={datetime.now(UTC).strftime('%Y-%m-%dT%H:%M:%SZ')}\n",
+        encoding="utf-8",
+    )
+    temporary.replace(destination)
 
 
 def _measure_case(

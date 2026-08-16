@@ -1025,6 +1025,14 @@ def ap_care_simulate(
         "configs/experiment/ap_care_v2.yaml"
     ),
     cases: Annotated[int | None, typer.Option("--cases", min=32)] = None,
+    workers: Annotated[
+        int,
+        typer.Option("--workers", min=1, max=64, help="Deterministic CPU worker processes."),
+    ] = 1,
+    progress_file: Annotated[
+        Path | None,
+        typer.Option("--progress-file", help="Optional atomic progress state outside artifacts."),
+    ] = None,
     dry_run: Annotated[
         bool,
         typer.Option("--dry-run", help="Validate and print the immutable G1 plan only."),
@@ -1040,12 +1048,20 @@ def ap_care_simulate(
 
         cfg = load_ap_care_config(config)
         if dry_run:
-            typer.echo(json.dumps(ap_care_simulation_plan(cfg, cases), indent=2, sort_keys=True))
+            typer.echo(
+                json.dumps(
+                    ap_care_simulation_plan(cfg, cases, workers),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
             return
         result = run_ap_care_simulation(
             output_directory=output_directory,
             config=cfg,
             cases=cases,
+            workers=workers,
+            progress_path=progress_file,
         )
     except (
         FileNotFoundError,

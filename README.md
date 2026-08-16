@@ -43,13 +43,19 @@ Target journal: *Digital Signal Processing* (Elsevier).
 | 11 | SAFE-REF development screening/replication | **stopped by Phase 10** |
 | 12 | SAFE-REF unseen-machine evaluation | **stopped by Phase 10** |
 | AP-G0 | AP-CARE contract, implementation, and regression tests | **complete locally** |
-| AP-G1 | Controlled mechanism validation | ready for immutable server wrapper/run |
+| AP-G1 | Controlled mechanism validation | immutable 512-case server job ready |
 | AP-G2 | Three-seed development screening | gated by AP-G1 |
 | AP-G3 | Ten-seed replication | gated by AP-G2 |
 | AP-G4 | Frozen unseen-machine evaluation | gated by AP-G3 |
 | AP-G5 | Jetson AGX Xavier and Xavier NX board-kit study | gated by AP-G4 |
 
 ## Quick start
+
+The decision-grade AP-G1 job is launched and inspected through the checked-in
+`start_ap_care_g1.sh` and `status_ap_care_g1.sh` wrappers. The default 16 CPU
+workers leave more than 25% of SERVER-02's 28 logical CPUs available. A gate
+failure is a valid completed scientific result and stops AP-G2; it is distinct
+from a runtime or report-push failure.
 
 ### Requirements
 

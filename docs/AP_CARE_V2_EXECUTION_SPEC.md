@@ -283,6 +283,16 @@ They are ignored, uncommitted, and are not G1 evidence. The first decision-grade
 G1 run must start from the committed config and produce a new immutable server
 artifact after the branch commit is reviewed.
 
+The M2 runtime contract is now implemented by
+`scripts/server/start_ap_care_g1.sh`, `run_ap_care_g1.sh`, and
+`status_ap_care_g1.sh`. It freezes 512 cases, records every deterministic case
+seed, hashes the config and each result artifact, writes atomic case progress,
+and defaults to 16 single-threaded worker processes. On SERVER-02 this reserves
+12 of 28 logical CPUs, exceeding the requested 25% host reserve. Exit status 2
+from the scientific CLI is normalized to a completed job only when both
+`gate.json` and `run.json` exist; it means G1 failed and AP-G2 must stop. Runtime
+or Git-push failures remain operational failures.
+
 ## Required artifacts
 
 Each gate writes a versioned directory containing config, config hash, git SHA,

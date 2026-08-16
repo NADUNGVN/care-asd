@@ -9,6 +9,7 @@ import pandas as pd
 import pytest
 
 from care_asd.ap_care_config import APCAREExperimentConfig
+from care_asd.reproducibility import file_sha256
 from care_asd.signal.ap_care_simulation import (
     ap_care_simulation_plan,
     run_ap_care_simulation,
@@ -44,8 +45,14 @@ def test_ap_care_plan_has_no_side_effect(tmp_path: Path) -> None:
     plan = ap_care_simulation_plan(config)
 
     assert plan["cases"] == 32
+    assert plan["workers"] == 1
+    assert len(plan["case_seeds"]) == 32
+    assert plan["case_seeds"][1] - plan["case_seeds"][0] == 7919
     assert len(str(plan["config_hash"])) == 64
     assert not output.exists()
+
+    with pytest.raises(ValueError, match="workers"):
+        ap_care_simulation_plan(config, workers=0)
 
 
 def test_synthetic_case_is_deterministic_with_exact_components() -> None:
@@ -80,14 +87,21 @@ def test_synthetic_case_is_deterministic_with_exact_components() -> None:
 def test_ap_care_small_run_writes_auditable_artifacts(tmp_path: Path) -> None:
     config = _small_config()
     output = tmp_path / "g1"
+    progress = tmp_path / "progress.env"
 
-    result = run_ap_care_simulation(output_directory=output, config=config)
+    result = run_ap_care_simulation(
+        output_directory=output,
+        config=config,
+        progress_path=progress,
+    )
 
     assert result.cases_path.is_file()
     assert result.summary_path.is_file()
     assert result.gate_path.is_file()
+    assert result.config_path.is_file()
     assert result.run_path.is_file()
     assert result.environment_path.is_file()
+    assert "completed_cases=32" in progress.read_text(encoding="utf-8")
     cases = pd.read_parquet(result.cases_path)
     assert len(cases) == 32
     assert set(cases["split"]) == {"calibration", "holdout"}
@@ -104,5 +118,10 @@ def test_ap_care_small_run_writes_auditable_artifacts(tmp_path: Path) -> None:
         "nontrivial_cancellation",
         "uncertainty_tracking",
     }
+    run = json.loads(result.run_path.read_text(encoding="utf-8"))
+    assert run["workers"] == 1
+    assert run["manifest_sha256"] is None
+    assert run["artifacts"]["config"]["sha256"] == file_sha256(result.config_path)
+    assert run["artifacts"]["cases"]["sha256"] == file_sha256(result.cases_path)
     with pytest.raises(FileExistsError):
         run_ap_care_simulation(output_directory=output, config=config)
