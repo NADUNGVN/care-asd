@@ -1,4 +1,10 @@
-# Phase 10--12 SAFE-REF protocol
+# Phase 10--12 SAFE-REF protocol (historical)
+
+> **Stopped:** corrected Phase 10 run
+> `server02_phase10_reference_safety_20260815T145112Z` failed the scientific
+> gate. Phases 11 and 12 must not be started. On `research/ap-care-v2`, continue
+> with `docs/AP_CARE_V2_EXECUTION_SPEC.md` instead. The commands below are kept
+> only to reproduce the historical protocol.
 
 ## Research question
 

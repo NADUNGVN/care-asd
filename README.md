@@ -2,23 +2,24 @@
 
 > Workspace path: `Teacher_Vu/CARE_ASD/` (one research track under the multi-paper Teacher_Vu workspace).
 
-**SAFE-REF: Normal-only Risk-Controlled Reference-Microphone Use for
+**AP-CARE v2: Anomaly-Preserving Bounded Reference Cancellation for
 Anomalous Sound Detection**
 
 Research codebase for unsupervised anomalous sound detection on
 [DCASE 2026 Challenge Task 2](https://dcase.community/challenge2026/task-first-shot-unsupervised-anomalous-sound-detection-for-machine-condition-monitoring)
 stereo (near/far) machine audio, with:
 
-1. Fixed minimum-statistics far-reference subtraction
-2. Normal-only reference-risk profiling and conservative near-only fallback
-3. Semi-synthetic mechanism validation followed by frozen unseen-machine testing
-4. Selective edge inference after the research gate is passed
+1. Exact near-only and capacity-matched reference-denoising controls
+2. Causal normal-only cancellation with explicit time-frequency removal budgets
+3. Controlled mechanism validation before any multi-seed DCASE training
+4. Frozen unseen-machine testing and board-kit inference only after research gates
 
 Target journal: *Digital Signal Processing* (Elsevier).
 
 > The current publication direction follows
+> [`docs/AP_CARE_V2_EXECUTION_SPEC.md`](docs/AP_CARE_V2_EXECUTION_SPEC.md) and
 > [`docs/RESEARCH_SCOPE.md`](docs/RESEARCH_SCOPE.md); the original implementation
-> plan remains historical context for Phases 0--9.
+> plan and SAFE-REF protocol remain historical context.
 >
 > Server collaboration follows
 > [`docs/COLLABORATION_PROTOCOL.md`](docs/COLLABORATION_PROTOCOL.md). Commands
@@ -38,10 +39,15 @@ Target journal: *Digital Signal Processing* (Elsevier).
 | 7 | Baseline-aligned CARE residual test | **complete; rejected** |
 | 8 | Frozen B00/B01 residual failure analysis | **complete** |
 | 9 | Capacity-matched gated fusion | **complete; rejected** |
-| 10 | SAFE-REF synthetic calibration | **implemented; awaiting server run** |
-| 11 | SAFE-REF development screening/replication | **implemented; gated by Phase 10** |
-| 12 | Frozen unseen-machine evaluation | **implemented; gated by Phase 11** |
-| 13 | DSP paper artifacts and Jetson board-kit study | gated by Phase 12 |
+| 10 | SAFE-REF synthetic calibration | **complete; scientific gate failed** |
+| 11 | SAFE-REF development screening/replication | **stopped by Phase 10** |
+| 12 | SAFE-REF unseen-machine evaluation | **stopped by Phase 10** |
+| AP-G0 | AP-CARE contract, implementation, and regression tests | **specification frozen; implementation pending** |
+| AP-G1 | Controlled mechanism validation | pending AP-G0 implementation |
+| AP-G2 | Three-seed development screening | gated by AP-G1 |
+| AP-G3 | Ten-seed replication | gated by AP-G2 |
+| AP-G4 | Frozen unseen-machine evaluation | gated by AP-G3 |
+| AP-G5 | Jetson AGX Xavier and Xavier NX board-kit study | gated by AP-G4 |
 
 ## Quick start
 
