@@ -55,6 +55,8 @@ training:
   batch_size: 128
   learning_rate: 0.0003
   weight_decay: 0.0001
+  warmup_epochs: 5
+  gradient_clip_norm: 1.0
   workers: 12
   mixed_precision: true
   screening_seeds: [13711, 42, 2026]
@@ -70,6 +72,8 @@ gates:
   confirmatory_bootstrap_ci_low_minimum: 0.0
   fault_delta_retention_median_minimum: 0.90
   fault_delta_retention_q05_minimum: 0.75
+  heldout_fault_delta_retention_median_minimum: 0.85
+  heldout_fault_delta_retention_q05_minimum: 0.65
   screening_maximum_machine_drop: 0.020
   confirmatory_maximum_machine_drop: 0.010
   screening_positive_lomo_folds_minimum: 5

@@ -81,4 +81,3 @@ class BandwiseReferenceAdapter(nn.Module):
 def trainable_parameter_count(model: nn.Module) -> int:
     """Count trainable parameters for immutable model cards."""
     return sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)
-

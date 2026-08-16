@@ -95,9 +95,8 @@ def test_counterfactual_augmentation_cache_is_resumable(tmp_path: Path) -> None:
     index = pd.read_parquet(result.index_path)
     assert (index["file_id"] != index["donor_file_id"]).all()
     with np.load(output / index.loc[0, "augmentation_file"], allow_pickle=False) as payload:
-        assert {"noisy_clean", "reference", "fault_teacher", "fault_noisy"}.issubset(
-            payload.files
-        )
+        assert {"noisy_clean", "reference", "fault_teacher", "fault_noisy"}.issubset(payload.files)
+        assert "heldout_noisy_clean" in payload.files
         assert payload["noisy_clean"].dtype == np.float16
         assert payload["noisy_clean"].shape == (2, 8, 3)
 

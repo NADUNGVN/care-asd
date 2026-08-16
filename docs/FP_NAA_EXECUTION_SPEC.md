@@ -136,6 +136,7 @@ Across seeds 13711, 42, and 2026:
 - C2 - C0 >= +1.00 percentage point;
 - C2 - C1 >= +0.50 percentage point;
 - median in-support fault-delta retention >= 0.90 and 5th percentile >= 0.75;
+- held-out friction-burst retention median >= 0.85 and 5th percentile >= 0.65;
 - no machine loses more than 2.00 points versus C0;
 - at least five of seven LOMO folds have positive C2 - C1 change.
 

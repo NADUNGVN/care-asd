@@ -82,6 +82,8 @@ class FPTrainingConfig(BaseModel):
     batch_size: int = Field(gt=0)
     learning_rate: float = Field(gt=0.0)
     weight_decay: float = Field(ge=0.0)
+    warmup_epochs: int = Field(ge=0)
+    gradient_clip_norm: float = Field(gt=0.0)
     workers: int = Field(ge=0, le=16)
     mixed_precision: bool
     screening_seeds: list[int]
@@ -100,6 +102,8 @@ class FPGatesConfig(BaseModel):
     confirmatory_bootstrap_ci_low_minimum: float
     fault_delta_retention_median_minimum: float = Field(ge=0.0)
     fault_delta_retention_q05_minimum: float = Field(ge=0.0)
+    heldout_fault_delta_retention_median_minimum: float = Field(ge=0.0)
+    heldout_fault_delta_retention_q05_minimum: float = Field(ge=0.0)
     screening_maximum_machine_drop: float = Field(ge=0.0)
     confirmatory_maximum_machine_drop: float = Field(ge=0.0)
     screening_positive_lomo_folds_minimum: int = Field(gt=0)
@@ -156,4 +160,6 @@ def load_fp_naa_config(path: str | Path) -> FPNAAConfig:
         raise ValueError("heldout_fault_family must not appear in train_fault_families")
     if config.adapter.hidden_dim % config.adapter.attention_heads != 0:
         raise ValueError("adapter hidden_dim must be divisible by attention_heads")
+    if config.training.warmup_epochs >= config.training.epochs:
+        raise ValueError("warmup_epochs must be smaller than epochs")
     return config

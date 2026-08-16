@@ -53,8 +53,8 @@ def fp_naa_loss(
             raise ValueError(f"{objective} requires student_fault and teacher_fault")
         _equal_shape(student_clean, student_fault, "student_clean", "student_fault")
         _equal_shape(teacher_clean, teacher_fault, "teacher_clean", "teacher_fault")
-        student_delta = _flatten_per_item(student_fault - student_clean)
-        teacher_delta = _flatten_per_item(teacher_fault - teacher_clean)
+        student_delta = _flatten_per_item(student_fault - student_clean).float()
+        teacher_delta = _flatten_per_item(teacher_fault - teacher_clean).float()
         direction = (1.0 - functional.cosine_similarity(student_delta, teacher_delta, dim=1)).mean()
         student_norm = torch.linalg.vector_norm(student_delta, dim=1)
         teacher_norm = torch.linalg.vector_norm(teacher_delta, dim=1)
@@ -98,10 +98,10 @@ def fault_delta_retention(
     _equal_shape(student_clean, teacher_clean, "student_clean", "teacher_clean")
     _equal_shape(student_clean, teacher_fault, "student_clean", "teacher_fault")
     student_norm = torch.linalg.vector_norm(
-        _flatten_per_item(student_fault - student_clean), dim=1
+        _flatten_per_item(student_fault - student_clean).float(), dim=1
     )
     teacher_norm = torch.linalg.vector_norm(
-        _flatten_per_item(teacher_fault - teacher_clean), dim=1
+        _flatten_per_item(teacher_fault - teacher_clean).float(), dim=1
     )
     return torch.exp(-torch.log((student_norm + eps) / (teacher_norm + eps)).abs())
 
@@ -115,4 +115,3 @@ def _flatten_per_item(value: Tensor) -> Tensor:
 def _equal_shape(first: Tensor, second: Tensor, first_name: str, second_name: str) -> None:
     if first.shape != second.shape:
         raise ValueError(f"{first_name} and {second_name} must have equal shapes")
-

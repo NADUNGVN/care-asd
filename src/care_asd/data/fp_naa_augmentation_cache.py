@@ -161,9 +161,7 @@ def build_fp_naa_augmentation_cache(
 
     metadata_rows = [_validate_and_read(plan.feature_path) for plan in plans]
     indexed = train.copy()
-    indexed["augmentation_file"] = [
-        f"features/{plan.feature_path.name}" for plan in plans
-    ]
+    indexed["augmentation_file"] = [f"features/{plan.feature_path.name}" for plan in plans]
     metadata_frame = pd.DataFrame(metadata_rows)
     for column in metadata_frame.columns:
         indexed[column] = metadata_frame[column]
@@ -248,7 +246,11 @@ def _prepare(plan: _AugmentationPlan, config: FPNAAConfig) -> _PreparedAugmentat
     target, target_rate = sf.read(plan.target_audio, dtype="float32", always_2d=True)
     donor, donor_rate = sf.read(plan.donor_audio, dtype="float32", always_2d=True)
     sample_rate = config.frontend.sample_rate
-    if target_rate != sample_rate or donor_rate != sample_rate or min(target.shape[1], donor.shape[1]) < 2:
+    if (
+        target_rate != sample_rate
+        or donor_rate != sample_rate
+        or min(target.shape[1], donor.shape[1]) < 2
+    ):
         raise ValueError("Augmentation source audio must be stereo at the configured sample rate")
     clean = fixed_duration_waveform(
         target[:, 0], sample_rate=sample_rate, duration_seconds=config.frontend.duration_seconds
@@ -302,9 +304,17 @@ def _prepare(plan: _AugmentationPlan, config: FPNAAConfig) -> _PreparedAugmentat
             snr_db=plan.noise_snr_db,
             peak_limit=config.augmentation.peak_limit,
         )
-        names.extend(["heldout_reference", "heldout_fault_teacher", "heldout_fault_noisy"])
+        names.extend(
+            [
+                "heldout_noisy_clean",
+                "heldout_reference",
+                "heldout_fault_teacher",
+                "heldout_fault_noisy",
+            ]
+        )
         waveforms.extend(
             [
+                heldout_pair.clean_noisy,
                 heldout_pair.reference_noise,
                 heldout_fault.waveform,
                 heldout_pair.fault_noisy,
@@ -341,7 +351,12 @@ def _validate_and_read(path: Path) -> dict[str, object]:
             elif value.shape != shape:
                 raise ValueError(f"Inconsistent augmentation token shape: {path}")
     if bool(metadata["heldout"]):
-        expected = {"heldout_reference", "heldout_fault_teacher", "heldout_fault_noisy"}
+        expected = {
+            "heldout_noisy_clean",
+            "heldout_reference",
+            "heldout_fault_teacher",
+            "heldout_fault_noisy",
+        }
         with np.load(path, allow_pickle=False) as payload:
             if not expected.issubset(payload.files):
                 raise ValueError(f"Held-out fault fields missing: {path}")
@@ -379,7 +394,8 @@ def _safe_audio_path(root: Path, relative_text: str) -> Path:
 
 def _augmentation_contract_sha(config: FPNAAConfig, base_metadata: Path) -> str:
     payload = {
-        "schema_version": config.schema_version,
+        "cache_schema_version": 2,
+        "config_schema_version": config.schema_version,
         "base_cache_metadata_sha256": _sha256(base_metadata),
         "checkpoint_sha256": config.provenance.checkpoint_sha256,
         "frontend": config.frontend.model_dump(mode="json"),
