@@ -123,6 +123,13 @@ machine/section/domain/condition stratum, uses identical sampled clip indices fo
 recomputes every source AUC, target AUC, pooled pAUC, and the final harmonic mean in each of 10,000
 replicates.
 
+Confirmatory execution is staged and immutable. The three screening seeds are reused byte-for-byte;
+only seeds 3407 and 777 are newly trained after both the G2 core and three-seed LOMO gates pass.
+Their five score files are averaged without labels for each capacity-matched candidate. The exact
+paired bootstrap then compares the five-seed C2 and C1 ensembles. Run contracts hash the C0 score,
+screening gate, LOMO gate, caches, and frozen config so artifacts from unrelated runs cannot be
+mixed. This staging changes compute cost, not the registered G3 decision rule.
+
 ## 5. Pass/fail gates
 
 ### G0 — implementation and provenance

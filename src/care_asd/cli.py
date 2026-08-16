@@ -1594,6 +1594,47 @@ def fp_naa_bootstrap_exact(
     console.print(f"[green]FP-NAA exact bootstrap complete.[/green] output={result}")
 
 
+@fp_naa_app.command("confirm-dev")
+def fp_naa_confirm_dev(
+    base_cache_dir: Annotated[Path, typer.Option("--base-cache-dir")],
+    augmentation_cache_dir: Annotated[Path, typer.Option("--augmentation-cache-dir")],
+    c0_scores: Annotated[Path, typer.Option("--c0-scores")],
+    screening_dir: Annotated[Path, typer.Option("--screening-dir")],
+    lomo_dir: Annotated[Path, typer.Option("--lomo-dir")],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    checkpoint_dir: Annotated[Path, typer.Option("--checkpoint-dir")],
+    config: Annotated[Path, typer.Option("--config")],
+    experiment_id: Annotated[str, typer.Option("--experiment-id")],
+    device: Annotated[str, typer.Option("--device")] = "cuda",
+    preload_workers: Annotated[int, typer.Option("--preload-workers", min=1, max=16)] = 12,
+) -> None:
+    """Run the staged five-seed C1/C2 confirmatory evaluation after G2 passes."""
+    try:
+        from care_asd.evaluation.fp_naa_confirmatory import run_fp_naa_confirmatory
+
+        result = run_fp_naa_confirmatory(
+            base_cache_directory=base_cache_dir,
+            augmentation_cache_directory=augmentation_cache_dir,
+            c0_score_path=c0_scores,
+            screening_directory=screening_dir,
+            lomo_directory=lomo_dir,
+            output_directory=output_dir,
+            checkpoint_directory=checkpoint_dir,
+            config_path=config,
+            experiment_id=experiment_id,
+            device=device,
+            preload_workers=preload_workers,
+        )
+    except (FileNotFoundError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]FP-NAA confirmatory run failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    status = "passed" if result.core_gate_passed else "failed"
+    console.print(
+        f"[green]FP-NAA confirmatory run complete.[/green] core_gate={status} "
+        f"summary={result.summary_path}"
+    )
+
+
 @app.command("train")
 def train(
     config: Annotated[
