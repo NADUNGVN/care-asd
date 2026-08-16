@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 REPO_DIR="${CARE_ASD_REPO_DIR:-$HOME/Dung_TDTU/CARE_ASD}"; cd "$REPO_DIR"
+mkdir -p reports/fp_naa outputs/fp_naa
 if pgrep -af '[r]un_fp_naa_reference_safety.sh' >/dev/null; then exec bash scripts/server/status_fp_naa_reference_safety.sh; fi
 if pgrep -af '[r]un_fp_naa_confirmatory_lomo.sh' >/dev/null; then exec bash scripts/server/status_fp_naa_confirmatory_lomo.sh; fi
 if pgrep -af '[r]un_fp_naa_confirmatory.sh' >/dev/null; then exec bash scripts/server/status_fp_naa_confirmatory.sh; fi
