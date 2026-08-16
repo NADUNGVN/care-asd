@@ -1,0 +1,70 @@
+{
+  "controller": {
+    "band_edges_hz": [
+      0.0,
+      500.0,
+      2000.0,
+      8000.0
+    ],
+    "budget_enabled": true,
+    "far_dominance_midpoint_db": -3.0,
+    "far_dominance_scale_db": 6.0,
+    "max_gain": 1.0,
+    "max_removed_energy_ratio": 0.2,
+    "risk_terms_bypass": false,
+    "uncertainty_delay_max_seconds": 0.02,
+    "uncertainty_log_magnitude_scale": 0.7,
+    "warmup_frames": 2
+  },
+  "experiment_id": "ap_care_v2_g1",
+  "gate": {
+    "active_attenuation_median_min_db": 1.0,
+    "active_case_fraction_min": 0.2,
+    "bootstrap_iterations": 2000,
+    "fault_retention_median_min": 0.9,
+    "fault_retention_q05_min": 0.75,
+    "leakage_spearman_ci_low_min": 0.4,
+    "leakage_spearman_min": 0.6,
+    "matched_attenuation_tolerance_db": 0.25,
+    "medium_high_leakage_min": 0.2,
+    "noise_attenuation_median_min_db": 1.0,
+    "retention_improvement_min": 0.1,
+    "uncertainty_spearman_ci_low_min": 0.4,
+    "uncertainty_spearman_min": 0.6
+  },
+  "schema_version": 1,
+  "simulation": {
+    "calibration_fraction": 0.5,
+    "cases": 512,
+    "d00_alpha_grid": [
+      0.1,
+      0.25,
+      0.5,
+      1.0,
+      1.5,
+      2.0,
+      3.0
+    ],
+    "d00_floor_beta": 0.1,
+    "duration_seconds": 2.0,
+    "profile_clips": 3,
+    "sample_rate": 16000,
+    "seed": 2026
+  },
+  "stft": {
+    "eps": 1e-08,
+    "hop_length": 512,
+    "n_fft": 1024,
+    "win_length": 1024,
+    "window": "hann"
+  },
+  "transfer": {
+    "alpha": 0.95,
+    "frequency_smoothing_bins": 5,
+    "machine_support_median_bins": 31,
+    "machine_support_midpoint_db": 3.0,
+    "machine_support_scale_db": 1.5,
+    "max_magnitude": 10.0,
+    "regularization": 1e-08
+  }
+}
