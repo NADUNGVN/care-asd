@@ -1,0 +1,21 @@
+{
+  "clips_per_machine_domain_condition": [
+    50
+  ],
+  "conditions": [
+    "anomaly",
+    "normal"
+  ],
+  "domains": [
+    "source",
+    "target"
+  ],
+  "identical_pairing": true,
+  "machine_sections": 7,
+  "paired_clips": 1400,
+  "systems": {
+    "B00": 1400,
+    "B01": 1400,
+    "B02": 1400
+  }
+}

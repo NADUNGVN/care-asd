@@ -1,0 +1,117 @@
+{
+  "analysis": {
+    "aggregation": "arithmetic_mean_over_machine_sections",
+    "bootstrap_iterations": 2000,
+    "candidates": [
+      "B01",
+      "B02"
+    ],
+    "max_fpr": 0.1,
+    "reference": "B00",
+    "resampling": "paired_within_machine_domain_condition",
+    "seed": 2026
+  },
+  "artifacts": {
+    "frozen_global_inference.csv": "4a7281a29d95ffd9556ab7f58e47b9c806b3f1cbbd159d8b0c6fe58e750eda7a",
+    "heterogeneity.json": "bae5ef88b3e20f434cd3cb017b6e6e049886907aaae3e7d6db2edbcf53a20581",
+    "leave_one_machine_out.csv": "67a5b69789574d37461cfeaaa674f233a22d0893d5ff5da1c64f2782d75e8331",
+    "machine_domain_bootstrap.csv": "9f318064c09fde7ac68b1cbd8547a6de52a279351d1ac54d818b7f1ac2510df5",
+    "machine_domain_metrics.csv": "3125aec0a69ddfaa4a09a1df501be089a91a04de252ec321a1a68e4c28419647",
+    "machine_domain_pauc_heatmap.svg": "98e2fbd7d704e14c75ff2ca7e7c55f56d82c2c296fb84819599f55bc7df9604a",
+    "machine_pauc_forest.svg": "9519fa3402778529aa9216320074ac4f133748022a330aca5272d7a166fd4ad9",
+    "robustness_appendix.md": "7c0139da8205b6600de1514382ea025e37c904cdf53513196c2f090163ce41b6",
+    "score_coverage.json": "d357ff1dbce899b95c045b3e783444e3e7f5d0c51ee97c134623206a518f79a6"
+  },
+  "coverage": {
+    "clips_per_machine_domain_condition": [
+      50
+    ],
+    "conditions": [
+      "anomaly",
+      "normal"
+    ],
+    "domains": [
+      "source",
+      "target"
+    ],
+    "identical_pairing": true,
+    "machine_sections": 7,
+    "paired_clips": 1400,
+    "systems": {
+      "B00": 1400,
+      "B01": 1400,
+      "B02": 1400
+    }
+  },
+  "decisions": {
+    "audio_access": "prohibited",
+    "evaluation_access": "prohibited",
+    "model_training": "prohibited",
+    "model_tuning": "prohibited"
+  },
+  "frozen_global_inference": {
+    "B01": {
+      "candidate": "reports/alignment/server02_phase7_care_residual_20260814T095459Z/scores.csv",
+      "iterations": 5000,
+      "metric_delta_candidate_minus_reference": {
+        "mean_auc": {
+          "ci95_high": 0.012972499999999937,
+          "ci95_low": -0.02491464285714292,
+          "mean": -0.0056566514285714305
+        },
+        "mean_pauc_max_fpr_0_1": {
+          "ci95_high": -0.0028571428571428914,
+          "ci95_low": -0.03270676691729313,
+          "mean": -0.01740075187969925
+        }
+      },
+      "reference": "reports/alignment/server02_phase6_alignment_20260813T061557Z/scores.csv",
+      "seed": 2026,
+      "stratification": "machine_type/section/condition"
+    },
+    "B02": {
+      "candidate": "reports/fusion/server02_phase9_gated_fusion_20260815T013410Z/scores.csv",
+      "iterations": 5000,
+      "metric_delta_candidate_minus_reference": {
+        "mean_auc": {
+          "ci95_high": 0.005957142857142775,
+          "ci95_low": -0.009686071428571443,
+          "mean": -0.0019184771428571406
+        },
+        "mean_pauc_max_fpr_0_1": {
+          "ci95_high": 0.0032349624060151187,
+          "ci95_low": -0.013984962406014878,
+          "mean": -0.005399879699248118
+        }
+      },
+      "reference": "reports/alignment/server02_phase6_alignment_20260813T061557Z/scores.csv",
+      "seed": 2026,
+      "stratification": "machine_type/section/condition"
+    }
+  },
+  "git_commit": "7a1c83685e8c4a0e9d6feeb0a9d4c9907c9a3995",
+  "schema_version": 1,
+  "source_hashes": {
+    "b00_scores": {
+      "path": "reports\\alignment\\server02_phase6_alignment_20260813T061557Z\\scores.csv",
+      "sha256": "57620e5ea54d7c067a49d0b8c88b0c87d57bdc35271af79aee98a058b5f7fa5a"
+    },
+    "b01_bootstrap": {
+      "path": "reports\\alignment\\server02_phase7_care_residual_20260814T095459Z\\paired_bootstrap_b01_vs_b00.json",
+      "sha256": "5d60a05ad060db5777669e146597cea09275825663e9dfdf1f6fcd303e75d0a3"
+    },
+    "b01_scores": {
+      "path": "reports\\alignment\\server02_phase7_care_residual_20260814T095459Z\\scores.csv",
+      "sha256": "80f9cc18095e357e880e524a2352d3ff5c27db560dd8a916cb8b7b6f3a3b5ffc"
+    },
+    "b02_bootstrap": {
+      "path": "reports\\fusion\\server02_phase9_gated_fusion_20260815T013410Z\\paired_bootstrap_b02_vs_b00.json",
+      "sha256": "a8ad0621cf8b42f6b11dd7a898394901fe8b7fd7135517bc880392e8263b5975"
+    },
+    "b02_scores": {
+      "path": "reports\\fusion\\server02_phase9_gated_fusion_20260815T013410Z\\scores.csv",
+      "sha256": "d3813d0b96c9fc7ec64a2ebc29b3f74dc685f0d450a0df7b86d19d73ad681b4c"
+    }
+  },
+  "study_id": "care_asd_robustness_appendix_v1"
+}

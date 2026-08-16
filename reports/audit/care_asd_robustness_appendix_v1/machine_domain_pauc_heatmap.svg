@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="471" viewBox="0 0 940 471">
+<rect width="100%" height="100%" fill="white"/>
+<text x="24" y="28" font-family="sans-serif" font-size="18" font-weight="700">Observed pAUC delta by machine and domain</text>
+<text x="24" y="50" font-family="sans-serif" font-size="12" fill="#4b5563">Red = harm; green = improvement; values are percentage points vs B00</text>
+<text x="248.0" y="78" text-anchor="middle" font-family="sans-serif" font-size="12">B01 all</text>
+<text x="364.0" y="78" text-anchor="middle" font-family="sans-serif" font-size="12">B01 source</text>
+<text x="480.0" y="78" text-anchor="middle" font-family="sans-serif" font-size="12">B01 target</text>
+<text x="596.0" y="78" text-anchor="middle" font-family="sans-serif" font-size="12">B02 all</text>
+<text x="712.0" y="78" text-anchor="middle" font-family="sans-serif" font-size="12">B02 source</text>
+<text x="828.0" y="78" text-anchor="middle" font-family="sans-serif" font-size="12">B02 target</text>
+<text x="24" y="118" font-family="sans-serif" font-size="13">ToyCar</text>
+<rect x="190" y="92" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="246.0" y="117" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="306" y="92" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="362.0" y="117" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="422" y="92" width="112" height="38" rx="3" fill="rgb(235,245,205)"/>
+<text x="478.0" y="117" text-anchor="middle" font-family="sans-serif" font-size="12">+0.00</text>
+<rect x="538" y="92" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="594.0" y="117" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="654" y="92" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="710.0" y="117" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="770" y="92" width="112" height="38" rx="3" fill="rgb(235,245,205)"/>
+<text x="826.0" y="117" text-anchor="middle" font-family="sans-serif" font-size="12">+0.00</text>
+<text x="24" y="160" font-family="sans-serif" font-size="13">ToyCarEmu</text>
+<rect x="190" y="134" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="246.0" y="159" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="306" y="134" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="362.0" y="159" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="422" y="134" width="112" height="38" rx="3" fill="rgb(185,115,115)"/>
+<text x="478.0" y="159" text-anchor="middle" font-family="sans-serif" font-size="12">-10.53</text>
+<rect x="538" y="134" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="594.0" y="159" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="654" y="134" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="710.0" y="159" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="770" y="134" width="112" height="38" rx="3" fill="rgb(185,115,115)"/>
+<text x="826.0" y="159" text-anchor="middle" font-family="sans-serif" font-size="12">-5.68</text>
+<text x="24" y="202" font-family="sans-serif" font-size="13">bearingEmu</text>
+<rect x="190" y="176" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="246.0" y="201" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="306" y="176" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="362.0" y="201" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="422" y="176" width="112" height="38" rx="3" fill="rgb(152,194,205)"/>
+<text x="478.0" y="201" text-anchor="middle" font-family="sans-serif" font-size="12">+0.63</text>
+<rect x="538" y="176" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="594.0" y="201" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="654" y="176" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="710.0" y="201" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="770" y="176" width="112" height="38" rx="3" fill="rgb(207,228,205)"/>
+<text x="826.0" y="201" text-anchor="middle" font-family="sans-serif" font-size="12">+0.21</text>
+<text x="24" y="244" font-family="sans-serif" font-size="13">fan</text>
+<rect x="190" y="218" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="246.0" y="243" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="306" y="218" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="362.0" y="243" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="422" y="218" width="112" height="38" rx="3" fill="rgb(185,115,115)"/>
+<text x="478.0" y="243" text-anchor="middle" font-family="sans-serif" font-size="12">-1.68</text>
+<rect x="538" y="218" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="594.0" y="243" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="654" y="218" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="710.0" y="243" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="770" y="218" width="112" height="38" rx="3" fill="rgb(185,217,217)"/>
+<text x="826.0" y="243" text-anchor="middle" font-family="sans-serif" font-size="12">-0.21</text>
+<text x="24" y="286" font-family="sans-serif" font-size="13">gearboxEmu</text>
+<rect x="190" y="260" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="246.0" y="285" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="306" y="260" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="362.0" y="285" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="422" y="260" width="112" height="38" rx="3" fill="rgb(235,245,205)"/>
+<text x="478.0" y="285" text-anchor="middle" font-family="sans-serif" font-size="12">+0.00</text>
+<rect x="538" y="260" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="594.0" y="285" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="654" y="260" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="710.0" y="285" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="770" y="260" width="112" height="38" rx="3" fill="rgb(235,245,205)"/>
+<text x="826.0" y="285" text-anchor="middle" font-family="sans-serif" font-size="12">+0.00</text>
+<text x="24" y="328" font-family="sans-serif" font-size="13">sliderEmu</text>
+<rect x="190" y="302" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="246.0" y="327" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="306" y="302" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="362.0" y="327" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="422" y="302" width="112" height="38" rx="3" fill="rgb(180,211,205)"/>
+<text x="478.0" y="327" text-anchor="middle" font-family="sans-serif" font-size="12">+0.42</text>
+<rect x="538" y="302" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="594.0" y="327" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="654" y="302" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="710.0" y="327" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="770" y="302" width="112" height="38" rx="3" fill="rgb(185,190,190)"/>
+<text x="826.0" y="327" text-anchor="middle" font-family="sans-serif" font-size="12">-0.42</text>
+<text x="24" y="370" font-family="sans-serif" font-size="13">valveEmu</text>
+<rect x="190" y="344" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="246.0" y="369" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="306" y="344" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="362.0" y="369" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="422" y="344" width="112" height="38" rx="3" fill="rgb(185,115,115)"/>
+<text x="478.0" y="369" text-anchor="middle" font-family="sans-serif" font-size="12">-3.79</text>
+<rect x="538" y="344" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="594.0" y="369" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="654" y="344" width="112" height="38" rx="3" fill="rgb(105,165,205)"/>
+<text x="710.0" y="369" text-anchor="middle" font-family="sans-serif" font-size="12">+nan</text>
+<rect x="770" y="344" width="112" height="38" rx="3" fill="rgb(185,115,115)"/>
+<text x="826.0" y="369" text-anchor="middle" font-family="sans-serif" font-size="12">-1.05</text>
+</svg>
