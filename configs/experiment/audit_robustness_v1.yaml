@@ -1,0 +1,24 @@
+schema_version: 1
+study_id: care_asd_robustness_appendix_v1
+
+sources:
+  b00_scores: reports/alignment/server02_phase6_alignment_20260813T061557Z/scores.csv
+  b01_scores: reports/alignment/server02_phase7_care_residual_20260814T095459Z/scores.csv
+  b02_scores: reports/fusion/server02_phase9_gated_fusion_20260815T013410Z/scores.csv
+  b01_bootstrap: reports/alignment/server02_phase7_care_residual_20260814T095459Z/paired_bootstrap_b01_vs_b00.json
+  b02_bootstrap: reports/fusion/server02_phase9_gated_fusion_20260815T013410Z/paired_bootstrap_b02_vs_b00.json
+
+analysis:
+  reference: B00
+  candidates: [B01, B02]
+  bootstrap_iterations: 2000
+  seed: 2026
+  max_fpr: 0.1
+  resampling: paired_within_machine_domain_condition
+  aggregation: arithmetic_mean_over_machine_sections
+
+decisions:
+  audio_access: prohibited
+  evaluation_access: prohibited
+  model_tuning: prohibited
+  model_training: prohibited

@@ -29,6 +29,13 @@ from care_asd.evaluation.paired_bootstrap import (
     write_paired_bootstrap_comparison,
     write_seed_ensemble_scores,
 )
+from care_asd.evaluation.robustness_appendix import (
+    RobustnessAppendixConfig,
+    RobustnessAppendixResult,
+    load_robustness_appendix_config,
+    robustness_appendix_plan,
+    run_robustness_appendix,
+)
 
 __all__ = [
     "SCORE_COLUMNS",
@@ -37,17 +44,22 @@ __all__ = [
     "DspBenchmarkResult",
     "LiteratureAuditConfig",
     "LiteratureAuditResult",
+    "RobustnessAppendixConfig",
+    "RobustnessAppendixResult",
     "ScoreMode",
     "audit_synthesis_plan",
     "calculate_development_auc_metrics",
     "literature_audit_plan",
     "load_audit_synthesis_config",
     "load_literature_audit_config",
+    "load_robustness_appendix_config",
     "normalize_official_development_scores",
+    "robustness_appendix_plan",
     "run_audit_synthesis",
     "run_care_development_benchmark",
     "run_dsp_development_benchmark",
     "run_literature_audit",
+    "run_robustness_appendix",
     "write_paired_bootstrap_comparison",
     "write_seed_ensemble_scores",
 ]

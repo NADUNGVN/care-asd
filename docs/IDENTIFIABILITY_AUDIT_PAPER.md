@@ -27,6 +27,12 @@ results explicitly rule out a generic claim against far-microphone use. The
 retained scope is deterministic, normal-only, signal-level contaminated-reference
 processing and its component-level safety evaluation.
 
+Audit-A2 adds the frozen machine/domain sensitivity analysis documented in
+`docs/ROBUSTNESS_APPENDIX_AUDIT_A2.md`. B01's pAUC harm survives every
+one-machine deletion, while B02 remains inconclusive. Both interventions are
+more favorable on source than target data on average, so the manuscript must
+report domain fragility rather than a uniform per-machine failure.
+
 ## Frozen evidence chain
 
 | Stage | Test | Result | Interpretation |
@@ -95,7 +101,7 @@ Unsupported claims:
 |---|---|---|---|
 | Audit-A0 | Frozen evidence package and figures | Local CPU | Artifact/hash audit |
 | Audit-A1 | Literature matrix and novelty positioning | None | **Complete; claim boundary frozen** |
-| Audit-A2 | Machine/domain robustness appendix from frozen scores | Local CPU | No new tuning |
+| Audit-A2 | Machine/domain robustness appendix from frozen scores | Local CPU | **Complete; no new tuning** |
 | Audit-A3 | Manuscript methods, results, limitations | None | Internal consistency |
 | Audit-A4 | Reproducibility bundle and submission checklist | None | All claims trace to artifacts |
 

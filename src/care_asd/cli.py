@@ -1176,6 +1176,57 @@ def audit_literature(
     )
 
 
+@audit_app.command("robustness")
+def audit_robustness(
+    output_directory: Annotated[Path, typer.Option("--output-dir")],
+    config: Annotated[Path, typer.Option("--config", "-c")] = Path(
+        "configs/experiment/audit_robustness_v1.yaml"
+    ),
+    repository_root: Annotated[Path, typer.Option("--repo-root")] = Path("."),
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Validate frozen score pairing without writing."),
+    ] = False,
+) -> None:
+    """Generate the immutable Audit-A2 machine/domain robustness appendix."""
+    try:
+        from care_asd.evaluation.robustness_appendix import (
+            load_robustness_appendix_config,
+            robustness_appendix_plan,
+            run_robustness_appendix,
+        )
+
+        cfg = load_robustness_appendix_config(config)
+        if dry_run:
+            typer.echo(
+                json.dumps(
+                    robustness_appendix_plan(cfg, repository_root=repository_root),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            return
+        result = run_robustness_appendix(
+            output_directory=output_directory,
+            config=cfg,
+            repository_root=repository_root,
+        )
+    except (
+        FileNotFoundError,
+        FileExistsError,
+        KeyError,
+        OSError,
+        TypeError,
+        ValueError,
+    ) as exc:
+        console.print(f"[red]Robustness appendix failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        "[green]Robustness appendix completed.[/green] "
+        f"summary={result.summary_path} heterogeneity={result.heterogeneity_path}"
+    )
+
+
 @reference_safety_app.command("dev")
 def reference_safety_dev(
     cache_directory: Annotated[Path, typer.Option("--cache-dir")],
