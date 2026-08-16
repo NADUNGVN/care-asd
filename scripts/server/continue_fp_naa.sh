@@ -8,6 +8,21 @@ if pgrep -af '[r]un_fp_naa_confirmatory.sh' >/dev/null; then exec bash scripts/s
 if pgrep -af '[r]un_fp_naa_lomo.sh' >/dev/null; then exec bash scripts/server/status_fp_naa_lomo.sh; fi
 if pgrep -af '[r]un_fp_naa_screening.sh' >/dev/null; then exec bash scripts/server/status_fp_naa_screening.sh; fi
 if pgrep -af '[r]un_fp_naa_baseline.sh' >/dev/null; then exec bash scripts/server/status_fp_naa_baseline.sh; fi
+stop_on_failed_run(){
+    local run_file="$1" status_script="$2" label="$3" run_id state_file
+    [ -f "$run_file" ] || return 0
+    run_id="$(cat "$run_file")"; state_file="outputs/fp_naa/$run_id/state.env"
+    if [ -f "$state_file" ] && grep -q '^status=FAILED$' "$state_file"; then
+        printf 'Latest %s run failed; refusing automatic restart.\n' "$label"
+        exec bash "$status_script"
+    fi
+}
+stop_on_failed_run outputs/fp_naa/latest_reference_safety_run_id.txt scripts/server/status_fp_naa_reference_safety.sh 'FP-NAA reference-safety'
+stop_on_failed_run outputs/fp_naa/latest_confirmatory_lomo_run_id.txt scripts/server/status_fp_naa_confirmatory_lomo.sh 'FP-NAA confirmatory LOMO'
+stop_on_failed_run outputs/fp_naa/latest_confirmatory_run_id.txt scripts/server/status_fp_naa_confirmatory.sh 'FP-NAA confirmatory'
+stop_on_failed_run outputs/fp_naa/latest_lomo_run_id.txt scripts/server/status_fp_naa_lomo.sh 'FP-NAA LOMO'
+stop_on_failed_run outputs/fp_naa/latest_screening_run_id.txt scripts/server/status_fp_naa_screening.sh 'FP-NAA screening'
+stop_on_failed_run outputs/fp_naa/latest_run_id.txt scripts/server/status_fp_naa_baseline.sh 'FP-NAA C0'
 LOMO_GATE="$(find reports/fp_naa -path '*/lomo/gate.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n1 | cut -d' ' -f2-)"
 CONFIRM_GATE="$(find reports/fp_naa -path '*/confirmatory/gate.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n1 | cut -d' ' -f2-)"
 CONFIRM_LOMO_GATE="$(find reports/fp_naa -path '*/confirmatory_lomo/gate.json' -type f -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n1 | cut -d' ' -f2-)"
