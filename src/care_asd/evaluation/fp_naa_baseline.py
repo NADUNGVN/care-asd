@@ -227,7 +227,12 @@ def run_fp_naa_baseline(
         "official_score_percent": 100.0 * c0_score,
         "minimum": config.gates.baseline_minimum_official_score,
         "minimum_percent": 100.0 * config.gates.baseline_minimum_official_score,
-        "published_reference_percent": 62.02,
+        "minimum_basis": "preregistered_internal_fidelity_threshold",
+        "published_context": {
+            "merl_original_beats_frequency_average_rescaled_percent": 60.28,
+            "merl_dis_na_beats_frequency_rdp4_rescaled_percent": 64.57,
+            "method_identical_to_c0": False,
+        },
         "passed": gate_passed,
     }
     gate_path = output / "gate.json"
@@ -281,4 +286,3 @@ def _write_progress(output: Path, *, completed: int, total: int, group: str) -> 
         f"current_group={group}\nupdated_utc={datetime.now(UTC).strftime('%Y-%m-%dT%H:%M:%SZ')}\n",
         encoding="utf-8",
     )
-

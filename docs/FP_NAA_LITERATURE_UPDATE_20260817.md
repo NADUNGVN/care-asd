@@ -24,6 +24,7 @@ about absolute task performance.
 | [Anomalous Sound Detection Meets Noise-Aware SSL](https://arxiv.org/abs/2608.00447) | Applies noise-aware SSL to DCASE 2026 and reports 70.24% official evaluation score for the winning NA-BEATs system versus 65.46% for second place. | FP-NAA cannot claim generic dual-microphone effectiveness or SOTA from a 63% development result. It must isolate the objective effect and safety evidence. |
 | [DCASE 2026 Task 2 description](https://arxiv.org/abs/2606.01578) | Defines normal-only first-shot ASD with synchronized near/far channels and the source-AUC, target-AUC, and pAUC evaluation cells. | The exact official harmonic score and normal-only training boundary remain mandatory. |
 | [Official DCASE 2026 results](https://dcase.community/challenge2026/task-first-shot-unsupervised-anomalous-sound-detection-for-machine-condition-monitoring-results) | Shows a broad performance frontier and substantial machine-to-machine heterogeneity. | Mean development improvement alone is insufficient; per-machine drops and LOMO are necessary. |
+| [MERL technical report](https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Fujimura_17_t2.pdf) | Reports 60.28% for original BEATs with frequency-wise memory, average pooling, and score rescaling, and 64.57% for Dis NA-BEATs with RDP(4). It does not report the exact FP-NAA C0 backend. | These are non-identical context points; the 60.50% C0 gate is an internal fidelity threshold, not a claimed reproduction of a published 62.02% result. |
 | [AITHU technical report](https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Jiang_125_t2.pdf) | Reports 68.20% development score using heterogeneous BEATs scoring/fine-tuning branches and score fusion; its single-branch reference is 64.04%. | Current strong systems exceed the FP-NAA absolute gate, but use materially different capacity and selection. They are context, not a capacity-matched causal comparator. |
 
 DCASE technical reports are current primary system descriptions but are not peer-reviewed journal
@@ -33,7 +34,7 @@ publication-status qualifiers.
 ## Frozen comparator interpretation
 
 - **C0** is a reproducible, training-free BEATs + frequency-RDP8 + BEAM backend. Its 60.50% gate
-  tests implementation fidelity against the published 62.02% reference; it is strong and
+  is a pre-registered internal implementation-fidelity threshold; it is strong and
   transparent, but not leaderboard SOTA.
 - **C1** has exactly the same architecture, parameter count, data, initialization seeds, optimizer,
   and scoring backend as C2, with normal-representation MSE as the only changed objective. It is

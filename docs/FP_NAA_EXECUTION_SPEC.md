@@ -125,9 +125,13 @@ cosine distance, and variance-minimizing normal-only score rescaling.
 | C2 | same adapter | MSE + counterfactual fault-delta loss | main FP-NAA candidate |
 | C3 | same as C2 | C2 + reference dropout/corruption | reference-safety ablation |
 
-The first implementation milestone is C0. Candidate results are uninterpretable until C0 is close
-to the published DCASE 2026 development reference of 62.02 official-score points for original
-BEATs + frequency RDP(8) + BEAM.
+The first implementation milestone is C0. Candidate results are uninterpretable until C0 passes the
+pre-registered internal fidelity threshold of 60.50 official-score points. This is not presented as
+a published reproduction target because no primary source reports this exact combination of
+original BEATs, RDP(8), BEAM, cosine distance, and the chosen rescaling. For context, the MERL
+DCASE 2026 report gives 60.28% for original BEATs with frequency-wise memory, average pooling,
+and score rescaling, and 64.57% for discriminatively trained NA-BEATs with RDP(4) and score
+rescaling. Those numbers bound expectations but are methodologically non-identical.
 
 ## 4. Exact evaluation contract
 
@@ -265,6 +269,7 @@ capacity remains free.
 
 - [DCASE 2026 Task 2 setup and exact metric](https://arxiv.org/abs/2606.01578)
 - [Anomalous Sound Detection Meets Noise-Aware SSL](https://arxiv.org/abs/2608.00447)
+- [MERL DCASE 2026 Task 2 technical report](https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Fujimura_17_t2.pdf)
 - [Noise-Aware Reference Denoising for First-Shot ASD](https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Kim_91_t2.pdf)
 - [NABEATs: Noise-Aware Audio Representation Learning](https://arxiv.org/abs/2607.16688)
 - [BEAM sub-band matching](https://arxiv.org/abs/2603.13749)
