@@ -75,6 +75,29 @@ fault-preservation requirement.
 These sources motivate the components but do not establish the combined projection as novel. A
 final novelty claim still requires the complete literature audit and all G2/G3 evidence.
 
+### Closest-method boundary checked before execution
+
+The closest DCASE system found in the pre-execution search is [Kim's reference denoising technical
+report](https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Kim_91_t2.pdf).
+It protects leaked machine sound by estimating a minimum-statistics noise floor and then applying
+floored spectral subtraction in the waveform/spectral frontend. It does not constrain a learned
+BEATs correction, select RDP-salient representation rows, or construct a shared-weight C1/C2
+causal comparison.
+
+Classical signal-space projection and adaptive noise cancellation already establish that a
+reference sensor can define an interference subspace; projection itself is therefore not novel.
+Their known failure when the reference contains non-interference components is precisely the risk
+tested here. V3's potentially new element is narrower: a per-clip half-space projection of only a
+learned representation correction, anchored by near--far evidence and restricted to the temporal
+rows used by a downstream ASD pooling rule.
+
+Orthogonal-projection arguments also appear in visual anomaly-detection autoencoders, for example
+[Self-Supervised Autoencoders for Visual Anomaly Detection](https://doi.org/10.3390/math12243988).
+That work learns a projection onto a normal-image manifold so anomalies remain visible in
+reconstruction error. V3 neither learns nor claims that manifold projection: it clips reference-
+conditioned contraction in a frozen audio representation and evaluates anomalies with RDP/BEAM.
+The paper must state these distinctions rather than claim orthogonal projection in general.
+
 ## Frozen v3 protocol
 
 The authoritative config is `configs/experiment/fp_naa_v3.yaml`. The projection fraction (0.20)
