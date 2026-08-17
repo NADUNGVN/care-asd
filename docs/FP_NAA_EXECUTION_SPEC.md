@@ -18,7 +18,9 @@ or `uv run`.
 The environment definition is `environments/fp-naa-cu118.yml`. Setup must finish with a real GPU
 convolution probe, not only `torch.cuda.is_available()`. Jobs execute through the Python CLI with
 `conda run`, so they select the named environment even when the interactive SSH prompt displays
-`(base)`. FP-NAA has no server shell wrappers.
+`(base)`. FP-NAA has no server shell wrappers. A failed CUDA runtime is removed and recreated from
+the frozen files; it is never repaired in place because pip-owned CUDA packages survive Conda
+`--prune`.
 
 ```bash
 env -u LD_LIBRARY_PATH -u LD_PRELOAD conda run -n care-asd-fp-naa care-asd fp-naa runtime-check
@@ -243,9 +245,10 @@ Experiments proceed in this order:
 5. run confirmatory seeds and bootstrap only after a screening pass;
 6. freeze the paper tables and claims before any evaluation-set scoring.
 
-Each server job has a short checked-in start command, a separate status command, an atomic state
-file, a persistent log, and an immutable report committed to `research/fp-naa`. Server jobs use at
-most 12 preprocessing workers by default so at least 25% of SERVER-02 CPU capacity remains free.
+Each server job uses a short public Python CLI command, a separate read-only status command, an
+atomic state file, a persistent log, and an immutable report committed to `research/fp-naa`.
+Server jobs use at most 12 preprocessing workers by default so at least 25% of SERVER-02 CPU
+capacity remains free.
 
 ## 7. Primary prior art used to set the boundary
 

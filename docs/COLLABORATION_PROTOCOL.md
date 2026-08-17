@@ -41,6 +41,8 @@ starts with `env -u LD_LIBRARY_PATH -u LD_PRELOAD conda run -n care-asd-fp-naa`,
 the prompt cannot contaminate the selected CUDA runtime. Dependency
 changes are made only through `environments/fp-naa-cu118.yml` and
 `requirements/fp-naa-cu118.lock.txt`; ad-hoc installation into Conda `base` is prohibited.
+A failed FP-NAA CUDA environment is removed and recreated from those files; an in-place Conda
+update is not accepted as evidence that pip-installed incompatible CUDA packages were removed.
 
 FP-NAA has no `scripts/server/*fp_naa*.sh` wrappers. Its stable public interface is
 `care-asd fp-naa runtime-check` plus `care-asd fp-naa job {start,status,list,continue}`. Commands

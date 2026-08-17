@@ -40,10 +40,18 @@ Conda owns Python 3.11 and the environment boundary. Pip installs the exact tran
 `requirements/fp-naa-cu118.lock.txt` inside that boundary. This avoids mixing Conda CUDA libraries
 with pip CUDA libraries while retaining normal Conda inspection/export/removal commands.
 
-Setup consists of explicit commands rather than a setup script:
+Setup consists of explicit commands rather than a setup script. A runtime that has ever failed a
+Torch/CUDA check is rebuilt instead of repaired in place: `conda env update --prune` cannot be
+relied on to remove CUDA packages previously installed by pip.
 
 ```bash
-env -u LD_LIBRARY_PATH -u LD_PRELOAD conda env update -n care-asd-fp-naa -f environments/fp-naa-cu118.yml --prune
+env -u LD_LIBRARY_PATH -u LD_PRELOAD conda env remove -n care-asd-fp-naa -y
+```
+
+An `EnvironmentLocationNotFound` response only means there was no old environment to remove.
+
+```bash
+env -u LD_LIBRARY_PATH -u LD_PRELOAD conda env create -f environments/fp-naa-cu118.yml
 ```
 
 ```bash
