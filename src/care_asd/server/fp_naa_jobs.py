@@ -187,7 +187,9 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
         import torch
         import torchaudio
     except (ImportError, OSError) as exc:
-        raise JobError("TORCH_IMPORT_FAILED", "Torch runtime could not be loaded", str(exc)) from exc
+        raise JobError(
+            "TORCH_IMPORT_FAILED", "Torch runtime could not be loaded", str(exc)
+        ) from exc
     installed = _installed_package_names()
     cu13 = sorted(name for name in installed if "cu13" in name)
     checks = {
@@ -234,14 +236,75 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
         checks["convolution_probe"] = "passed"
         checks["deterministic_attention_backward_probe"] = "passed"
         checks["deterministic_algorithms"] = torch.are_deterministic_algorithms_enabled()
-        checks["deterministic_warn_only"] = (
-            torch.is_deterministic_algorithms_warn_only_enabled()
-        )
+        checks["deterministic_warn_only"] = torch.is_deterministic_algorithms_warn_only_enabled()
         checks["flash_sdp_enabled"] = torch.backends.cuda.flash_sdp_enabled()
-        checks["memory_efficient_sdp_enabled"] = (
-            torch.backends.cuda.mem_efficient_sdp_enabled()
-        )
+        checks["memory_efficient_sdp_enabled"] = torch.backends.cuda.mem_efficient_sdp_enabled()
         checks["math_sdp_enabled"] = torch.backends.cuda.math_sdp_enabled()
+        try:
+            from care_asd.evaluation.fp_naa_candidate import _primary_safe_backward
+            from care_asd.fp_naa_config import FPObjectiveConfig
+            from care_asd.models.fp_naa_objective import fp_naa_loss
+
+            objective = FPObjectiveConfig(
+                normal_mse_weight=1.0,
+                fault_direction_weight=0.25,
+                fault_magnitude_weight=1.0,
+                fault_separation_weight=2.0,
+                reference_consistency_weight=0.0,
+                magnitude_huber_delta=0.05,
+                fault_loss_mode="tail_constrained",
+                direction_cosine_floor=0.5,
+                gain_lower_bound=1.05,
+                gain_upper_bound=1.20,
+                tail_fraction=0.10,
+                score_gain_lower_bound=1.05,
+                score_patch_fraction=0.20,
+                primary_safe_gradient_projection=True,
+            )
+            clean = torch.ones(4, 2, 2, 8, device="cuda")
+            delta = torch.zeros_like(clean)
+            delta[..., 0] = 0.01
+            delta[..., 1] = -0.01
+            teacher_fault = clean + delta
+            erased = fp_naa_loss(
+                objective="c2_fault_preserving",
+                student_clean=clean,
+                teacher_clean=clean,
+                student_fault=clean,
+                teacher_fault=teacher_fault,
+                config=objective,
+            )
+            safe = fp_naa_loss(
+                objective="c2_fault_preserving",
+                student_clean=clean,
+                teacher_clean=clean,
+                student_fault=clean + 1.10 * delta,
+                teacher_fault=teacher_fault,
+                config=objective,
+            )
+            if not bool(torch.isfinite(safe.total)) or not bool(safe.total < erased.total):
+                raise RuntimeError("Tail-safe objective did not prefer the bounded-gain sample")
+            parameter = torch.nn.Parameter(torch.tensor([1.0, 1.0], device="cuda"))
+            cosine, conflict = _primary_safe_backward(
+                primary=parameter[0].square(),
+                auxiliary=-parameter[0] + parameter[1],
+                parameters=[parameter],
+                auxiliary_scale=1.0,
+            )
+            expected = torch.tensor([2.0, 1.0], device="cuda")
+            if parameter.grad is None or not torch.allclose(parameter.grad, expected):
+                raise RuntimeError("Primary-safe gradient projection returned an invalid update")
+            if not bool(cosine < 0.0) or not bool(conflict == 1.0):
+                raise RuntimeError("Primary-safe gradient conflict was not detected")
+            torch.cuda.synchronize()
+        except (AssertionError, RuntimeError, ValueError) as exc:
+            raise JobError(
+                "TAIL_SAFE_METHOD_PROBE_FAILED",
+                "FP-NAA v2 tail-loss/gradient probe failed",
+                str(exc),
+            ) from exc
+        checks["tail_safe_objective_probe"] = "passed"
+        checks["primary_safe_gradient_probe"] = "passed"
     return {"schema_version": SCHEMA_VERSION, "runtime": checks}
 
 
@@ -297,7 +360,9 @@ def _start_fp_naa_job_locked(
         created_utc=now,
         updated_utc=now,
         log=str(log_path.relative_to(ctx.repo_root)),
-        report=str((ctx.repo_root / "reports" / "server" / f"{run_id}.md").relative_to(ctx.repo_root)),
+        report=str(
+            (ctx.repo_root / "reports" / "server" / f"{run_id}.md").relative_to(ctx.repo_root)
+        ),
     )
     _write_state(state_path, state)
     _write_latest(ctx, state)
@@ -338,7 +403,9 @@ def _start_fp_naa_job_locked(
         )
         _write_state(state_path, failed)
         _write_latest(ctx, failed)
-        raise JobError("JOB_LAUNCH_FAILED", "Could not launch detached Python job", str(exc)) from exc
+        raise JobError(
+            "JOB_LAUNCH_FAILED", "Could not launch detached Python job", str(exc)
+        ) from exc
     running = replace(
         state,
         status=JobStatus.RUNNING.value,
@@ -465,9 +532,7 @@ def fp_naa_job_status(
     return payload
 
 
-def list_fp_naa_jobs(
-    *, context: FPNAAJobContext | None = None, limit: int = 10
-) -> dict[str, Any]:
+def list_fp_naa_jobs(*, context: FPNAAJobContext | None = None, limit: int = 10) -> dict[str, Any]:
     ctx = context or FPNAAJobContext.from_environment()
     if not 1 <= limit <= 100:
         raise JobError("INVALID_LIMIT", "limit must be in [1, 100]", limit)
@@ -774,11 +839,7 @@ def _run_reference_safety(
     beats_source, checkpoint = _ensure_beats_assets(ctx)
     report = ctx.reports_root / run_id / "reference_safety"
     safety_cache = (
-        ctx.data_root
-        / "fp_naa"
-        / "reference_safety_cache"
-        / "dev"
-        / "waveform_fp32infer_v2"
+        ctx.data_root / "fp_naa" / "reference_safety_cache" / "dev" / "waveform_fp32infer_v2"
     )
     screen_run = screen_gate.parents[1].name
     confirm_run = confirm_gate.parents[1].name
@@ -849,9 +910,7 @@ def _run_reference_safety(
         "--preload-workers",
         str(workers),
     )
-    return _stage_result(
-        report / "gate.json", "passed", report / "reference_safety_summary.csv"
-    )
+    return _stage_result(report / "gate.json", "passed", report / "reference_safety_summary.csv")
 
 
 def _common_paths(ctx: FPNAAJobContext) -> dict[str, Path]:
@@ -965,7 +1024,14 @@ def _ensure_beats_assets(ctx: FPNAAJobContext) -> tuple[Path, Path]:
         temporary = Path(tempfile.mkdtemp(prefix="unilm_", dir=external))
         try:
             _run_external(
-                ["git", "clone", "--filter=blob:none", "--no-checkout", BEATS_REPOSITORY, str(temporary)],
+                [
+                    "git",
+                    "clone",
+                    "--filter=blob:none",
+                    "--no-checkout",
+                    BEATS_REPOSITORY,
+                    str(temporary),
+                ],
                 cwd=ctx.repo_root,
             )
             _run_external(["git", "sparse-checkout", "set", "beats"], cwd=temporary)
@@ -976,7 +1042,9 @@ def _ensure_beats_assets(ctx: FPNAAJobContext) -> tuple[Path, Path]:
                 shutil.rmtree(temporary)
     actual_commit = _external_output(["git", "rev-parse", "HEAD"], cwd=source_root)
     if actual_commit != BEATS_COMMIT:
-        raise JobError("BEATS_SOURCE_MISMATCH", "Pinned BEATs source commit mismatch", actual_commit)
+        raise JobError(
+            "BEATS_SOURCE_MISMATCH", "Pinned BEATs source commit mismatch", actual_commit
+        )
     if not checkpoint.is_file() or _sha256(checkpoint) != BEATS_ITER3_SHA256:
         _download_checkpoint(checkpoint)
     if _sha256(checkpoint) != BEATS_ITER3_SHA256:
@@ -999,7 +1067,10 @@ def _download_checkpoint(destination: Path) -> None:
                 handle.write(block)
                 downloaded += len(block)
                 if downloaded % (64 * 1024 * 1024) < len(block):
-                    print(json.dumps({"event": "checkpoint_download", "bytes": downloaded}), flush=True)
+                    print(
+                        json.dumps({"event": "checkpoint_download", "bytes": downloaded}),
+                        flush=True,
+                    )
     if _sha256(partial) != BEATS_ITER3_SHA256:
         raise JobError("BEATS_CHECKPOINT_MISMATCH", "Downloaded checkpoint SHA-256 mismatch")
     os.replace(partial, destination)
@@ -1084,9 +1155,7 @@ def _publish_report(ctx: FPNAAJobContext, run_id: str, report_dir: Path, report:
         _run_external(["git", "push", "origin", f"HEAD:{ctx.branch}"], cwd=ctx.repo_root)
     except subprocess.CalledProcessError as exc:
         print(
-            json.dumps(
-                {"error": {"code": "REPORT_PUSH_FAILED", "returncode": exc.returncode}}
-            ),
+            json.dumps({"error": {"code": "REPORT_PUSH_FAILED", "returncode": exc.returncode}}),
             flush=True,
         )
         return int(exc.returncode or 1)
@@ -1336,10 +1405,7 @@ def _sha256(path: Path) -> str:
 def _installed_package_names() -> set[str]:
     import importlib.metadata as metadata
 
-    return {
-        str(distribution.metadata["Name"]).lower()
-        for distribution in metadata.distributions()
-    }
+    return {str(distribution.metadata["Name"]).lower() for distribution in metadata.distributions()}
 
 
 def _utc_now() -> str:

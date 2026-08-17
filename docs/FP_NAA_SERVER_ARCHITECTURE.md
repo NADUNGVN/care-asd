@@ -148,3 +148,6 @@ After the valid v1 screening failure, new screening and downstream jobs use the 
 `configs/experiment/fp_naa_v2.yaml` tail-safe objective. The immutable v1 reports remain valid
 negative-ablation artifacts; the shared BEATs and augmentation caches are reusable because v2 does
 not change their frontend or augmentation contracts.
+
+The public `fp-naa runtime-check` also executes CUDA smoke probes for the tail-safe objective and
+primary-safe gradient projection, so server validation remains one short command.
