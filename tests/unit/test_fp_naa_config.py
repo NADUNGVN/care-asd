@@ -34,6 +34,10 @@ def test_v1_through_v4_configs_are_versioned_without_changing_frozen_gates() -> 
     assert v3.backend == v1.backend
     assert v3.gates == v1.gates
     assert v4.experiment_id == "fp_naa_v4_reference_only_equivariant"
+    assert (
+        v4.screening_c1_reuse_run_id
+        == "server02_fp_naa_screening_20260817T145911Z"
+    )
     assert v4.adapter.c2_conditioning_mode == "reference_only_equivariant"
     assert v4.adapter.reference_safety_mode == "none"
     assert v4.adapter.share_c1_weights_for_c2 is False
@@ -84,4 +88,14 @@ def test_reference_only_c2_rejects_auxiliary_loss(tmp_path: Path) -> None:
     path.write_text(yaml.safe_dump(payload), encoding="utf-8")
 
     with pytest.raises(ValueError, match="zero auxiliary-objective weights"):
+        load_fp_naa_config(path)
+
+
+def test_c1_reuse_run_id_rejects_filesystem_paths(tmp_path: Path) -> None:
+    payload = yaml.safe_load(Path("configs/experiment/fp_naa_v4.yaml").read_text())
+    payload["screening_c1_reuse_run_id"] = "../unregistered-run"
+    path = tmp_path / "invalid.yaml"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="screening_c1_reuse_run_id"):
         load_fp_naa_config(path)

@@ -7,6 +7,7 @@ import json
 import math
 import os
 import random
+import shutil
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -136,6 +137,13 @@ def run_fp_naa_screening(
         raise FileNotFoundError(f"C0 score file not found: {c0_scores}")
     output.mkdir(parents=True, exist_ok=True)
     checkpoints.mkdir(parents=True, exist_ok=True)
+    c1_reuse = _screening_c1_reuse_manifest(
+        output=output,
+        config=config,
+        base_cache_sha256=_sha256(base_cache / "cache.json"),
+        augmentation_cache_sha256=_sha256(augmentation_cache / "cache.json"),
+        c0_scores_sha256=_sha256(c0_scores),
+    )
     _ensure_contract(
         output,
         {
@@ -146,6 +154,7 @@ def run_fp_naa_screening(
             "base_cache_metadata_sha256": _sha256(base_cache / "cache.json"),
             "augmentation_cache_metadata_sha256": _sha256(augmentation_cache / "cache.json"),
             "c0_scores_sha256": _sha256(c0_scores),
+            "screening_c1_reuse": c1_reuse,
         },
     )
     completed_gate = output / "gate.json"
@@ -185,20 +194,32 @@ def run_fp_naa_screening(
                 completed=run_number - 1,
                 total=total_runs,
             )
-            model = _load_or_train_model(
-                checkpoint=checkpoint,
-                history_path=variant / "training_history.csv",
-                arrays=training,
-                candidate=candidate,
-                seed=seed,
-                config=config,
-                device=torch_device,
-                progress_output=output,
-                run_number=run_number,
-                total_runs=total_runs,
-            )
+            reused_parameters: int | None = None
+            if candidate == "c1_mse" and c1_reuse is not None:
+                reused_parameters = _materialize_reused_c1_variant(
+                    source_directory=Path(str(c1_reuse["source_directory"])),
+                    destination=variant,
+                    seed=seed,
+                    manifest=c1_reuse,
+                )
+                model = None
+            else:
+                model = _load_or_train_model(
+                    checkpoint=checkpoint,
+                    history_path=variant / "training_history.csv",
+                    arrays=training,
+                    candidate=candidate,
+                    seed=seed,
+                    config=config,
+                    device=torch_device,
+                    progress_output=output,
+                    run_number=run_number,
+                    total_runs=total_runs,
+                )
             retention_path = variant / "retention.csv"
             if not retention_path.is_file():
+                if model is None:
+                    raise ValueError("Reused C1 retention artifact is missing")
                 _write_retention_diagnostics(
                     model=model,
                     arrays=training,
@@ -216,6 +237,8 @@ def run_fp_naa_screening(
             if score_path.is_file() and not metrics_path.is_file():
                 calculate_dcase2026_official_metrics(score_path, metrics_path)
             elif not score_path.is_file():
+                if model is None:
+                    raise ValueError("Reused C1 score artifact is missing")
                 _score_adapter(
                     model=model,
                     base_store=base_store,
@@ -241,7 +264,11 @@ def run_fp_naa_screening(
                     "in_support_retention_q05": float(in_support.quantile(0.05)),
                     "heldout_retention_median": float(heldout.median()),
                     "heldout_retention_q05": float(heldout.quantile(0.05)),
-                    "trainable_parameters": trainable_parameter_count(model),
+                    "trainable_parameters": (
+                        reused_parameters
+                        if reused_parameters is not None
+                        else trainable_parameter_count(model)
+                    ),
                     "score_path": str(score_path.relative_to(output)),
                 }
             )
@@ -283,6 +310,146 @@ def run_fp_naa_screening(
         completed_gate,
         bool(gate["checks"]["core_screening"]),
     )
+
+
+def _screening_c1_reuse_manifest(
+    *,
+    output: Path,
+    config: FPNAAConfig,
+    base_cache_sha256: str,
+    augmentation_cache_sha256: str,
+    c0_scores_sha256: str,
+) -> dict[str, object] | None:
+    """Validate a frozen C1 screening result for byte-identical artifact reuse."""
+    run_id = config.screening_c1_reuse_run_id
+    if run_id is None:
+        return None
+    source = output.parent.parent / run_id / "screening"
+    contract_path = source / "contract.json"
+    summary_path = source / "screening_summary.csv"
+    if not contract_path.is_file() or not summary_path.is_file():
+        raise FileNotFoundError(f"Registered C1 reuse run is incomplete: {source}")
+    contract = json.loads(contract_path.read_text(encoding="utf-8"))
+    expected_hashes = {
+        "base_cache_metadata_sha256": base_cache_sha256,
+        "augmentation_cache_metadata_sha256": augmentation_cache_sha256,
+        "c0_scores_sha256": c0_scores_sha256,
+    }
+    for key, expected in expected_hashes.items():
+        if contract.get(key) != expected:
+            raise ValueError(f"Registered C1 reuse {key} mismatch: {source}")
+    source_config = contract.get("config")
+    if not isinstance(source_config, dict):
+        raise ValueError(f"Registered C1 reuse config is invalid: {source}")
+    if _c1_reuse_signature(source_config) != _c1_reuse_signature(
+        config.model_dump(mode="json")
+    ):
+        raise ValueError(f"Registered C1 training/scoring contract mismatch: {source}")
+
+    summary = pd.read_csv(summary_path)
+    c1 = summary.loc[summary["candidate"] == "c1_mse"].copy()
+    if set(c1["seed"].astype(int)) != set(config.training.screening_seeds):
+        raise ValueError(f"Registered C1 reuse seeds are incomplete: {source}")
+    artifacts: dict[str, str] = {}
+    required = ("training_history.csv", "retention.csv", "scores.csv", "metrics.json")
+    for seed in config.training.screening_seeds:
+        for name in required:
+            relative = Path(f"seed{seed}") / "c1_mse" / name
+            artifact = source / relative
+            if not artifact.is_file():
+                raise FileNotFoundError(f"Registered C1 artifact is missing: {artifact}")
+            artifacts[relative.as_posix()] = _sha256(artifact)
+    return {
+        "source_run_id": run_id,
+        "source_directory": str(source),
+        "source_contract_sha256": _sha256(contract_path),
+        "source_summary_sha256": _sha256(summary_path),
+        "artifacts": artifacts,
+    }
+
+
+def _c1_reuse_signature(config: dict[str, object]) -> dict[str, object]:
+    """Return only fields that can affect C1 training, diagnostics, or scoring."""
+    adapter = cast(dict[str, object], config["adapter"])
+    objective = cast(dict[str, object], config["objective"])
+    training = cast(dict[str, object], config["training"])
+    return {
+        "provenance": config["provenance"],
+        "frontend": config["frontend"],
+        "backend": config["backend"],
+        "augmentation": config["augmentation"],
+        "adapter": {
+            key: adapter[key]
+            for key in (
+                "hidden_dim",
+                "attention_heads",
+                "dropout",
+                "reference_dropout_probability",
+                "reference_corruption_probability",
+            )
+        },
+        "objective": {"normal_mse_weight": objective["normal_mse_weight"]},
+        "training": {
+            key: training[key]
+            for key in (
+                "epochs",
+                "batch_size",
+                "learning_rate",
+                "weight_decay",
+                "warmup_epochs",
+                "gradient_clip_norm",
+                "workers",
+                "mixed_precision",
+                "screening_seeds",
+            )
+        },
+    }
+
+
+def _materialize_reused_c1_variant(
+    *,
+    source_directory: Path,
+    destination: Path,
+    seed: int,
+    manifest: dict[str, object],
+) -> int:
+    """Copy a validated C1 variant and preserve per-file provenance."""
+    artifacts = cast(dict[str, str], manifest["artifacts"])
+    names = ("training_history.csv", "retention.csv", "scores.csv", "metrics.json")
+    copied: dict[str, str] = {}
+    for name in names:
+        relative = Path(f"seed{seed}") / "c1_mse" / name
+        expected = artifacts[relative.as_posix()]
+        source = source_directory / relative
+        target = destination / name
+        if target.is_file():
+            if _sha256(target) != expected:
+                raise ValueError(f"Reused C1 artifact hash mismatch: {target}")
+        else:
+            shutil.copy2(source, target)
+        if _sha256(target) != expected:
+            raise ValueError(f"Reused C1 artifact copy failed: {target}")
+        copied[name] = expected
+    summary = pd.read_csv(source_directory / "screening_summary.csv")
+    row = summary.loc[
+        (summary["candidate"] == "c1_mse") & (summary["seed"].astype(int) == seed)
+    ]
+    if len(row) != 1:
+        raise ValueError(f"Reused C1 summary row is invalid for seed {seed}")
+    parameters = int(row.iloc[0]["trainable_parameters"])
+    _atomic_json(
+        destination / "reuse.json",
+        {
+            "schema_version": 1,
+            "source_run_id": manifest["source_run_id"],
+            "source_contract_sha256": manifest["source_contract_sha256"],
+            "seed": seed,
+            "candidate": "c1_mse",
+            "trainable_parameters": parameters,
+            "artifacts": copied,
+        },
+    )
+    return parameters
 
 
 def run_fp_naa_lomo(

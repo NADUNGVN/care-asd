@@ -136,6 +136,10 @@ class FPNAAConfig(BaseModel):
 
     schema_version: int
     experiment_id: str
+    screening_c1_reuse_run_id: str | None = Field(
+        default=None,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$",
+    )
     provenance: ProvenanceConfig
     frontend: FPFrontendConfig
     backend: FPBackendConfig

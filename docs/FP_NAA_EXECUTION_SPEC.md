@@ -293,6 +293,9 @@ in-support q05 at 0.1019. V3 is closed without LOMO. The next frozen mechanism r
 dependence from the learned correction so `F(x + delta, r) - F(x, r) = delta` by construction.
 Its causal architecture, unchanged gates, and novelty boundary are preregistered in
 [`FP_NAA_V4_REFERENCE_ONLY_EQUIVARIANCE.md`](FP_NAA_V4_REFERENCE_ONLY_EQUIVARIANCE.md).
+The unchanged three-seed C1 comparator is reused byte-for-byte from that V3 run with source/cache/
+score/artifact SHA-256 validation; only the three V4 C2 trajectories are newly trained during core
+screening. There is no fallback to an incompatible or partially matching C1 run.
 
 ## 8. Primary prior art used to set the boundary
 

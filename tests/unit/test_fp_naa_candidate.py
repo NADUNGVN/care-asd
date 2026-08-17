@@ -13,6 +13,7 @@ torch = pytest.importorskip("torch")
 
 from care_asd.evaluation.fp_naa_candidate import (
     _auxiliary_scale,
+    _c1_reuse_signature,
     _deterministic_runtime_metadata,
     _exclude_machine,
     _fault_diagnostics,
@@ -146,6 +147,14 @@ def test_v4_uses_reference_only_c2_without_auxiliary_forward() -> None:
     assert c2.conditioning_mode == "reference_only_equivariant"
     assert _auxiliary_scale(0, candidate="c2_fault_preserving", config=config) == 0.0
     assert _auxiliary_scale(59, candidate="c2_fault_preserving", config=config) == 0.0
+
+
+def test_v3_and_v4_have_identical_c1_reuse_signatures() -> None:
+    v3 = yaml.safe_load(Path("configs/experiment/fp_naa_v3.yaml").read_text())
+    v4 = yaml.safe_load(Path("configs/experiment/fp_naa_v4.yaml").read_text())
+    assert _c1_reuse_signature(v3) == _c1_reuse_signature(v4)
+    v4["training"]["learning_rate"] *= 2.0
+    assert _c1_reuse_signature(v3) != _c1_reuse_signature(v4)
 
 
 def test_primary_safe_backward_removes_conflicting_auxiliary_component() -> None:

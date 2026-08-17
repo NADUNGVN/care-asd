@@ -147,9 +147,11 @@ an infinite restart loop.
 After the valid v1--v3 screening failures, new screening and downstream jobs use the versioned
 `configs/experiment/fp_naa_v4.yaml` reference-only perturbation-equivariant adapter. The immutable
 v1--v3 reports remain valid negative-ablation artifacts. The shared BEATs and augmentation caches
-are reusable because V4 does not change their frontend or augmentation contracts. V4 trains the
-target-conditioned C1 and same-capacity reference-only C2 independently; both use only normal MSE,
-while pseudo faults remain blinded retention diagnostics.
+are reusable because V4 does not change their frontend or augmentation contracts. For screening,
+V4 reuses the registered V3 C1 report artifacts only after validating its training/scoring
+signature and all SHA-256 values, then trains the same-capacity reference-only C2 from scratch.
+Both use only normal MSE, while pseudo faults remain blinded retention diagnostics. A mismatch
+causes a hard failure rather than silent retraining or fallback.
 
 The public `fp-naa runtime-check` retains the historical tail-loss, gradient, and V3 projection
 probes and additionally executes the V4 target-perturbation equivariance invariant on CUDA, so

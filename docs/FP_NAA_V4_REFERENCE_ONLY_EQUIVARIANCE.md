@@ -51,6 +51,13 @@ loss weights are zero, and the implementation skips the second fault forward pas
 remain blinded diagnostics only. This prevents the 84--85% gradient conflict observed in V2 and
 isolates the architectural constraint as the C1/C2 difference.
 
+The three screening C1 artifacts are reused byte-for-byte from the valid V3 run
+`server02_fp_naa_screening_20260817T145911Z`; C1's architecture, data, normal-MSE objective,
+optimizer, backend, and seeds are unchanged. The controller verifies the source contract, base and
+augmentation cache hashes, C0 score hash, seed set, and every copied artifact SHA-256 before use.
+Any mismatch is fatal. This removes three redundant training trajectories without changing the
+comparator or selecting a favorable result. V4 C2 never reuses a V3 checkpoint.
+
 The exact identity concerns perturbations at the adapter input. The registered retention metric
 compares the noisy-input BEATs delta with a clean-teacher BEATs delta, which need not be identical.
 Retention must therefore still pass empirically; the algebra is not used as a substitute for G2.
@@ -85,7 +92,8 @@ The authoritative configuration is `configs/experiment/fp_naa_v4.yaml`.
 
 - BEATs checkpoint/cache, augmentation cache, C0 scores, RDP(8)/BEAM backend, three screening
   seeds, optimizer, 60 epochs, and every G2/G3 threshold are unchanged.
-- C1 is the original target-conditioned MSE adapter.
+- C1 is the original target-conditioned MSE adapter, reused from the registered V3 run only after
+  exact contract and artifact-hash validation.
 - C2 is independently trained reference-only equivariant MSE adapter.
 - No auxiliary fault loss, output projection, threshold grid, or development-label selection is
   allowed.
