@@ -320,6 +320,8 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
                 raise RuntimeError("RDP-salient projection violated its contraction bound")
             if not torch.allclose(projected[:, :2], raw_correction[:, :2]):
                 raise RuntimeError("RDP-salient projection changed an unprotected temporal row")
+            torch.manual_seed(2608)
+            torch.cuda.manual_seed_all(2608)
             equivariant = BandwiseReferenceAdapter(
                 embedding_dim=8,
                 hidden_dim=8,
@@ -347,7 +349,12 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
                 atol=1.0e-6,
             ):
                 raise RuntimeError("Reference-only adapter violated target perturbation equivariance")
-            if torch.allclose(reference_shifted_output, clean_output):
+            reference_response = (
+                reference_shifted_output - clean_output
+            ).float().square().mean().sqrt()
+            if not bool(torch.isfinite(reference_response)) or not bool(
+                reference_response > 1.0e-7
+            ):
                 raise RuntimeError("Reference-only adapter ignored its reference input")
             differentiable_near = torch.randn(
                 1, 3, 2, 8, device="cuda", requires_grad=True
@@ -371,7 +378,9 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
         checks["tail_safe_objective_probe"] = "passed"
         checks["primary_safe_gradient_probe"] = "passed"
         checks["rdp_salient_projection_probe"] = "passed"
+        checks["reference_responsiveness_probe"] = "passed"
         checks["target_perturbation_equivariance_probe"] = "passed"
+        checks["target_jacobian_identity_probe"] = "passed"
     return {"schema_version": SCHEMA_VERSION, "runtime": checks}
 
 

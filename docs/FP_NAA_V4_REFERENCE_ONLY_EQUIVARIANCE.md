@@ -97,7 +97,9 @@ The authoritative configuration is `configs/experiment/fp_naa_v4.yaml`.
 - C2 is independently trained reference-only equivariant MSE adapter.
 - No auxiliary fault loss, output projection, threshold grid, or development-label selection is
   allowed.
-- SERVER-02 must pass `target_perturbation_equivariance_probe` before screening.
+- SERVER-02 must pass `reference_responsiveness_probe`,
+  `target_perturbation_equivariance_probe`, and `target_jacobian_identity_probe` before
+  screening.
 - LOMO remains blocked unless every G2 core check passes.
 
 V4 succeeds at screening only if it reaches at least 62.00%, improves over C0 by at least 1.00
