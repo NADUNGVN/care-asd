@@ -338,7 +338,8 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
                 perturbation = 0.02 * torch.randn_like(near)
                 clean_output = equivariant(near, far)
                 perturbed_output = equivariant(near + perturbation, far)
-                reference_shifted_output = equivariant(near, far + 0.1)
+                reference_perturbation = 0.1 * torch.randn_like(far)
+                reference_shifted_output = equivariant(near, far + reference_perturbation)
             if not torch.allclose(
                 perturbed_output - clean_output,
                 perturbation,

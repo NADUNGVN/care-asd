@@ -180,7 +180,8 @@ def test_reference_only_adapter_is_exactly_target_perturbation_equivariant() -> 
         perturbation = 0.05 * torch.randn_like(target)
         baseline = model(target, reference)
         perturbed = model(target + perturbation, reference)
-        shifted_reference = model(target, reference + 0.2)
+        reference_perturbation = 0.2 * torch.randn_like(reference)
+        shifted_reference = model(target, reference + reference_perturbation)
     torch.testing.assert_close(perturbed - baseline, perturbation, rtol=1.0e-5, atol=1.0e-6)
     assert not torch.allclose(shifted_reference, baseline)
 
