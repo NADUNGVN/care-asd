@@ -69,6 +69,11 @@ env -u LD_LIBRARY_PATH -u LD_PRELOAD conda run -n care-asd-fp-naa care-asd fp-na
 The last command rejects the wrong Conda env, any CUDA 13 package, a Torch/torchaudio version
 mismatch, unavailable CUDA, or a failed real cuDNN convolution.
 
+Every detached subprocess also receives `CUBLAS_WORKSPACE_CONFIG=:4096:8`. Adapter training uses
+hard deterministic algorithms, disables cuDNN benchmarking and the nondeterministic flash/memory-
+efficient attention kernels, and records the resulting backend state in checkpoints and run
+metadata. A determinism warning is therefore a failed experiment contract, not an ignorable log.
+
 ## BEATs extraction numerical contract
 
 Frozen BEATs inference and adapter optimization have separate precision controls. BEATs token

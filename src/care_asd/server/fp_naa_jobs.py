@@ -31,6 +31,7 @@ EXPECTED_CONDA_ENV = "care-asd-fp-naa"
 EXPECTED_TORCH = "2.6.0+cu118"
 EXPECTED_TORCHAUDIO = "2.6.0+cu118"
 EXPECTED_CUDA = "11.8"
+CUBLAS_WORKSPACE_CONFIG = ":4096:8"
 BRANCH = "research/fp-naa"
 CHECKPOINT_URL = (
     "https://huggingface.co/lpepino/beats_ckpts/resolve/"
@@ -173,6 +174,7 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
     for variable in ("LD_LIBRARY_PATH", "LD_PRELOAD"):
         if os.environ.pop(variable, None) is not None:
             removed_dynamic_library_variables.append(variable)
+    os.environ["CUBLAS_WORKSPACE_CONFIG"] = CUBLAS_WORKSPACE_CONFIG
     prefix_name = Path(sys.prefix).name
     conda_name = os.environ.get("CONDA_DEFAULT_ENV")
     if prefix_name != EXPECTED_CONDA_ENV and conda_name != EXPECTED_CONDA_ENV:
@@ -195,6 +197,7 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
         "cudnn": torch.backends.cudnn.version(),
         "cuda_available": bool(torch.cuda.is_available()),
         "cu13_packages": cu13,
+        "cublas_workspace_config": os.environ["CUBLAS_WORKSPACE_CONFIG"],
         "removed_dynamic_library_variables": removed_dynamic_library_variables,
     }
     if checks["torch"] != EXPECTED_TORCH:
@@ -206,15 +209,39 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
     checks["gpu"] = torch.cuda.get_device_name(0)
     if run_convolution:
         try:
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
+            torch.backends.cuda.enable_flash_sdp(False)
+            torch.backends.cuda.enable_mem_efficient_sdp(False)
+            torch.backends.cuda.enable_math_sdp(True)
+            torch.use_deterministic_algorithms(True, warn_only=False)
             layer = torch.nn.Conv2d(1, 4, 3, padding=1).cuda()
             sample = torch.randn(2, 1, 32, 32, device="cuda")
             output = layer(sample)
+            attention = torch.nn.MultiheadAttention(32, 4, batch_first=True).cuda()
+            sequence = torch.randn(2, 8, 32, device="cuda", requires_grad=True)
+            attended, _ = attention(sequence, sequence, sequence, need_weights=False)
+            attended.square().mean().backward()
             torch.cuda.synchronize()
         except RuntimeError as exc:
-            raise JobError("CUDNN_PROBE_FAILED", "GPU convolution probe failed", str(exc)) from exc
+            raise JobError(
+                "DETERMINISTIC_GPU_PROBE_FAILED",
+                "Deterministic convolution/attention probe failed",
+                str(exc),
+            ) from exc
         if tuple(output.shape) != (2, 4, 32, 32):
             raise JobError("CUDNN_PROBE_FAILED", "Unexpected convolution output shape")
         checks["convolution_probe"] = "passed"
+        checks["deterministic_attention_backward_probe"] = "passed"
+        checks["deterministic_algorithms"] = torch.are_deterministic_algorithms_enabled()
+        checks["deterministic_warn_only"] = (
+            torch.is_deterministic_algorithms_warn_only_enabled()
+        )
+        checks["flash_sdp_enabled"] = torch.backends.cuda.flash_sdp_enabled()
+        checks["memory_efficient_sdp_enabled"] = (
+            torch.backends.cuda.mem_efficient_sdp_enabled()
+        )
+        checks["math_sdp_enabled"] = torch.backends.cuda.math_sdp_enabled()
     return {"schema_version": SCHEMA_VERSION, "runtime": checks}
 
 
@@ -288,9 +315,7 @@ def _start_fp_naa_job_locked(
         "--workers",
         str(workers),
     ]
-    clean_env = os.environ.copy()
-    clean_env.pop("LD_LIBRARY_PATH", None)
-    clean_env.pop("LD_PRELOAD", None)
+    clean_env = _subprocess_environment()
     try:
         with log_path.open("ab", buffering=0) as log_handle:
             process = subprocess.Popen(
@@ -1018,17 +1043,22 @@ def _run_pytest(ctx: FPNAAJobContext, *tests: str) -> None:
 
 def _run_external(command: list[str], *, cwd: Path) -> None:
     print(json.dumps({"event": "command", "argv": command}), flush=True)
-    clean_env = os.environ.copy()
-    clean_env.pop("LD_LIBRARY_PATH", None)
-    clean_env.pop("LD_PRELOAD", None)
+    clean_env = _subprocess_environment()
     subprocess.run(command, cwd=cwd, env=clean_env, check=True)
 
 
 def _external_output(command: list[str], *, cwd: Path) -> str:
-    clean_env = os.environ.copy()
-    clean_env.pop("LD_LIBRARY_PATH", None)
-    clean_env.pop("LD_PRELOAD", None)
+    clean_env = _subprocess_environment()
     return subprocess.check_output(command, cwd=cwd, env=clean_env, text=True).strip()
+
+
+def _subprocess_environment() -> dict[str, str]:
+    environment = os.environ.copy()
+    environment.pop("LD_LIBRARY_PATH", None)
+    environment.pop("LD_PRELOAD", None)
+    environment["CUBLAS_WORKSPACE_CONFIG"] = CUBLAS_WORKSPACE_CONFIG
+    environment.setdefault("PYTHONHASHSEED", "0")
+    return environment
 
 
 def _assert_clean_branch(ctx: FPNAAJobContext) -> None:

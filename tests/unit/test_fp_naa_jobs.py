@@ -9,6 +9,7 @@ from typing import cast
 import pytest
 
 from care_asd.server.fp_naa_jobs import (
+    CUBLAS_WORKSPACE_CONFIG,
     SCHEMA_VERSION,
     FPNAAJobContext,
     JobError,
@@ -164,6 +165,10 @@ def test_start_uses_detached_current_python_without_a_shell(
     assert command[3:6] == ["fp-naa", "job", "run-internal"]
     assert kwargs["start_new_session"] is True
     assert "shell" not in kwargs
+    environment = cast(dict[str, str], kwargs["env"])
+    assert environment["CUBLAS_WORKSPACE_CONFIG"] == CUBLAS_WORKSPACE_CONFIG
+    assert "LD_LIBRARY_PATH" not in environment
+    assert "LD_PRELOAD" not in environment
     assert result["job"]["pid"] == 4321
 
 

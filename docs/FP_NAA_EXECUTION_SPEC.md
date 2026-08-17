@@ -33,6 +33,12 @@ run, whose autocast extraction generated all-NaN near and far token grids. That 
 excluded from scientific analysis. Cache schema v2 rejects non-finite audio, frontend output, and
 post-cast payloads before publication and binds reuse to the complete extraction contract.
 
+Adapter runs require hard deterministic PyTorch execution, `CUBLAS_WORKSPACE_CONFIG=:4096:8`,
+cuDNN benchmarking disabled, and math scaled-dot-product attention with flash and memory-efficient
+kernels disabled. Runtime state is written into checkpoints and run metadata. A CuBLAS or attention
+determinism warning invalidates that run as infrastructure evidence; it cannot enter screening or
+confirmatory statistics.
+
 ```bash
 env -u LD_LIBRARY_PATH -u LD_PRELOAD conda run -n care-asd-fp-naa care-asd fp-naa runtime-check
 ```

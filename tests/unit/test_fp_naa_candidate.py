@@ -12,6 +12,7 @@ import yaml
 torch = pytest.importorskip("torch")
 
 from care_asd.evaluation.fp_naa_candidate import (
+    _deterministic_runtime_metadata,
     _exclude_machine,
     _load_or_train_model,
     _TrainingArrays,
@@ -87,6 +88,14 @@ def test_candidate_training_writes_resumable_checkpoint(
     assert json.loads(json.dumps(payload["config"]))["training"]["epochs"] == 1
     output = model(torch.from_numpy(noisy_clean[:1]), torch.from_numpy(reference[:1]))
     assert output.shape == torch.Size((1, 2, 2, 8))
+    runtime = _deterministic_runtime_metadata()
+    assert runtime["cublas_workspace_config"] == ":4096:8"
+    assert runtime["deterministic_algorithms"] is True
+    assert runtime["deterministic_warn_only"] is False
+    assert runtime["cudnn_benchmark"] is False
+    assert runtime["flash_sdp_enabled"] is False
+    assert runtime["memory_efficient_sdp_enabled"] is False
+    assert runtime["math_sdp_enabled"] is True
 
     fold = _exclude_machine(arrays, "fan")
     assert len(fold.frame) == 2

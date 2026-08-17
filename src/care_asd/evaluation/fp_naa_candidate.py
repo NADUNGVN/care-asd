@@ -15,6 +15,9 @@ from typing import Literal, cast
 
 import numpy as np
 import pandas as pd
+
+os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+
 import torch
 from torch import Tensor
 from torch.utils.data import DataLoader, Dataset
@@ -258,6 +261,7 @@ def run_fp_naa_screening(
             "base_cache": str(base_cache),
             "augmentation_cache": str(augmentation_cache),
             "c0_scores": str(c0_scores),
+            "deterministic_runtime": _deterministic_runtime_metadata(),
             "config": config.model_dump(mode="json"),
             "device": str(torch_device),
             "preload_workers": workers,
@@ -545,6 +549,7 @@ def _load_or_train_model(
             "seed": seed,
             "model_state": model.state_dict(),
             "config": config.model_dump(mode="json"),
+            "deterministic_runtime": _deterministic_runtime_metadata(),
         },
         temporary,
     )
@@ -942,13 +947,38 @@ def _set_seed(seed: int) -> None:
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    torch.use_deterministic_algorithms(True, warn_only=True)
+    _configure_deterministic_runtime()
+
+
+def _configure_deterministic_runtime() -> None:
+    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    if torch.cuda.is_available():
+        torch.backends.cuda.enable_flash_sdp(False)
+        torch.backends.cuda.enable_mem_efficient_sdp(False)
+        torch.backends.cuda.enable_math_sdp(True)
+    torch.use_deterministic_algorithms(True, warn_only=False)
+
+
+def _deterministic_runtime_metadata() -> dict[str, object]:
+    return {
+        "cublas_workspace_config": os.environ.get("CUBLAS_WORKSPACE_CONFIG"),
+        "deterministic_algorithms": torch.are_deterministic_algorithms_enabled(),
+        "deterministic_warn_only": torch.is_deterministic_algorithms_warn_only_enabled(),
+        "cudnn_deterministic": torch.backends.cudnn.deterministic,
+        "cudnn_benchmark": torch.backends.cudnn.benchmark,
+        "flash_sdp_enabled": torch.backends.cuda.flash_sdp_enabled(),
+        "memory_efficient_sdp_enabled": torch.backends.cuda.mem_efficient_sdp_enabled(),
+        "math_sdp_enabled": torch.backends.cuda.math_sdp_enabled(),
+    }
 
 
 def _cuda_device(device: str) -> torch.device:
     resolved = torch.device(device)
     if resolved.type != "cuda" or not torch.cuda.is_available():
         raise RuntimeError("FP-NAA screening requires a CUDA device")
+    _configure_deterministic_runtime()
     return resolved
 
 
