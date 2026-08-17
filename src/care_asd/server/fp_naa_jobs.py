@@ -348,11 +348,23 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
                 raise RuntimeError("Reference-only adapter violated target perturbation equivariance")
             if torch.allclose(reference_shifted_output, clean_output):
                 raise RuntimeError("Reference-only adapter ignored its reference input")
+            differentiable_near = torch.randn(
+                1, 3, 2, 8, device="cuda", requires_grad=True
+            )
+            cotangent = torch.randn_like(differentiable_near)
+            (equivariant(differentiable_near, far[:1, :3]) * cotangent).sum().backward()
+            if differentiable_near.grad is None or not torch.allclose(
+                differentiable_near.grad,
+                cotangent,
+                rtol=1.0e-5,
+                atol=1.0e-6,
+            ):
+                raise RuntimeError("Reference-only adapter target Jacobian is not identity")
             torch.cuda.synchronize()
         except (AssertionError, RuntimeError, ValueError) as exc:
             raise JobError(
-                "TAIL_SAFE_METHOD_PROBE_FAILED",
-                "FP-NAA v2 tail-loss/gradient probe failed",
+                "METHOD_INVARIANT_PROBE_FAILED",
+                "An FP-NAA structural or objective invariant probe failed",
                 str(exc),
             ) from exc
         checks["tail_safe_objective_probe"] = "passed"

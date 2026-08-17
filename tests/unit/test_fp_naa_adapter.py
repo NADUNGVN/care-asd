@@ -184,6 +184,12 @@ def test_reference_only_adapter_is_exactly_target_perturbation_equivariant() -> 
     torch.testing.assert_close(perturbed - baseline, perturbation, rtol=1.0e-5, atol=1.0e-6)
     assert not torch.allclose(shifted_reference, baseline)
 
+    differentiable_target = torch.randn(1, 3, 2, 32, requires_grad=True)
+    cotangent = torch.randn_like(differentiable_target)
+    (model(differentiable_target, reference[:1, :3]) * cotangent).sum().backward()
+    assert differentiable_target.grad is not None
+    torch.testing.assert_close(differentiable_target.grad, cotangent)
+
 
 def test_reference_only_adapter_preserves_capacity() -> None:
     common = {
@@ -200,3 +206,4 @@ def test_reference_only_adapter_preserves_capacity() -> None:
     assert trainable_parameter_count(reference_only) == trainable_parameter_count(
         target_conditioned
     )
+    assert trainable_parameter_count(BandwiseReferenceAdapter()) == 989_696
