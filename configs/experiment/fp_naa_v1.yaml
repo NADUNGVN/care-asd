@@ -14,7 +14,8 @@ frontend:
   frequency_patches: 8
   embedding_dim: 768
   cache_dtype: float16
-  inference_batch_size: 8
+  inference_mixed_precision: false
+  inference_batch_size: 16
 
 backend:
   temporal_pooling: rdp

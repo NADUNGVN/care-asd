@@ -27,6 +27,12 @@ convolution probe, not only `torch.cuda.is_available()`. Jobs execute through th
 the frozen files; it is never repaired in place because pip-owned CUDA packages survive Conda
 `--prune`.
 
+BEATs extraction is frozen to FP32 inference even though the stored token grids are finite-checked
+float16 and adapter optimization uses AMP. This separation follows the first C0 infrastructure
+run, whose autocast extraction generated all-NaN near and far token grids. That failed run is
+excluded from scientific analysis. Cache schema v2 rejects non-finite audio, frontend output, and
+post-cast payloads before publication and binds reuse to the complete extraction contract.
+
 ```bash
 env -u LD_LIBRARY_PATH -u LD_PRELOAD conda run -n care-asd-fp-naa care-asd fp-naa runtime-check
 ```

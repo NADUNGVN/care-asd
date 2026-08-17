@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 import soundfile as sf
 import yaml
 
@@ -19,6 +20,11 @@ class _FakeFrontend:
         output = np.zeros((len(waveforms), 2, 8, 3), dtype=np.float32)
         output += means[:, None, None, :]
         return output
+
+
+class _NonFiniteFrontend:
+    def extract(self, waveforms: np.ndarray) -> np.ndarray:
+        return np.full((len(waveforms), 2, 8, 3), np.nan, dtype=np.float32)
 
 
 def _write_config(path: Path, checkpoint_sha: str) -> None:
@@ -38,6 +44,7 @@ def _write_config(path: Path, checkpoint_sha: str) -> None:
             "frequency_patches": 8,
             "embedding_dim": 3,
             "cache_dtype": "float16",
+            "inference_mixed_precision": False,
             "inference_batch_size": 2,
         },
         "backend": {
@@ -188,6 +195,66 @@ def test_beats_cache_is_stereo_resumable_and_provenance_locked(tmp_path: Path) -
     )
     assert reused == result
 
+    changed = yaml.safe_load(config.read_text(encoding="utf-8"))
+    changed["frontend"]["inference_batch_size"] = 1
+    config.write_text(yaml.safe_dump(changed, sort_keys=False), encoding="utf-8")
+    with pytest.raises(ValueError, match="config_sha256"):
+        build_beats_token_cache(
+            manifest_path=manifest,
+            audio_root=audio_root,
+            output_directory=output,
+            config_path=config,
+            beats_source_directory=source,
+            checkpoint_path=checkpoint,
+            workers=1,
+            device="cpu",
+            frontend_factory=forbidden_factory,
+        )
+
+
+def test_beats_cache_rejects_non_finite_frontend_output(tmp_path: Path) -> None:
+    sample_rate = 8000
+    audio_root = tmp_path / "audio"
+    audio_root.mkdir()
+    audio = audio_root / "clip.wav"
+    sf.write(audio, np.column_stack([np.ones(800), -np.ones(800)]) * 0.1, sample_rate)
+    manifest = tmp_path / "manifest.parquet"
+    pd.DataFrame(
+        [
+            {
+                "file_id": "clip",
+                "relative_path": "clip.wav",
+                "machine_type": "fan",
+                "section": "section_00",
+                "domain": "source",
+                "condition": "normal",
+                "dataset_split": "dev_train",
+            }
+        ]
+    ).to_parquet(manifest, index=False)
+    checkpoint = tmp_path / "checkpoint.pt"
+    checkpoint.write_bytes(b"checkpoint")
+    config = tmp_path / "config.yaml"
+    _write_config(config, hashlib.sha256(checkpoint.read_bytes()).hexdigest())
+    source = tmp_path / "source"
+    source.mkdir()
+    output = tmp_path / "cache"
+
+    with pytest.raises(RuntimeError, match="non-finite tokens"):
+        build_beats_token_cache(
+            manifest_path=manifest,
+            audio_root=audio_root,
+            output_directory=output,
+            config_path=config,
+            beats_source_directory=source,
+            checkpoint_path=checkpoint,
+            workers=1,
+            device="cpu",
+            frontend_factory=lambda *_args: _NonFiniteFrontend(),
+        )
+    assert not (output / "cache.json").exists()
+    assert not list((output / "features").glob("*.npz"))
+
 
 def test_fixed_duration_waveform_and_checked_in_config() -> None:
     short = fixed_duration_waveform(np.ones(3), sample_rate=2, duration_seconds=2.0)
@@ -195,5 +262,7 @@ def test_fixed_duration_waveform_and_checked_in_config() -> None:
     np.testing.assert_array_equal(short, [1.0, 1.0, 1.0, 0.0])
     np.testing.assert_array_equal(long, [0.0, 1.0, 2.0, 3.0])
     config = load_fp_naa_config(Path("configs/experiment/fp_naa_v1.yaml"))
+    assert config.frontend.inference_mixed_precision is False
+    assert config.frontend.inference_batch_size == 16
     assert config.training.workers == 12
     assert config.gates.baseline_minimum_official_score == 0.605

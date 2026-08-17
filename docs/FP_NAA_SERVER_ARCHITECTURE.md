@@ -69,6 +69,28 @@ env -u LD_LIBRARY_PATH -u LD_PRELOAD conda run -n care-asd-fp-naa care-asd fp-na
 The last command rejects the wrong Conda env, any CUDA 13 package, a Torch/torchaudio version
 mismatch, unavailable CUDA, or a failed real cuDNN convolution.
 
+## BEATs extraction numerical contract
+
+Frozen BEATs inference and adapter optimization have separate precision controls. BEATs token
+extraction runs in FP32 (`frontend.inference_mixed_precision: false`); adapter training may still
+use AMP (`training.mixed_precision: true`). Every audio batch, FP32 frontend result, and float16
+cache payload must be finite before an atomic feature write. Completed caches are reusable only
+when their manifest, full config, frontend contract, checkpoint, cache schema, and precision mode
+match exactly.
+
+The cache reader overlaps one bounded batch of CPU/NFS loading with the current GPU extraction.
+The registered server configuration uses batch size 16 and at most 12 loader workers, leaving the
+reserved CPU capacity available for other SERVER-02 work. MBW and power may still oscillate at
+batch boundaries; correctness and throughput are determined from progress and finite-value checks,
+not from a flat utilization trace.
+
+The failed C0 run `server02_fp_naa_c0_20260817T042420Z` produced 8,400 cache files under the old
+`beats_iter3_stereo_10s_v1` namespace before baseline validation found an all-NaN token payload.
+That run is a numerical-infrastructure failure, not a C0 scientific result. Its report and cache
+remain immutable evidence. All new runs use `beats_iter3_stereo_10s_fp32infer_v2`; downstream
+counterfactual and reference-safety caches also use new namespaces so no invalid v1 artifact can
+enter an experiment.
+
 ## Public command contract
 
 ```bash

@@ -180,8 +180,12 @@ def build_fp_naa_reference_safety_cache(
         payload: dict[str, np.ndarray] = {}
         cursor = 0
         for level in LEAKAGE_NAMES:
-            payload[f"leakage_{level}_clean_reference"] = grids[cursor].astype(np.float16)
-            payload[f"leakage_{level}_fault_reference"] = grids[cursor + 1].astype(np.float16)
+            payload[f"leakage_{level}_clean_reference"] = _cache_grid(
+                grids[cursor], context=f"file_id={item.plan.file_id} leakage={level} clean"
+            )
+            payload[f"leakage_{level}_fault_reference"] = _cache_grid(
+                grids[cursor + 1], context=f"file_id={item.plan.file_id} leakage={level} fault"
+            )
             cursor += 2
         payload["metadata_json"] = np.asarray(
             json.dumps(item.metadata, sort_keys=True, separators=(",", ":"))
@@ -196,7 +200,7 @@ def build_fp_naa_reference_safety_cache(
         silence = frontend.extract(np.zeros((1, samples), dtype=np.float32))
         if silence.ndim != 4 or len(silence) != 1:
             raise RuntimeError(f"Unexpected silence BEATs shape: {silence.shape}")
-        _atomic_npy(silence_path, silence[0].astype(np.float16))
+        _atomic_npy(silence_path, _cache_grid(silence[0], context="silence reference"))
 
     for plan in plans:
         _validate_feature(plan.feature_path, expected_file_id=plan.file_id)
@@ -380,7 +384,7 @@ def _default_frontend_factory(
         checkpoint_path=checkpoint,
         device=device,
         frequency_patches=config.frontend.frequency_patches,
-        mixed_precision=config.training.mixed_precision,
+        mixed_precision=config.frontend.inference_mixed_precision,
     )
 
 
@@ -399,6 +403,16 @@ def _write_feature(path: Path, payload: dict[str, np.ndarray]) -> None:
     with temporary.open("wb") as handle:
         np.savez(handle, **payload)
     os.replace(temporary, path)
+
+
+def _cache_grid(grid: np.ndarray, *, context: str) -> np.ndarray:
+    if grid.ndim != 3 or not np.isfinite(grid).all():
+        raise RuntimeError(f"Non-finite BEATs tokens; cache write aborted: {context}")
+    with np.errstate(over="ignore", invalid="ignore"):
+        cached = np.asarray(grid, dtype=np.float16)
+    if not np.isfinite(cached).all():
+        raise RuntimeError(f"BEATs tokens overflow float16; cache write aborted: {context}")
+    return cached
 
 
 def _validate_feature(path: Path, *, expected_file_id: str) -> None:

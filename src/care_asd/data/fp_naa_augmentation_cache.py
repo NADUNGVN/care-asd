@@ -148,7 +148,10 @@ def build_fp_naa_augmentation_cache(
         for item in prepared:
             count = len(item.names)
             payload = {
-                name: grids[cursor + offset].astype(np.float16)
+                name: _cache_grid(
+                    grids[cursor + offset],
+                    context=f"file_id={item.plan.file_id} field={name}",
+                )
                 for offset, name in enumerate(item.names)
             }
             payload["metadata_json"] = np.asarray(
@@ -371,7 +374,7 @@ def _default_frontend_factory(
         checkpoint_path=checkpoint,
         device=device,
         frequency_patches=config.frontend.frequency_patches,
-        mixed_precision=config.training.mixed_precision,
+        mixed_precision=config.frontend.inference_mixed_precision,
     )
 
 
@@ -380,6 +383,16 @@ def _write_feature(path: Path, payload: dict[str, np.ndarray]) -> None:
     with temporary.open("wb") as handle:
         np.savez(handle, **payload)
     os.replace(temporary, path)
+
+
+def _cache_grid(grid: np.ndarray, *, context: str) -> np.ndarray:
+    if grid.ndim != 3 or not np.isfinite(grid).all():
+        raise RuntimeError(f"Non-finite BEATs tokens; cache write aborted: {context}")
+    with np.errstate(over="ignore", invalid="ignore"):
+        cached = np.asarray(grid, dtype=np.float16)
+    if not np.isfinite(cached).all():
+        raise RuntimeError(f"BEATs tokens overflow float16; cache write aborted: {context}")
+    return cached
 
 
 def _safe_audio_path(root: Path, relative_text: str) -> Path:

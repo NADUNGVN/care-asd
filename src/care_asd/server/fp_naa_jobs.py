@@ -748,7 +748,13 @@ def _run_reference_safety(
     _verify_safety_inputs(screen_gate, lomo_gate, confirm_gate, confirm_lomo_gate)
     beats_source, checkpoint = _ensure_beats_assets(ctx)
     report = ctx.reports_root / run_id / "reference_safety"
-    safety_cache = ctx.data_root / "fp_naa" / "reference_safety_cache" / "dev" / "waveform_v1"
+    safety_cache = (
+        ctx.data_root
+        / "fp_naa"
+        / "reference_safety_cache"
+        / "dev"
+        / "waveform_fp32infer_v2"
+    )
     screen_run = screen_gate.parents[1].name
     confirm_run = confirm_gate.parents[1].name
     screen_checkpoints = ctx.data_root / "fp_naa" / "checkpoints" / screen_run
@@ -836,12 +842,12 @@ def _common_paths(ctx: FPNAAJobContext) -> dict[str, Path]:
         / "fp_naa"
         / "beats_cache"
         / "dev"
-        / "beats_iter3_stereo_10s_v1",
+        / "beats_iter3_stereo_10s_fp32infer_v2",
         "augmentation_cache": ctx.data_root
         / "fp_naa"
         / "augmentation_cache"
         / "dev"
-        / "counterfactual_v2",
+        / "counterfactual_fp32infer_v3",
     }
 
 

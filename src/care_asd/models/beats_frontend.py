@@ -78,7 +78,12 @@ class OfficialBEATsFrontend:
             self.frequency_patches,
             tokens.shape[2],
         )
-        return grid.float().cpu().numpy()
+        output = grid.float().cpu().numpy()
+        if not np.isfinite(output).all():
+            raise RuntimeError(
+                "BEATs produced non-finite tokens; disable frontend inference mixed precision"
+            )
+        return output
 
 
 def fixed_duration_waveform(

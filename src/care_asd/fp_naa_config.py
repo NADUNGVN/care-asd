@@ -26,6 +26,7 @@ class FPFrontendConfig(BaseModel):
     frequency_patches: int = Field(gt=0)
     embedding_dim: int = Field(gt=0)
     cache_dtype: str
+    inference_mixed_precision: bool
     inference_batch_size: int = Field(gt=0)
 
 

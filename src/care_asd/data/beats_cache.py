@@ -84,6 +84,8 @@ def build_beats_token_cache(
         return _load_completed_cache(
             output,
             manifest_sha=manifest_sha,
+            config_sha=config_sha,
+            frontend_contract_sha=frontend_contract_sha,
             config=config,
         )
 
@@ -139,13 +141,12 @@ def build_beats_token_cache(
     completed = len(frame) - len(tasks)
     _write_progress(output, completed=completed, total=len(frame), stage="extract")
     batch_size = config.frontend.inference_batch_size
-    for batch in _chunks(tasks, batch_size):
-        loader = lambda task: _load_pair(task, config)  # noqa: E731
-        if workers == 0:
-            loaded = [loader(task) for task in batch]
-        else:
-            with ThreadPoolExecutor(max_workers=workers) as executor:
-                loaded = list(executor.map(loader, batch))
+    for loaded in _loaded_batches(
+        tasks,
+        batch_size=batch_size,
+        config=config,
+        workers=workers,
+    ):
         if frontend is None:
             factory = frontend_factory or _default_frontend_factory
             frontend = factory(config, beats_source, checkpoint, device)
@@ -157,12 +158,21 @@ def build_beats_token_cache(
             raise RuntimeError("BEATs output frequency-patch count violates config")
         if grids.shape[3] != config.frontend.embedding_dim:
             raise RuntimeError("BEATs output embedding dimension violates config")
+        if not np.isfinite(grids).all():
+            invalid = np.flatnonzero(~np.isfinite(grids).all(axis=(1, 2, 3)))
+            file_ids = sorted({loaded[int(index) // 2].file_id for index in invalid})
+            raise RuntimeError(
+                "BEATs produced non-finite tokens; refusing to write cache for "
+                f"file_ids={file_ids}"
+            )
         token_shape = (int(grids.shape[1]), int(grids.shape[2]), int(grids.shape[3]))
         for index, item in enumerate(loaded):
+            near = _cache_grid(grids[2 * index], file_id=item.file_id, channel="near")
+            far = _cache_grid(grids[2 * index + 1], file_id=item.file_id, channel="far")
             _write_feature(
                 item.feature_path,
-                near=grids[2 * index].astype(np.float16),
-                far=grids[2 * index + 1].astype(np.float16),
+                near=near,
+                far=far,
             )
         completed += len(loaded)
         _write_progress(output, completed=completed, total=len(frame), stage="extract")
@@ -179,7 +189,7 @@ def build_beats_token_cache(
     indexed.to_parquet(index_temporary, index=False)
     os.replace(index_temporary, index_path)
     metadata = {
-        "schema_version": 1,
+        "schema_version": 2,
         "created_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "clips": len(frame),
         "token_shape": list(token_shape),
@@ -193,6 +203,8 @@ def build_beats_token_cache(
         "checkpoint_sha256": config.provenance.checkpoint_sha256,
         "duration_seconds": config.frontend.duration_seconds,
         "sample_rate": config.frontend.sample_rate,
+        "inference_mixed_precision": config.frontend.inference_mixed_precision,
+        "finite_validation": "audio_frontend_and_float16_cache",
     }
     _atomic_text(metadata_path, json.dumps(metadata, indent=2, sort_keys=True) + "\n")
     _write_progress(output, completed=len(frame), total=len(frame), stage="complete")
@@ -210,7 +222,7 @@ def _default_frontend_factory(
         checkpoint_path=checkpoint,
         device=device,
         frequency_patches=config.frontend.frequency_patches,
-        mixed_precision=config.training.mixed_precision,
+        mixed_precision=config.frontend.inference_mixed_precision,
     )
 
 
@@ -218,6 +230,8 @@ def _load_pair(task: _AudioTask, config: FPNAAConfig) -> _LoadedPair:
     if not task.audio_path.is_file():
         raise FileNotFoundError(f"Audio file not found: {task.audio_path}")
     waveform, sample_rate = sf.read(task.audio_path, dtype="float32", always_2d=True)
+    if not np.isfinite(waveform).all():
+        raise ValueError(f"Audio contains non-finite samples: {task.audio_path}")
     if sample_rate != config.frontend.sample_rate:
         raise ValueError(f"Unexpected sample rate {sample_rate}: {task.audio_path}")
     if waveform.shape[1] < 2:
@@ -236,6 +250,15 @@ def _load_pair(task: _AudioTask, config: FPNAAConfig) -> _LoadedPair:
 
 
 def _write_feature(path: Path, *, near: np.ndarray, far: np.ndarray) -> None:
+    if (
+        near.shape != far.shape
+        or near.ndim != 3
+        or near.dtype != np.float16
+        or far.dtype != np.float16
+        or not np.isfinite(near).all()
+        or not np.isfinite(far).all()
+    ):
+        raise ValueError(f"Refusing to write invalid BEATs token grids: {path}")
     temporary = path.with_suffix(".npz.tmp")
     with temporary.open("wb") as handle:
         np.savez(handle, near=near, far=far)
@@ -253,7 +276,14 @@ def _validate_existing_features(output: Path, feature_files: list[str]) -> tuple
                 raise ValueError(f"Invalid BEATs feature payload: {path}")
             near = payload["near"]
             far = payload["far"]
-        if near.shape != far.shape or near.ndim != 3 or near.dtype != np.float16:
+        if (
+            near.shape != far.shape
+            or near.ndim != 3
+            or near.dtype != np.float16
+            or far.dtype != np.float16
+            or not np.isfinite(near).all()
+            or not np.isfinite(far).all()
+        ):
             raise ValueError(f"Invalid BEATs token grids: {path}")
         shape = tuple(int(value) for value in near.shape)
         if expected is None:
@@ -269,17 +299,26 @@ def _load_completed_cache(
     output: Path,
     *,
     manifest_sha: str,
+    config_sha: str,
+    frontend_contract_sha: str,
     config: FPNAAConfig,
 ) -> BEATsCache:
     metadata_path = output / "cache.json"
     index_path = output / "index.parquet"
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     expected = {
+        "schema_version": 2,
         "manifest_sha256": manifest_sha,
+        "config_sha256": config_sha,
+        "frontend_contract_sha256": frontend_contract_sha,
         "checkpoint_sha256": config.provenance.checkpoint_sha256,
         "beats_commit": config.provenance.beats_commit,
         "duration_seconds": config.frontend.duration_seconds,
         "sample_rate": config.frontend.sample_rate,
+        "inference_mixed_precision": config.frontend.inference_mixed_precision,
+        "finite_validation": "audio_frontend_and_float16_cache",
+        "dtype": config.frontend.cache_dtype,
+        "channels": config.frontend.channels,
     }
     for key, value in expected.items():
         if metadata.get(key) != value:
@@ -294,6 +333,7 @@ def _load_completed_cache(
 
 def _frontend_contract_sha(config: FPNAAConfig) -> str:
     payload = {
+        "cache_schema_version": 2,
         "schema_version": config.schema_version,
         "provenance": {
             "beats_repository": str(config.provenance.beats_repository),
@@ -301,7 +341,6 @@ def _frontend_contract_sha(config: FPNAAConfig) -> str:
             "checkpoint_sha256": config.provenance.checkpoint_sha256,
         },
         "frontend": config.frontend.model_dump(mode="json"),
-        "mixed_precision": config.training.mixed_precision,
     }
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(canonical).hexdigest()
@@ -332,3 +371,47 @@ def _sha256(path: Path) -> str:
 def _chunks(items: list[_AudioTask], size: int) -> Iterator[list[_AudioTask]]:
     for start in range(0, len(items), size):
         yield items[start : start + size]
+
+
+def _loaded_batches(
+    tasks: list[_AudioTask],
+    *,
+    batch_size: int,
+    config: FPNAAConfig,
+    workers: int,
+) -> Iterator[list[_LoadedPair]]:
+    """Load one batch ahead so CPU/NFS work overlaps GPU extraction."""
+    batches = iter(_chunks(tasks, batch_size))
+    if workers == 0:
+        for batch in batches:
+            yield [_load_pair(task, config) for task in batch]
+        return
+    try:
+        first = next(batches)
+    except StopIteration:
+        return
+    with ThreadPoolExecutor(max_workers=min(workers, batch_size)) as executor:
+        futures = [executor.submit(_load_pair, task, config) for task in first]
+        while futures:
+            loaded = [future.result() for future in futures]
+            try:
+                following = next(batches)
+            except StopIteration:
+                futures = []
+            else:
+                futures = [executor.submit(_load_pair, task, config) for task in following]
+            yield loaded
+
+
+def _cache_grid(grid: np.ndarray, *, file_id: str, channel: str) -> np.ndarray:
+    if grid.ndim != 3 or not np.isfinite(grid).all():
+        raise RuntimeError(
+            f"Non-finite BEATs {channel} tokens for file_id={file_id}; cache write aborted"
+        )
+    with np.errstate(over="ignore", invalid="ignore"):
+        cached = np.asarray(grid, dtype=np.float16)
+    if not np.isfinite(cached).all():
+        raise RuntimeError(
+            f"BEATs {channel} tokens overflow float16 for file_id={file_id}; cache write aborted"
+        )
+    return cached
