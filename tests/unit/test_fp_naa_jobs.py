@@ -192,9 +192,9 @@ def test_fp_naa_shell_wrappers_are_not_part_of_the_architecture() -> None:
     assert list((repository / "scripts" / "server").glob("*fp_naa*.sh")) == []
 
 
-def test_server_pipeline_uses_the_versioned_reference_projection_config(tmp_path: Path) -> None:
+def test_server_pipeline_uses_the_versioned_equivariant_config(tmp_path: Path) -> None:
     context = _context(tmp_path)
-    assert _common_paths(context)["config"].name == "fp_naa_v3.yaml"
+    assert _common_paths(context)["config"].name == "fp_naa_v4.yaml"
 
 
 def test_state_schema_is_validated() -> None:

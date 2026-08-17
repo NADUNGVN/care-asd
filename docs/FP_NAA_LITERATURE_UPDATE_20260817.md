@@ -5,7 +5,7 @@ identifiability audit or reinterpret any AP-CARE result.
 
 ## Decision
 
-FP-NAA remains a defensible research direction, but only as an **objective-and-safety**
+FP-NAA remains a defensible research direction, but only as a **mechanism-and-safety**
 contribution. It is not a claim to have invented reference-conditioned denoising, cross-attention,
 BEATs adaptation, pseudo faults, or dual-microphone ASD. A development score above the registered
 63.00% gate is not by itself a state-of-the-art result.
@@ -26,6 +26,9 @@ about absolute task performance.
 | [Official DCASE 2026 results](https://dcase.community/challenge2026/task-first-shot-unsupervised-anomalous-sound-detection-for-machine-condition-monitoring-results) | Shows a broad performance frontier and substantial machine-to-machine heterogeneity. | Mean development improvement alone is insufficient; per-machine drops and LOMO are necessary. |
 | [MERL technical report](https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Fujimura_17_t2.pdf) | Reports 60.28% for original BEATs with frequency-wise memory, average pooling, and score rescaling, and 64.57% for Dis NA-BEATs with RDP(4). It does not report the exact FP-NAA C0 backend. | These are non-identical context points; the 60.50% C0 gate is an internal fidelity threshold, not a claimed reproduction of a published 62.02% result. |
 | [AITHU technical report](https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Jiang_125_t2.pdf) | Reports 68.20% development score using heterogeneous BEATs scoring/fine-tuning branches and score fusion; its single-branch reference is 64.04%. | Current strong systems exceed the FP-NAA absolute gate, but use materially different capacity and selection. They are context, not a capacity-matched causal comparator. |
+| [Noise-Aware Reference Denoising](https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Kim_91_t2.pdf) | Uses far-channel minimum-statistics noise transfer plus floored spectral subtraction, reaching 64.70% with an ensemble and documenting over-suppression failures. | Far-reference denoising and signal-loss safeguards are prior art. V4 must claim only its representation-space structural invariant and evidence protocol. |
+| [Deep ANC](https://www.isca-archive.org/interspeech_2020/zhang20i_interspeech.html) | Predicts a cancelling signal from a reference input with a CRN. | A learned reference-only correction is not novel by itself. |
+| [Interference-aware AEC target](https://www.isca-archive.org/interspeech_2024/khanagha24_interspeech.html) | Documents near-end deletion during double talk and modifies the training target to reduce it. | Target deletion is an established safety problem; V4 differs by imposing an exact token-input identity Jacobian rather than changing a waveform target. |
 
 DCASE technical reports are current primary system descriptions but are not peer-reviewed journal
 evidence. The two noise-aware SSL papers are preprints at this cutoff. Claims must retain these
@@ -36,11 +39,13 @@ publication-status qualifiers.
 - **C0** is a reproducible, training-free BEATs + frequency-RDP8 + BEAM backend. Its 60.50% gate
   is a pre-registered internal implementation-fidelity threshold; it is strong and
   transparent, but not leaderboard SOTA.
-- **C1** has exactly the same architecture, parameter count, data, initialization seeds, optimizer,
-  and scoring backend as C2, with normal-representation MSE as the only changed objective. It is
-  the primary causal baseline for the FP-NAA claim.
-- **C2** can support a contribution only through C2-minus-C1 paired evidence plus the absolute C0
-  and machine-level safeguards. Comparing C2 only with the official baseline is insufficient.
+- **C1** is the target-conditioned cross-attention adapter trained with normal-representation MSE.
+  It is the primary causal baseline for the V4 claim.
+- **V4 C2** has the same module inventory, parameter count, data, seeds, optimizer, MSE objective,
+  and scoring backend as C1, but its learned correction depends only on the reference. The isolated
+  intervention is the exact `F(x + delta, r) - F(x, r) = delta` architecture. C2 can support a
+  contribution only through C2-minus-C1 paired evidence plus the absolute C0 and machine-level
+  safeguards. Comparing C2 only with the official baseline is insufficient.
 - Contemporary 67–70% systems provide external performance context. Their unavailable training
   assets, ensembles, label-selection policies, or different model capacities must not be
   reconstructed approximately and presented as exact replications.
@@ -49,10 +54,10 @@ publication-status qualifiers.
 
 Permitted after a full G3 pass:
 
-> Under a frozen BEATs backend and capacity-matched reference-conditioned adapter, counterfactual
-> fault-delta preservation improved the exact DCASE score over MSE-only distillation, with a
-> positive stratified paired-bootstrap interval, cross-machine consistency, and preserved held-out
-> pseudo-fault evidence.
+> Under a frozen BEATs backend, a capacity-matched reference-only correction with exact target-token
+> perturbation equivariance improved the exact DCASE score over target-conditioned MSE denoising,
+> with a positive stratified paired-bootstrap interval, cross-machine consistency, and preserved
+> held-out pseudo-fault evidence.
 
 Still prohibited:
 
@@ -62,6 +67,7 @@ Still prohibited:
 - development-set LOMO proves generalization to hidden evaluation machines;
 - the far microphone is noise-only; or
 - reference-conditioned cross-attention is novel.
+- reference-only noise cancellation, residual addition, or equivariance in general is novel.
 
 ## Evidence required before manuscript conversion
 

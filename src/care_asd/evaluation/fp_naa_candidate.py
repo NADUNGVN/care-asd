@@ -661,6 +661,14 @@ def _materialize_reference_safe_c2(
 def _auxiliary_scale(epoch: int, *, candidate: Candidate, config: FPNAAConfig) -> float:
     if candidate == "c1_mse":
         return 0.0
+    auxiliary_weights = (
+        config.objective.fault_direction_weight,
+        config.objective.fault_magnitude_weight,
+        config.objective.fault_separation_weight,
+        config.objective.reference_consistency_weight,
+    )
+    if all(weight == 0.0 for weight in auxiliary_weights):
+        return 0.0
     start = config.objective.auxiliary_start_epoch
     if epoch < start:
         return 0.0
@@ -1162,6 +1170,11 @@ def _new_model(config: FPNAAConfig, *, candidate: Candidate) -> BandwiseReferenc
         hidden_dim=config.adapter.hidden_dim,
         attention_heads=config.adapter.attention_heads,
         dropout=config.adapter.dropout,
+        conditioning_mode=(
+            config.adapter.c2_conditioning_mode
+            if candidate == "c2_fault_preserving"
+            else "target_conditioned"
+        ),
         reference_safety_mode=safety_mode,
         reference_safety_fraction=config.adapter.reference_safety_fraction,
         maximum_reference_contraction=config.adapter.maximum_reference_contraction,

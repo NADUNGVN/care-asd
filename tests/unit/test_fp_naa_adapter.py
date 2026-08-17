@@ -159,3 +159,44 @@ def test_reference_safety_projection_adds_no_trainable_parameters() -> None:
         maximum_reference_contraction=0.1,
     )
     assert trainable_parameter_count(safe) == trainable_parameter_count(baseline)
+
+
+def test_reference_only_adapter_is_exactly_target_perturbation_equivariant() -> None:
+    torch.manual_seed(11)
+    model = BandwiseReferenceAdapter(
+        embedding_dim=32,
+        hidden_dim=16,
+        attention_heads=4,
+        dropout=0.0,
+        conditioning_mode="reference_only_equivariant",
+    ).eval()
+    with torch.no_grad():
+        output = model.fusion[-1]
+        assert isinstance(output, torch.nn.Linear)
+        torch.nn.init.normal_(output.weight, std=0.02)
+        torch.nn.init.normal_(output.bias, std=0.02)
+        target = torch.randn(2, 5, 8, 32)
+        reference = torch.randn_like(target)
+        perturbation = 0.05 * torch.randn_like(target)
+        baseline = model(target, reference)
+        perturbed = model(target + perturbation, reference)
+        shifted_reference = model(target, reference + 0.2)
+    torch.testing.assert_close(perturbed - baseline, perturbation, rtol=1.0e-5, atol=1.0e-6)
+    assert not torch.allclose(shifted_reference, baseline)
+
+
+def test_reference_only_adapter_preserves_capacity() -> None:
+    common = {
+        "embedding_dim": 32,
+        "hidden_dim": 16,
+        "attention_heads": 4,
+        "dropout": 0.0,
+    }
+    target_conditioned = BandwiseReferenceAdapter(**common)
+    reference_only = BandwiseReferenceAdapter(
+        **common,
+        conditioning_mode="reference_only_equivariant",
+    )
+    assert trainable_parameter_count(reference_only) == trainable_parameter_count(
+        target_conditioned
+    )

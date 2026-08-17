@@ -65,6 +65,9 @@ class FPAdapterConfig(BaseModel):
     dropout: float = Field(ge=0.0, lt=1.0)
     reference_dropout_probability: float = Field(ge=0.0, le=1.0)
     reference_corruption_probability: float = Field(ge=0.0, le=1.0)
+    c2_conditioning_mode: Literal[
+        "target_conditioned", "reference_only_equivariant"
+    ] = "target_conditioned"
     reference_safety_mode: Literal["none", "rdp_salient_contraction"] = "none"
     reference_safety_fraction: float = Field(default=0.20, gt=0.0, le=1.0)
     maximum_reference_contraction: float = Field(default=1.0, ge=0.0, le=1.0)
@@ -205,4 +208,21 @@ def load_fp_naa_config(path: str | Path) -> FPNAAConfig:
             raise ValueError("shared C1 weights require zero auxiliary-objective weights")
         if objective.primary_safe_gradient_projection:
             raise ValueError("shared C1 weights cannot enable auxiliary-gradient projection")
+        if adapter.c2_conditioning_mode != "target_conditioned":
+            raise ValueError("shared C1 weights require target-conditioned C2 architecture")
+    if adapter.c2_conditioning_mode == "reference_only_equivariant":
+        if adapter.reference_safety_mode != "none":
+            raise ValueError("reference-only C2 cannot combine with an output safety projection")
+        if adapter.share_c1_weights_for_c2:
+            raise ValueError("reference-only C2 must train its own capacity-matched weights")
+        auxiliary_weights = (
+            objective.fault_direction_weight,
+            objective.fault_magnitude_weight,
+            objective.fault_separation_weight,
+            objective.reference_consistency_weight,
+        )
+        if any(weight != 0.0 for weight in auxiliary_weights):
+            raise ValueError("reference-only C2 requires zero auxiliary-objective weights")
+        if objective.primary_safe_gradient_projection:
+            raise ValueError("reference-only C2 cannot enable auxiliary-gradient projection")
     return config

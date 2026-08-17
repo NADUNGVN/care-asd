@@ -7,6 +7,28 @@ This amendment was frozen after the valid deterministic v2 screening run
 immutable negative ablations. V3 is a new structural mechanism, not another weighting of the
 failed counterfactual objective.
 
+V3 is now closed after the valid deterministic run
+`server02_fp_naa_screening_20260817T145911Z` on source commit `7171030`. The run completed all six
+registered variants and pushed its immutable report as commit `5126ab7`; it did not pass G2 and
+must not proceed to LOMO.
+
+## Post-execution outcome
+
+- C0: 61.9768%;
+- C1 mean: 63.4057%;
+- V3 C2 mean: 63.4189%;
+- C2 - C0: +1.4421 percentage points (pass);
+- C2 - C1: +0.0132 percentage point, versus the frozen +0.50 requirement (fail);
+- in-support retention median/q05: 0.7208/0.1019 (both fail);
+- held-out friction-burst retention median/q05: 0.8814/0.4932 (median pass, q05 fail);
+- worst-machine drop: pass.
+
+The projection retained C1 performance but barely changed either the score or the retention tail.
+This falsifies the operational hypothesis that static near--far output contraction is the dominant
+erasure direction. The evidence instead locates the problem in the dependence of the learned
+correction on the target input: changing the target changes the correction itself. No threshold or
+projection-fraction search is permitted after this result.
+
 ## Evidence that closes v2
 
 V2 completed all six registered runs on source commit `9f82112`:

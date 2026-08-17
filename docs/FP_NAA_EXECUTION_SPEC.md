@@ -287,6 +287,13 @@ projection, shared-weight causal comparator, and unchanged gates are preregister
 [`FP_NAA_V3_REFERENCE_PROJECTION.md`](FP_NAA_V3_REFERENCE_PROJECTION.md). V3 does not tune the v2
 loss and cannot reuse a v1/v2 C2 checkpoint.
 
+V3 subsequently completed the valid run `server02_fp_naa_screening_20260817T145911Z`. It retained
+the C1 score (63.4189% versus 63.4057%) but improved it by only 0.0132 point and left the
+in-support q05 at 0.1019. V3 is closed without LOMO. The next frozen mechanism removes target
+dependence from the learned correction so `F(x + delta, r) - F(x, r) = delta` by construction.
+Its causal architecture, unchanged gates, and novelty boundary are preregistered in
+[`FP_NAA_V4_REFERENCE_ONLY_EQUIVARIANCE.md`](FP_NAA_V4_REFERENCE_ONLY_EQUIVARIANCE.md).
+
 ## 8. Primary prior art used to set the boundary
 
 - [DCASE 2026 Task 2 setup and exact metric](https://arxiv.org/abs/2606.01578)

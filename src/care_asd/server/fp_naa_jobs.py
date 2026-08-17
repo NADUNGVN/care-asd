@@ -243,7 +243,10 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
         try:
             from care_asd.evaluation.fp_naa_candidate import _primary_safe_backward
             from care_asd.fp_naa_config import FPObjectiveConfig
-            from care_asd.models.fp_naa_adapter import rdp_salient_contraction_projection
+            from care_asd.models.fp_naa_adapter import (
+                BandwiseReferenceAdapter,
+                rdp_salient_contraction_projection,
+            )
             from care_asd.models.fp_naa_objective import fp_naa_loss
 
             objective = FPObjectiveConfig(
@@ -317,6 +320,34 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
                 raise RuntimeError("RDP-salient projection violated its contraction bound")
             if not torch.allclose(projected[:, :2], raw_correction[:, :2]):
                 raise RuntimeError("RDP-salient projection changed an unprotected temporal row")
+            equivariant = BandwiseReferenceAdapter(
+                embedding_dim=8,
+                hidden_dim=8,
+                attention_heads=2,
+                dropout=0.0,
+                conditioning_mode="reference_only_equivariant",
+            ).cuda().eval()
+            with torch.no_grad():
+                output_projection = equivariant.fusion[-1]
+                if not isinstance(output_projection, torch.nn.Linear):
+                    raise RuntimeError("Equivariant adapter output projection is invalid")
+                torch.nn.init.normal_(output_projection.weight, mean=0.0, std=0.01)
+                torch.nn.init.normal_(output_projection.bias, mean=0.0, std=0.01)
+                near = torch.randn(2, 4, 2, 8, device="cuda")
+                far = torch.randn_like(near)
+                perturbation = 0.02 * torch.randn_like(near)
+                clean_output = equivariant(near, far)
+                perturbed_output = equivariant(near + perturbation, far)
+                reference_shifted_output = equivariant(near, far + 0.1)
+            if not torch.allclose(
+                perturbed_output - clean_output,
+                perturbation,
+                rtol=1.0e-5,
+                atol=1.0e-6,
+            ):
+                raise RuntimeError("Reference-only adapter violated target perturbation equivariance")
+            if torch.allclose(reference_shifted_output, clean_output):
+                raise RuntimeError("Reference-only adapter ignored its reference input")
             torch.cuda.synchronize()
         except (AssertionError, RuntimeError, ValueError) as exc:
             raise JobError(
@@ -327,6 +358,7 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
         checks["tail_safe_objective_probe"] = "passed"
         checks["primary_safe_gradient_probe"] = "passed"
         checks["rdp_salient_projection_probe"] = "passed"
+        checks["target_perturbation_equivariance_probe"] = "passed"
     return {"schema_version": SCHEMA_VERSION, "runtime": checks}
 
 
@@ -939,7 +971,7 @@ def _common_paths(ctx: FPNAAJobContext) -> dict[str, Path]:
     return {
         "manifest": ctx.repo_root / "data" / "manifests" / "dcase2026_dev.parquet",
         "audio_root": ctx.data_root / "raw" / "dcase2026" / "dev" / "extracted",
-        "config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v3.yaml",
+        "config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v4.yaml",
         "safety_config": ctx.repo_root
         / "configs"
         / "experiment"

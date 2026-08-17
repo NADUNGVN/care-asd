@@ -17,6 +17,7 @@ from care_asd.evaluation.fp_naa_candidate import (
     _exclude_machine,
     _fault_diagnostics,
     _load_or_train_model,
+    _new_model,
     _primary_safe_backward,
     _TrainingArrays,
 )
@@ -134,6 +135,17 @@ def test_v2_config_activates_tail_safe_curriculum() -> None:
     assert _auxiliary_scale(20, candidate="c2_fault_preserving", config=config) == 0.1
     assert _auxiliary_scale(29, candidate="c2_fault_preserving", config=config) == 1.0
     assert _auxiliary_scale(59, candidate="c1_mse", config=config) == 0.0
+
+
+def test_v4_uses_reference_only_c2_without_auxiliary_forward() -> None:
+    payload = yaml.safe_load(Path("configs/experiment/fp_naa_v4.yaml").read_text())
+    config = FPNAAConfig.model_validate(payload)
+    c1 = _new_model(config, candidate="c1_mse")
+    c2 = _new_model(config, candidate="c2_fault_preserving")
+    assert c1.conditioning_mode == "target_conditioned"
+    assert c2.conditioning_mode == "reference_only_equivariant"
+    assert _auxiliary_scale(0, candidate="c2_fault_preserving", config=config) == 0.0
+    assert _auxiliary_scale(59, candidate="c2_fault_preserving", config=config) == 0.0
 
 
 def test_primary_safe_backward_removes_conflicting_auxiliary_component() -> None:

@@ -8,6 +8,7 @@ from typing import Literal
 import torch
 from torch import Tensor, nn
 
+ConditioningMode = Literal["target_conditioned", "reference_only_equivariant"]
 ReferenceSafetyMode = Literal["none", "rdp_salient_contraction"]
 
 
@@ -27,6 +28,7 @@ class BandwiseReferenceAdapter(nn.Module):
         hidden_dim: int = 256,
         attention_heads: int = 8,
         dropout: float = 0.1,
+        conditioning_mode: ConditioningMode = "target_conditioned",
         reference_safety_mode: ReferenceSafetyMode = "none",
         reference_safety_fraction: float = 0.20,
         maximum_reference_contraction: float = 1.0,
@@ -38,6 +40,8 @@ class BandwiseReferenceAdapter(nn.Module):
             raise ValueError("hidden_dim must be divisible by attention_heads")
         if not 0.0 <= dropout < 1.0:
             raise ValueError("dropout must be in [0, 1)")
+        if conditioning_mode not in {"target_conditioned", "reference_only_equivariant"}:
+            raise ValueError(f"Unsupported conditioning_mode: {conditioning_mode}")
         if reference_safety_mode not in {"none", "rdp_salient_contraction"}:
             raise ValueError(f"Unsupported reference_safety_mode: {reference_safety_mode}")
         if not 0.0 < reference_safety_fraction <= 1.0:
@@ -45,6 +49,7 @@ class BandwiseReferenceAdapter(nn.Module):
         if not 0.0 <= maximum_reference_contraction <= 1.0:
             raise ValueError("maximum_reference_contraction must be in [0, 1]")
         self.embedding_dim = embedding_dim
+        self.conditioning_mode = conditioning_mode
         self.reference_safety_mode = reference_safety_mode
         self.reference_safety_fraction = reference_safety_fraction
         self.maximum_reference_contraction = maximum_reference_contraction
@@ -82,7 +87,12 @@ class BandwiseReferenceAdapter(nn.Module):
         batch, time, bands, dimension = target.shape
         target_rows = target.permute(0, 2, 1, 3).reshape(batch * bands, time, dimension)
         reference_rows = reference.permute(0, 2, 1, 3).reshape(batch * bands, time, dimension)
-        query = self.target_projection(self.target_norm(target_rows))
+        query_source = (
+            reference_rows
+            if self.conditioning_mode == "reference_only_equivariant"
+            else target_rows
+        )
+        query = self.target_projection(self.target_norm(query_source))
         key_value = self.reference_projection(self.reference_norm(reference_rows))
         attended, _ = self.cross_attention(
             query,
