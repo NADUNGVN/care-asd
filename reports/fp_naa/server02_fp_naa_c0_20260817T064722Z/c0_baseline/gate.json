@@ -1,0 +1,16 @@
+{
+  "gate": "G1_strong_baseline_reproduction",
+  "method": "freq_rdp8_beam",
+  "minimum": 0.605,
+  "minimum_basis": "preregistered_internal_fidelity_threshold",
+  "minimum_percent": 60.5,
+  "official_score": 0.6197676455378447,
+  "official_score_percent": 61.97676455378447,
+  "passed": true,
+  "published_context": {
+    "merl_dis_na_beats_frequency_rdp4_rescaled_percent": 64.57,
+    "merl_original_beats_frequency_average_rescaled_percent": 60.28,
+    "method_identical_to_c0": false
+  },
+  "schema_version": 1
+}

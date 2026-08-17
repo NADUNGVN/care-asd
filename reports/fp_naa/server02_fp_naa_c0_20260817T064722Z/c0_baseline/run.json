@@ -1,0 +1,14 @@
+{
+  "cache_directory": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/fp_naa/beats_cache/dev/beats_iter3_stereo_10s_fp32infer_v2",
+  "created_utc": "2026-08-17T07:05:14Z",
+  "device": "cuda",
+  "experiment_id": "server02_fp_naa_c0_20260817T064722Z",
+  "methods": [
+    "global_ap",
+    "freq_ap",
+    "freq_ap_beam",
+    "freq_rdp4_beam",
+    "freq_rdp8_beam"
+  ],
+  "schema_version": 1
+}
