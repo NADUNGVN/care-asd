@@ -196,3 +196,21 @@ def test_robustness_audit_dry_run_is_exposed_and_side_effect_free(tmp_path: Path
     assert '"paired_clips": 1400' in result.stdout
     assert '"audio_access": "prohibited"' in result.stdout
     assert not output.exists()
+
+
+def test_fp_naa_job_commands_are_exposed_in_help() -> None:
+    result = runner.invoke(app, ["fp-naa", "job", "--help"])
+
+    assert result.exit_code == 0
+    for command in ("start", "status", "list", "continue"):
+        assert command in result.stdout
+    assert "run-internal" not in result.stdout
+
+
+def test_fp_naa_runtime_check_rejects_wrong_environment(monkeypatch) -> None:
+    monkeypatch.setenv("CONDA_DEFAULT_ENV", "base")
+    result = runner.invoke(app, ["fp-naa", "runtime-check"])
+
+    assert result.exit_code == 2
+    assert '"code": "WRONG_CONDA_ENV"' in result.output
+    assert "care-asd-fp-naa" in result.output

@@ -2,10 +2,8 @@
 
 from typing import Any
 
+from care_asd.beats_contract import BEATS_COMMIT, BEATS_ITER3_SHA256, BEATS_REPOSITORY
 from care_asd.models.beats_frontend import (
-    BEATS_COMMIT,
-    BEATS_ITER3_SHA256,
-    BEATS_REPOSITORY,
     OfficialBEATsFrontend,
     fixed_duration_waveform,
 )

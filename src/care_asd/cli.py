@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import subprocess
 from pathlib import Path
-from typing import Annotated, Literal, cast
+from typing import Annotated, Any, Literal, cast
 
 import typer
 from omegaconf import OmegaConf
@@ -56,6 +56,16 @@ from care_asd.models import (
     stage_official_development_data,
 )
 from care_asd.reproducibility import collect_environment_report, set_seed
+from care_asd.server import (
+    JobError,
+    JobStage,
+    continue_fp_naa_job,
+    execute_fp_naa_job,
+    fp_naa_job_status,
+    fp_naa_runtime_check,
+    list_fp_naa_jobs,
+    start_fp_naa_job,
+)
 
 app = typer.Typer(
     name="care-asd",
@@ -82,6 +92,8 @@ audit_app = typer.Typer(help="Frozen CARE-ASD identifiability/audit paper synthe
 app.add_typer(audit_app, name="audit")
 fp_naa_app = typer.Typer(help="Fault-Preserving Noise-Aware Adapter successor experiments.")
 app.add_typer(fp_naa_app, name="fp-naa")
+fp_naa_job_app = typer.Typer(help="Conda-native FP-NAA server job controller.")
+fp_naa_app.add_typer(fp_naa_job_app, name="job")
 
 console = Console(stderr=True)
 
@@ -1403,6 +1415,92 @@ def mvp_bootstrap(
         console.print(f"[red]MVP bootstrap failed:[/red] {exc}")
         raise typer.Exit(code=1) from exc
     console.print(f"[green]Paired bootstrap complete:[/green] {result}")
+
+
+def _emit_fp_naa_job_result(action: Any) -> None:
+    """Emit the stable JSON envelope used by FP-NAA server commands."""
+    try:
+        payload = action()
+    except JobError as exc:
+        typer.echo(json.dumps(exc.as_dict(), indent=2, sort_keys=True), err=True)
+        raise typer.Exit(code=2) from exc
+    except Exception as exc:  # pragma: no cover - public server boundary
+        payload = {
+            "error": {
+                "code": "UNEXPECTED_CLI_FAILURE",
+                "message": str(exc),
+                "type": type(exc).__name__,
+            }
+        }
+        typer.echo(json.dumps(payload, indent=2, sort_keys=True), err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(json.dumps(payload, indent=2, sort_keys=True))
+
+
+@fp_naa_app.command("runtime-check")
+def fp_naa_runtime_check_command() -> None:
+    """Validate Conda, pinned Torch/CUDA, cuDNN, and a real GPU convolution."""
+    _emit_fp_naa_job_result(fp_naa_runtime_check)
+
+
+@fp_naa_job_app.command("start")
+def fp_naa_job_start_command(
+    stage: Annotated[JobStage, typer.Option("--stage")],
+    workers: Annotated[int, typer.Option("--workers", min=1, max=12)] = 12,
+) -> None:
+    """Validate and start exactly one detached FP-NAA stage."""
+    _emit_fp_naa_job_result(lambda: start_fp_naa_job(stage, workers=workers))
+
+
+@fp_naa_job_app.command("status")
+def fp_naa_job_status_command(
+    run_id: Annotated[str | None, typer.Option("--run-id")] = None,
+    log_lines: Annotated[int, typer.Option("--log-lines", min=0, max=500)] = 30,
+) -> None:
+    """Read one snapshot; this command never waits or starts a job."""
+    _emit_fp_naa_job_result(lambda: fp_naa_job_status(run_id=run_id, log_lines=log_lines))
+
+
+@fp_naa_job_app.command("list")
+def fp_naa_job_list_command(
+    limit: Annotated[int, typer.Option("--limit", min=1, max=100)] = 10,
+) -> None:
+    """List recent Python-managed FP-NAA jobs."""
+    _emit_fp_naa_job_result(lambda: list_fp_naa_jobs(limit=limit))
+
+
+@fp_naa_job_app.command("continue")
+def fp_naa_job_continue_command(
+    workers: Annotated[int, typer.Option("--workers", min=1, max=12)] = 12,
+) -> None:
+    """Report an active job or start only the next gate-eligible stage."""
+    _emit_fp_naa_job_result(lambda: continue_fp_naa_job(workers=workers))
+
+
+@fp_naa_job_app.command("run-internal", hidden=True)
+def fp_naa_job_run_internal_command(
+    stage: Annotated[JobStage, typer.Option("--stage")],
+    run_id: Annotated[str, typer.Option("--run-id")],
+    workers: Annotated[int, typer.Option("--workers", min=1, max=12)],
+) -> None:
+    """Execute a stage in the detached child process."""
+    try:
+        status = execute_fp_naa_job(stage, run_id, workers=workers)
+    except JobError as exc:
+        typer.echo(json.dumps(exc.as_dict(), indent=2, sort_keys=True), err=True)
+        raise typer.Exit(code=2) from exc
+    except Exception as exc:  # pragma: no cover - detached worker boundary
+        payload = {
+            "error": {
+                "code": "UNEXPECTED_WORKER_FAILURE",
+                "message": str(exc),
+                "type": type(exc).__name__,
+            }
+        }
+        typer.echo(json.dumps(payload, indent=2, sort_keys=True), err=True)
+        raise typer.Exit(code=1) from exc
+    if status:
+        raise typer.Exit(code=status)
 
 
 @fp_naa_app.command("cache-beats")

@@ -16,16 +16,16 @@ Python 3.11 and the environment lifecycle; the exact Python dependency set is fr
 or `uv run`.
 
 The environment definition is `environments/fp-naa-cu118.yml`. Setup must finish with a real GPU
-convolution probe, not only `torch.cuda.is_available()`. Jobs execute through
-`scripts/server/fp_naa_conda_run.sh`, so they select the named environment even when the interactive
-SSH prompt displays `(base)`.
+convolution probe, not only `torch.cuda.is_available()`. Jobs execute through the Python CLI with
+`conda run`, so they select the named environment even when the interactive SSH prompt displays
+`(base)`. FP-NAA has no server shell wrappers.
 
 ```bash
-bash scripts/server/setup_fp_naa_conda.sh
+env -u LD_LIBRARY_PATH -u LD_PRELOAD conda run -n care-asd-fp-naa care-asd fp-naa runtime-check
 ```
 
 ```bash
-bash scripts/server/status_fp_naa_conda.sh
+env -u LD_LIBRARY_PATH -u LD_PRELOAD conda run -n care-asd-fp-naa care-asd fp-naa job status
 ```
 
 ## 1. Research question

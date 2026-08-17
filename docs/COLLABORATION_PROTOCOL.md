@@ -35,12 +35,17 @@ researcher should stop and send the output rather than discarding changes.
 
 ### FP-NAA environment exception
 
-The FP-NAA research branch uses the dedicated Conda environment `care-asd-fp-naa`; its server
-wrappers must not use the repository `.venv`. The researcher does not need to activate this env:
-checked-in wrappers select it with `conda run`, so `(base)` in the prompt is harmless. Dependency
+The FP-NAA research branch uses the dedicated Conda environment `care-asd-fp-naa` and must not use
+the repository `.venv`. The researcher does not need to activate this env: every public command
+starts with `env -u LD_LIBRARY_PATH -u LD_PRELOAD conda run -n care-asd-fp-naa`, so `(base)` in
+the prompt cannot contaminate the selected CUDA runtime. Dependency
 changes are made only through `environments/fp-naa-cu118.yml` and
-`requirements/fp-naa-cu118.lock.txt`; ad-hoc `pip install`, `uv sync`, and installation into Conda
-`base` are prohibited for FP-NAA jobs.
+`requirements/fp-naa-cu118.lock.txt`; ad-hoc installation into Conda `base` is prohibited.
+
+FP-NAA has no `scripts/server/*fp_naa*.sh` wrappers. Its stable public interface is
+`care-asd fp-naa runtime-check` plus `care-asd fp-naa job {start,status,list,continue}`. Commands
+return structured JSON. `status` is read-only and never sleeps, starts a process, or infers success
+from GPU utilization.
 
 ## Required preflight artifact
 
