@@ -187,7 +187,9 @@ def test_reference_only_adapter_is_exactly_target_perturbation_equivariant() -> 
 
     differentiable_target = torch.randn(1, 3, 2, 32, requires_grad=True)
     cotangent = torch.randn_like(differentiable_target)
-    (model(differentiable_target, reference[:1, :3]) * cotangent).sum().backward()
+    differentiable_reference = reference[:1, :3, :2]
+    assert differentiable_reference.shape == differentiable_target.shape
+    (model(differentiable_target, differentiable_reference) * cotangent).sum().backward()
     assert differentiable_target.grad is not None
     torch.testing.assert_close(differentiable_target.grad, cotangent)
 
