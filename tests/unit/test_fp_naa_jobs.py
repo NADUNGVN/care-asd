@@ -17,6 +17,7 @@ from care_asd.server.fp_naa_jobs import (
     JobState,
     JobStatus,
     _atomic_json,
+    _common_paths,
     _launch_lock,
     _next_stage,
     _write_latest,
@@ -141,10 +142,10 @@ def test_start_uses_detached_current_python_without_a_shell(
     monkeypatch.setattr(
         "care_asd.server.fp_naa_jobs._git_output",
         lambda _context, *arguments: (
-            "research/fp-naa" if arguments == ("branch", "--show-current") else ""
-        )
-        if arguments != ("rev-parse", "HEAD")
-        else "b" * 40,
+            ("research/fp-naa" if arguments == ("branch", "--show-current") else "")
+            if arguments != ("rev-parse", "HEAD")
+            else "b" * 40
+        ),
     )
     monkeypatch.setattr("care_asd.server.fp_naa_jobs.fp_naa_runtime_check", lambda: {})
     captured: dict[str, object] = {}
@@ -189,6 +190,11 @@ def test_launch_lock_rejects_concurrent_start_request(tmp_path: Path) -> None:
 def test_fp_naa_shell_wrappers_are_not_part_of_the_architecture() -> None:
     repository = Path(__file__).resolve().parents[2]
     assert list((repository / "scripts" / "server").glob("*fp_naa*.sh")) == []
+
+
+def test_server_pipeline_uses_the_versioned_tail_safe_config(tmp_path: Path) -> None:
+    context = _context(tmp_path)
+    assert _common_paths(context)["config"].name == "fp_naa_v2.yaml"
 
 
 def test_state_schema_is_validated() -> None:

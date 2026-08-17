@@ -858,7 +858,7 @@ def _common_paths(ctx: FPNAAJobContext) -> dict[str, Path]:
     return {
         "manifest": ctx.repo_root / "data" / "manifests" / "dcase2026_dev.parquet",
         "audio_root": ctx.data_root / "raw" / "dcase2026" / "dev" / "extracted",
-        "config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v1.yaml",
+        "config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v2.yaml",
         "safety_config": ctx.repo_root
         / "configs"
         / "experiment"

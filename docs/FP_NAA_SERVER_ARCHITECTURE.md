@@ -143,3 +143,8 @@ c0 -> screening -> lomo -> confirmatory -> confirmatory-lomo -> reference-safety
 The controller validates required gates and artifact hashes before launching dependent stages.
 Explicit `start --stage ...` is required after a failed process so a transient failure cannot cause
 an infinite restart loop.
+
+After the valid v1 screening failure, new screening and downstream jobs use the versioned
+`configs/experiment/fp_naa_v2.yaml` tail-safe objective. The immutable v1 reports remain valid
+negative-ablation artifacts; the shared BEATs and augmentation caches are reusable because v2 does
+not change their frontend or augmentation contracts.

@@ -7,7 +7,7 @@ torch = pytest.importorskip("torch")
 
 from care_asd.fp_naa_config import FPObjectiveConfig
 from care_asd.models.fp_naa_adapter import BandwiseReferenceAdapter, trainable_parameter_count
-from care_asd.models.fp_naa_objective import fault_delta_retention, fp_naa_loss
+from care_asd.models.fp_naa_objective import _upper_tail_mean, fault_delta_retention, fp_naa_loss
 
 
 def _objective_config() -> FPObjectiveConfig:
@@ -75,3 +75,46 @@ def test_c1_excludes_fault_terms_and_retention_is_bounded() -> None:
     retention = fault_delta_retention(clean, clean + 2.0, clean, clean + 1.0)
     assert torch.all((retention > 0.0) & (retention <= 1.0))
     assert retention.tolist() == pytest.approx([0.5, 0.5], abs=1.0e-6)
+
+
+def test_tail_constrained_loss_prefers_safe_fault_gain() -> None:
+    config = _objective_config().model_copy(
+        update={
+            "fault_loss_mode": "tail_constrained",
+            "direction_cosine_floor": 0.5,
+            "gain_lower_bound": 1.05,
+            "gain_upper_bound": 1.20,
+            "tail_fraction": 0.5,
+            "fault_separation_weight": 2.0,
+            "score_gain_lower_bound": 1.05,
+            "score_patch_fraction": 0.5,
+        }
+    )
+    torch.manual_seed(4)
+    teacher_clean = torch.randn(4, 2, 2, 8)
+    teacher_delta = 0.01 * torch.randn_like(teacher_clean)
+    teacher_fault = teacher_clean + teacher_delta
+    erased = fp_naa_loss(
+        objective="c2_fault_preserving",
+        student_clean=teacher_clean,
+        teacher_clean=teacher_clean,
+        student_fault=teacher_clean,
+        teacher_fault=teacher_fault,
+        config=config,
+    )
+    safe_gain = fp_naa_loss(
+        objective="c2_fault_preserving",
+        student_clean=teacher_clean,
+        teacher_clean=teacher_clean,
+        student_fault=teacher_clean + 1.10 * teacher_delta,
+        teacher_fault=teacher_fault,
+        config=config,
+    )
+    assert safe_gain.total < erased.total
+    assert safe_gain.fault_direction.item() == pytest.approx(0.0, abs=1.0e-6)
+    assert torch.all(safe_gain.retention > 0.90)
+
+
+def test_upper_tail_mean_targets_worst_violations() -> None:
+    values = torch.tensor([0.0, 1.0, 2.0, 3.0])
+    assert _upper_tail_mean(values, 0.5).item() == pytest.approx(2.5)

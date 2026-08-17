@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
@@ -72,8 +73,19 @@ class FPObjectiveConfig(BaseModel):
     normal_mse_weight: float = Field(ge=0.0)
     fault_direction_weight: float = Field(ge=0.0)
     fault_magnitude_weight: float = Field(ge=0.0)
+    fault_separation_weight: float = Field(default=0.0, ge=0.0)
     reference_consistency_weight: float = Field(ge=0.0)
     magnitude_huber_delta: float = Field(gt=0.0)
+    fault_loss_mode: Literal["exact", "tail_constrained"] = "exact"
+    direction_cosine_floor: float = Field(default=0.0, ge=-1.0, le=1.0)
+    gain_lower_bound: float = Field(default=1.0, gt=0.0)
+    gain_upper_bound: float = Field(default=1.0, gt=0.0)
+    tail_fraction: float = Field(default=0.10, gt=0.0, le=1.0)
+    score_gain_lower_bound: float = Field(default=1.0, gt=0.0)
+    score_patch_fraction: float = Field(default=0.10, gt=0.0, le=1.0)
+    auxiliary_start_epoch: int = Field(default=0, ge=0)
+    auxiliary_ramp_epochs: int = Field(default=0, ge=0)
+    primary_safe_gradient_projection: bool = False
 
 
 class FPTrainingConfig(BaseModel):
@@ -163,4 +175,16 @@ def load_fp_naa_config(path: str | Path) -> FPNAAConfig:
         raise ValueError("adapter hidden_dim must be divisible by attention_heads")
     if config.training.warmup_epochs >= config.training.epochs:
         raise ValueError("warmup_epochs must be smaller than epochs")
+    objective = config.objective
+    if objective.gain_lower_bound > objective.gain_upper_bound:
+        raise ValueError("gain_lower_bound must not exceed gain_upper_bound")
+    if objective.auxiliary_start_epoch >= config.training.epochs:
+        raise ValueError("auxiliary_start_epoch must be smaller than training epochs")
+    if objective.auxiliary_start_epoch + objective.auxiliary_ramp_epochs > config.training.epochs:
+        raise ValueError("auxiliary objective ramp must finish within training epochs")
+    if (
+        objective.primary_safe_gradient_projection
+        and objective.fault_loss_mode != "tail_constrained"
+    ):
+        raise ValueError("primary-safe projection requires tail_constrained fault loss")
     return config

@@ -271,7 +271,15 @@ atomic state file, a persistent log, and an immutable report committed to `resea
 Server jobs use at most 12 preprocessing workers by default so at least 25% of SERVER-02 CPU
 capacity remains free.
 
-## 7. Primary prior art used to set the boundary
+## 7. Post-screening amendment
+
+The original fixed-penalty C2 failed the valid deterministic screening run
+`server02_fp_naa_screening_20260817T083029Z`. The evidence, frozen v2 hypothesis, tail-risk loss,
+primary-safe gradient rule, and unchanged gates are recorded in
+[`FP_NAA_V2_TAIL_SAFE_REVISION.md`](FP_NAA_V2_TAIL_SAFE_REVISION.md). The v1 run remains an immutable
+negative ablation; it is not overwritten or counted as v2 evidence.
+
+## 8. Primary prior art used to set the boundary
 
 - [DCASE 2026 Task 2 setup and exact metric](https://arxiv.org/abs/2606.01578)
 - [Anomalous Sound Detection Meets Noise-Aware SSL](https://arxiv.org/abs/2608.00447)

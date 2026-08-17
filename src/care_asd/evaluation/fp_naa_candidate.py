@@ -477,8 +477,9 @@ def _load_or_train_model(
     objective = cast(FPNaaObjective, candidate)
     model.train()
     for epoch in range(config.training.epochs):
-        totals = torch.zeros(5, dtype=torch.float64, device=device)
+        totals = torch.zeros(8, dtype=torch.float64, device=device)
         examples = 0
+        auxiliary_scale = _auxiliary_scale(epoch, candidate=candidate, config=config)
         for noisy_clean, reference, teacher_clean, fault_noisy, teacher_fault in loader:
             noisy_clean = noisy_clean.to(device, non_blocking=True)
             reference = reference.to(device, non_blocking=True)
@@ -486,9 +487,9 @@ def _load_or_train_model(
             optimizer.zero_grad(set_to_none=True)
             with torch.autocast(device_type=device.type, enabled=use_amp):
                 student_clean = model(noisy_clean, reference)
-                if candidate == "c1_mse":
+                if candidate == "c1_mse" or auxiliary_scale == 0.0:
                     loss = fp_naa_loss(
-                        objective=objective,
+                        objective="c1_mse",
                         student_clean=student_clean,
                         teacher_clean=teacher_clean,
                         config=config.objective,
@@ -505,19 +506,46 @@ def _load_or_train_model(
                         teacher_fault=teacher_fault,
                         config=config.objective,
                     )
-            scaler.scale(loss.total).backward()
-            scaler.unscale_(optimizer)
+                primary = config.objective.normal_mse_weight * loss.normal_mse
+                auxiliary = loss.total - primary
+                effective_total = primary + auxiliary_scale * auxiliary
+            gradient_cosine = loss.total.new_zeros(())
+            gradient_conflict = loss.total.new_zeros(())
+            if (
+                candidate == "c2_fault_preserving"
+                and auxiliary_scale > 0.0
+                and config.objective.primary_safe_gradient_projection
+            ):
+                gradient_cosine, gradient_conflict = _primary_safe_backward(
+                    primary=primary,
+                    auxiliary=auxiliary,
+                    parameters=list(model.parameters()),
+                    auxiliary_scale=auxiliary_scale,
+                )
+            else:
+                scaler.scale(effective_total).backward()
+                scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(), config.training.gradient_clip_norm)
-            scaler.step(optimizer)
-            scaler.update()
+            if (
+                candidate == "c2_fault_preserving"
+                and auxiliary_scale > 0.0
+                and config.objective.primary_safe_gradient_projection
+            ):
+                optimizer.step()
+            else:
+                scaler.step(optimizer)
+                scaler.update()
             batch = len(noisy_clean)
             totals += batch * torch.stack(
                 (
-                    loss.total.detach(),
+                    effective_total.detach(),
                     loss.normal_mse.detach(),
                     loss.fault_direction.detach(),
                     loss.fault_magnitude.detach(),
+                    loss.fault_separation.detach(),
                     loss.retention.detach().mean(),
+                    gradient_cosine.detach(),
+                    gradient_conflict.detach(),
                 )
             ).to(dtype=torch.float64)
             examples += batch
@@ -530,7 +558,11 @@ def _load_or_train_model(
                 "normal_mse": epoch_totals[1],
                 "fault_direction": epoch_totals[2],
                 "fault_magnitude": epoch_totals[3],
-                "retention": epoch_totals[4],
+                "fault_separation": epoch_totals[4],
+                "retention": epoch_totals[5],
+                "gradient_cosine": epoch_totals[6],
+                "gradient_conflict_fraction": epoch_totals[7],
+                "auxiliary_scale": auxiliary_scale,
             }
         )
         scheduler.step()
@@ -555,6 +587,68 @@ def _load_or_train_model(
     )
     os.replace(temporary, checkpoint)
     return model.eval()
+
+
+def _auxiliary_scale(epoch: int, *, candidate: Candidate, config: FPNAAConfig) -> float:
+    if candidate == "c1_mse":
+        return 0.0
+    start = config.objective.auxiliary_start_epoch
+    if epoch < start:
+        return 0.0
+    ramp = config.objective.auxiliary_ramp_epochs
+    if ramp == 0:
+        return 1.0
+    return min(1.0, (epoch - start + 1) / ramp)
+
+
+def _primary_safe_backward(
+    *,
+    primary: torch.Tensor,
+    auxiliary: torch.Tensor,
+    parameters: list[torch.nn.Parameter],
+    auxiliary_scale: float,
+    eps: float = 1.0e-12,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Apply PCGrad to the auxiliary gradient while preserving primary-loss descent."""
+    primary_gradients = torch.autograd.grad(
+        primary, parameters, retain_graph=True, allow_unused=True
+    )
+    auxiliary_gradients = torch.autograd.grad(auxiliary, parameters, allow_unused=True)
+    primary_norm_sq = primary.new_zeros(())
+    auxiliary_norm_sq = primary.new_zeros(())
+    dot = primary.new_zeros(())
+    for primary_gradient, auxiliary_gradient in zip(
+        primary_gradients, auxiliary_gradients, strict=True
+    ):
+        if primary_gradient is not None:
+            primary_norm_sq += primary_gradient.float().square().sum()
+        if auxiliary_gradient is not None:
+            auxiliary_norm_sq += auxiliary_gradient.float().square().sum()
+        if primary_gradient is not None and auxiliary_gradient is not None:
+            dot += (primary_gradient.float() * auxiliary_gradient.float()).sum()
+    cosine = dot / (primary_norm_sq.sqrt() * auxiliary_norm_sq.sqrt() + eps)
+    conflict = (dot < 0.0).to(dtype=primary.dtype)
+    coefficient = torch.where(
+        dot < 0.0,
+        dot / (primary_norm_sq + eps),
+        dot.new_zeros(()),
+    )
+    for parameter, primary_gradient, auxiliary_gradient in zip(
+        parameters, primary_gradients, auxiliary_gradients, strict=True
+    ):
+        if primary_gradient is None and auxiliary_gradient is None:
+            parameter.grad = None
+            continue
+        primary_value = (
+            torch.zeros_like(parameter) if primary_gradient is None else primary_gradient
+        )
+        auxiliary_value = (
+            torch.zeros_like(parameter) if auxiliary_gradient is None else auxiliary_gradient
+        )
+        if primary_gradient is not None:
+            auxiliary_value = auxiliary_value - coefficient * primary_gradient
+        parameter.grad = primary_value + auxiliary_scale * auxiliary_value
+    return cosine, conflict
 
 
 def _write_retention_diagnostics(

@@ -1,0 +1,93 @@
+schema_version: 1
+experiment_id: fp_naa_v2_tail_safe
+
+provenance:
+  beats_repository: https://github.com/microsoft/unilm.git
+  beats_commit: 833df7e7832e5064a281131ee64a481afa8e5b95
+  checkpoint_url: https://huggingface.co/lpepino/beats_ckpts/resolve/a2ddb6b0411c39942ae144a6414872e14e5a4329/BEATs_iter3.pt
+  checkpoint_sha256: 8d1b234032a9ccff353612dc6c20982346dc2968b205b79d97303eb5e77bfb34
+
+frontend:
+  sample_rate: 16000
+  duration_seconds: 10.0
+  channels: [near, far]
+  frequency_patches: 8
+  embedding_dim: 768
+  cache_dtype: float16
+  inference_mixed_precision: false
+  inference_batch_size: 16
+
+backend:
+  temporal_pooling: rdp
+  rdp_gamma: 8.0
+  scorer: beam
+  cosine_distance_scale: 0.5
+  local_density_neighbors: 4
+  score_rescaling: variance_minimization_train_all
+  eps: 1.0e-12
+
+augmentation:
+  seed: 2608
+  noise_snr_db_min: -10.0
+  noise_snr_db_max: 10.0
+  fault_delta_level_db_min: -24.0
+  fault_delta_level_db_max: -12.0
+  train_fault_families: [periodic_resonance, amplitude_modulation, frequency_modulation]
+  heldout_fault_family: friction_burst
+  heldout_fraction: 0.10
+  peak_limit: 1.0
+
+adapter:
+  hidden_dim: 256
+  attention_heads: 8
+  dropout: 0.1
+  reference_dropout_probability: 0.2
+  reference_corruption_probability: 0.3
+
+objective:
+  normal_mse_weight: 1.0
+  fault_direction_weight: 0.25
+  fault_magnitude_weight: 1.0
+  fault_separation_weight: 2.0
+  reference_consistency_weight: 0.0
+  magnitude_huber_delta: 0.05
+  fault_loss_mode: tail_constrained
+  direction_cosine_floor: 0.50
+  gain_lower_bound: 1.05
+  gain_upper_bound: 1.20
+  tail_fraction: 0.10
+  score_gain_lower_bound: 1.10
+  score_patch_fraction: 0.20
+  auxiliary_start_epoch: 20
+  auxiliary_ramp_epochs: 10
+  primary_safe_gradient_projection: true
+
+training:
+  epochs: 60
+  batch_size: 128
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  warmup_epochs: 5
+  gradient_clip_norm: 1.0
+  workers: 12
+  mixed_precision: true
+  screening_seeds: [13711, 42, 2026]
+  confirmatory_seeds: [13711, 42, 2026, 3407, 777]
+
+gates:
+  baseline_minimum_official_score: 0.605
+  screening_minimum_official_score: 0.620
+  screening_minimum_gain_over_c0: 0.010
+  screening_minimum_gain_over_c1: 0.005
+  confirmatory_minimum_ensemble_official_score: 0.630
+  confirmatory_minimum_gain_over_c1: 0.0075
+  confirmatory_bootstrap_ci_low_minimum: 0.0
+  fault_delta_retention_median_minimum: 0.90
+  fault_delta_retention_q05_minimum: 0.75
+  heldout_fault_delta_retention_median_minimum: 0.85
+  heldout_fault_delta_retention_q05_minimum: 0.65
+  screening_maximum_machine_drop: 0.020
+  confirmatory_maximum_machine_drop: 0.010
+  screening_positive_lomo_folds_minimum: 5
+  confirmatory_positive_lomo_folds_minimum: 6
+  bootstrap_iterations: 10000
