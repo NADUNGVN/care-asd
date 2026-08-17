@@ -243,6 +243,7 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
         try:
             from care_asd.evaluation.fp_naa_candidate import _primary_safe_backward
             from care_asd.fp_naa_config import FPObjectiveConfig
+            from care_asd.models.fp_naa_adapter import rdp_salient_contraction_projection
             from care_asd.models.fp_naa_objective import fp_naa_loss
 
             objective = FPObjectiveConfig(
@@ -296,6 +297,26 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
                 raise RuntimeError("Primary-safe gradient projection returned an invalid update")
             if not bool(cosine < 0.0) or not bool(conflict == 1.0):
                 raise RuntimeError("Primary-safe gradient conflict was not detected")
+            reference = torch.zeros(2, 4, 2, 8, device="cuda")
+            target = torch.stack(
+                [torch.full((2, 2, 8), float(index + 1), device="cuda") for index in range(4)],
+                dim=1,
+            )
+            raw_correction = -target
+            projected = rdp_salient_contraction_projection(
+                correction=raw_correction,
+                target=target,
+                reference=reference,
+                protected_fraction=0.50,
+                maximum_contraction=0.10,
+            )
+            discrepancy = target - reference
+            contraction = (projected * discrepancy).sum(dim=(2, 3))
+            norm_sq = discrepancy.square().sum(dim=(2, 3))
+            if not torch.all(contraction[:, -2:] >= -0.10001 * norm_sq[:, -2:]):
+                raise RuntimeError("RDP-salient projection violated its contraction bound")
+            if not torch.allclose(projected[:, :2], raw_correction[:, :2]):
+                raise RuntimeError("RDP-salient projection changed an unprotected temporal row")
             torch.cuda.synchronize()
         except (AssertionError, RuntimeError, ValueError) as exc:
             raise JobError(
@@ -305,6 +326,7 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
             ) from exc
         checks["tail_safe_objective_probe"] = "passed"
         checks["primary_safe_gradient_probe"] = "passed"
+        checks["rdp_salient_projection_probe"] = "passed"
     return {"schema_version": SCHEMA_VERSION, "runtime": checks}
 
 
@@ -917,7 +939,7 @@ def _common_paths(ctx: FPNAAJobContext) -> dict[str, Path]:
     return {
         "manifest": ctx.repo_root / "data" / "manifests" / "dcase2026_dev.parquet",
         "audio_root": ctx.data_root / "raw" / "dcase2026" / "dev" / "extracted",
-        "config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v2.yaml",
+        "config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v3.yaml",
         "safety_config": ctx.repo_root
         / "configs"
         / "experiment"

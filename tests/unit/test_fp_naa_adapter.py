@@ -6,7 +6,11 @@ import pytest
 torch = pytest.importorskip("torch")
 
 from care_asd.fp_naa_config import FPObjectiveConfig
-from care_asd.models.fp_naa_adapter import BandwiseReferenceAdapter, trainable_parameter_count
+from care_asd.models.fp_naa_adapter import (
+    BandwiseReferenceAdapter,
+    rdp_salient_contraction_projection,
+    trainable_parameter_count,
+)
 from care_asd.models.fp_naa_objective import _upper_tail_mean, fault_delta_retention, fp_naa_loss
 
 
@@ -118,3 +122,40 @@ def test_tail_constrained_loss_prefers_safe_fault_gain() -> None:
 def test_upper_tail_mean_targets_worst_violations() -> None:
     values = torch.tensor([0.0, 1.0, 2.0, 3.0])
     assert _upper_tail_mean(values, 0.5).item() == pytest.approx(2.5)
+
+
+def test_rdp_salient_projection_bounds_only_high_disagreement_rows() -> None:
+    reference = torch.zeros(1, 4, 2, 3)
+    target = torch.stack(
+        [torch.full((1, 2, 3), float(index + 1)) for index in range(4)], dim=1
+    )
+    correction = -target
+    projected = rdp_salient_contraction_projection(
+        correction=correction,
+        target=target,
+        reference=reference,
+        protected_fraction=0.5,
+        maximum_contraction=0.1,
+    )
+    discrepancy = target - reference
+    dot = (projected * discrepancy).sum(dim=(2, 3))
+    norm_sq = discrepancy.square().sum(dim=(2, 3))
+    torch.testing.assert_close(projected[:, :2], correction[:, :2])
+    torch.testing.assert_close(dot[:, -2:], -0.1 * norm_sq[:, -2:])
+
+
+def test_reference_safety_projection_adds_no_trainable_parameters() -> None:
+    common = {
+        "embedding_dim": 32,
+        "hidden_dim": 16,
+        "attention_heads": 4,
+        "dropout": 0.0,
+    }
+    baseline = BandwiseReferenceAdapter(**common)
+    safe = BandwiseReferenceAdapter(
+        **common,
+        reference_safety_mode="rdp_salient_contraction",
+        reference_safety_fraction=0.2,
+        maximum_reference_contraction=0.1,
+    )
+    assert trainable_parameter_count(safe) == trainable_parameter_count(baseline)

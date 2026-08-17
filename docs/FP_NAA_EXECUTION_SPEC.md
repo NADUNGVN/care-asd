@@ -279,6 +279,14 @@ primary-safe gradient rule, and unchanged gates are recorded in
 [`FP_NAA_V2_TAIL_SAFE_REVISION.md`](FP_NAA_V2_TAIL_SAFE_REVISION.md). The v1 run remains an immutable
 negative ablation; it is not overwritten or counted as v2 evidence.
 
+The tail-safe v2 formulation subsequently failed the valid deterministic run
+`server02_fp_naa_screening_20260817T120203Z`: C2 fell to 61.0112%, 2.3945 points below C1, while
+84--85% of auxiliary batches exhibited gradient conflict and the in-support q05 remained 0.3037.
+V2 is therefore closed without LOMO. The new structural hypothesis, exact reference-contraction
+projection, shared-weight causal comparator, and unchanged gates are preregistered in
+[`FP_NAA_V3_REFERENCE_PROJECTION.md`](FP_NAA_V3_REFERENCE_PROJECTION.md). V3 does not tune the v2
+loss and cannot reuse a v1/v2 C2 checkpoint.
+
 ## 8. Primary prior art used to set the boundary
 
 - [DCASE 2026 Task 2 setup and exact metric](https://arxiv.org/abs/2606.01578)

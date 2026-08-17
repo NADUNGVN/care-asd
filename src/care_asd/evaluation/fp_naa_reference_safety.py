@@ -586,7 +586,7 @@ def _load_c2_model(
         raise ValueError(f"C2 checkpoint identity mismatch: {checkpoint}")
     if payload.get("config") != config.model_dump(mode="json"):
         raise ValueError(f"C2 checkpoint config mismatch: {checkpoint}")
-    model = _new_model(config).to(device)
+    model = _new_model(config, candidate="c2_fault_preserving").to(device)
     model.load_state_dict(payload["model_state"])
     return model.eval()
 

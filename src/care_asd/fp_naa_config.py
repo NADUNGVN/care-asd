@@ -65,6 +65,10 @@ class FPAdapterConfig(BaseModel):
     dropout: float = Field(ge=0.0, lt=1.0)
     reference_dropout_probability: float = Field(ge=0.0, le=1.0)
     reference_corruption_probability: float = Field(ge=0.0, le=1.0)
+    reference_safety_mode: Literal["none", "rdp_salient_contraction"] = "none"
+    reference_safety_fraction: float = Field(default=0.20, gt=0.0, le=1.0)
+    maximum_reference_contraction: float = Field(default=1.0, ge=0.0, le=1.0)
+    share_c1_weights_for_c2: bool = False
 
 
 class FPObjectiveConfig(BaseModel):
@@ -187,4 +191,18 @@ def load_fp_naa_config(path: str | Path) -> FPNAAConfig:
         and objective.fault_loss_mode != "tail_constrained"
     ):
         raise ValueError("primary-safe projection requires tail_constrained fault loss")
+    adapter = config.adapter
+    if adapter.share_c1_weights_for_c2:
+        if adapter.reference_safety_mode == "none":
+            raise ValueError("shared C1 weights require an active reference-safety projection")
+        auxiliary_weights = (
+            objective.fault_direction_weight,
+            objective.fault_magnitude_weight,
+            objective.fault_separation_weight,
+            objective.reference_consistency_weight,
+        )
+        if any(weight != 0.0 for weight in auxiliary_weights):
+            raise ValueError("shared C1 weights require zero auxiliary-objective weights")
+        if objective.primary_safe_gradient_projection:
+            raise ValueError("shared C1 weights cannot enable auxiliary-gradient projection")
     return config

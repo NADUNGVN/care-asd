@@ -450,17 +450,31 @@ def _load_or_train_model(
     run_number: int,
     total_runs: int,
 ) -> BandwiseReferenceAdapter:
-    model = _new_model(config).to(device)
+    model = _new_model(config, candidate=candidate).to(device)
     if checkpoint.is_file():
         payload = torch.load(checkpoint, map_location=device, weights_only=True)
         if payload.get("candidate") != candidate or int(payload.get("seed", -1)) != seed:
             raise ValueError(f"Checkpoint contract mismatch: {checkpoint}")
         if payload.get("config") != config.model_dump(mode="json"):
             raise ValueError(f"Checkpoint config mismatch: {checkpoint}")
+        if candidate == "c2_fault_preserving" and config.adapter.share_c1_weights_for_c2:
+            source_checkpoint = checkpoint.with_name("c1_mse.pt")
+            if not source_checkpoint.is_file():
+                raise FileNotFoundError(f"Shared C1 checkpoint not found: {source_checkpoint}")
+            if payload.get("derived_from_c1_sha256") != _sha256(source_checkpoint):
+                raise ValueError(f"Shared C1 checkpoint hash mismatch: {checkpoint}")
         model.load_state_dict(payload["model_state"])
         return model.eval()
+    if candidate == "c2_fault_preserving" and config.adapter.share_c1_weights_for_c2:
+        return _materialize_reference_safe_c2(
+            checkpoint=checkpoint,
+            history_path=history_path,
+            seed=seed,
+            config=config,
+            device=device,
+        )
     _set_seed(seed)
-    model = _new_model(config).to(device)
+    model = _new_model(config, candidate=candidate).to(device)
     dataset = _CounterfactualDataset(arrays)
     generator = torch.Generator().manual_seed(seed)
     loader = DataLoader(
@@ -591,6 +605,52 @@ def _load_or_train_model(
             "model_state": model.state_dict(),
             "config": config.model_dump(mode="json"),
             "deterministic_runtime": _deterministic_runtime_metadata(),
+        },
+        temporary,
+    )
+    os.replace(temporary, checkpoint)
+    return model.eval()
+
+
+def _materialize_reference_safe_c2(
+    *,
+    checkpoint: Path,
+    history_path: Path,
+    seed: int,
+    config: FPNAAConfig,
+    device: torch.device,
+) -> BandwiseReferenceAdapter:
+    """Reuse C1 weights so C2 differs only by the parameter-free safety projection."""
+    source_checkpoint = checkpoint.with_name("c1_mse.pt")
+    source_history = history_path.parent.parent / "c1_mse" / history_path.name
+    if not source_checkpoint.is_file() or not source_history.is_file():
+        raise FileNotFoundError(
+            "Reference-safe C2 requires the matching C1 checkpoint and training history"
+        )
+    source = torch.load(source_checkpoint, map_location=device, weights_only=True)
+    if source.get("candidate") != "c1_mse" or int(source.get("seed", -1)) != seed:
+        raise ValueError(f"C1 source checkpoint contract mismatch: {source_checkpoint}")
+    if source.get("config") != config.model_dump(mode="json"):
+        raise ValueError(f"C1 source checkpoint config mismatch: {source_checkpoint}")
+
+    model = _new_model(config, candidate="c2_fault_preserving").to(device)
+    model.load_state_dict(source["model_state"])
+    history = pd.read_csv(source_history)
+    history["derived_from_candidate"] = "c1_mse"
+    history["reference_safety_mode"] = config.adapter.reference_safety_mode
+    history["maximum_reference_contraction"] = config.adapter.maximum_reference_contraction
+    _atomic_csv(history_path, history)
+    temporary = checkpoint.with_suffix(checkpoint.suffix + ".tmp")
+    torch.save(
+        {
+            "schema_version": 1,
+            "candidate": "c2_fault_preserving",
+            "seed": seed,
+            "model_state": source["model_state"],
+            "config": config.model_dump(mode="json"),
+            "deterministic_runtime": _deterministic_runtime_metadata(),
+            "derived_from_c1_sha256": _sha256(source_checkpoint),
+            "reference_safety_mode": config.adapter.reference_safety_mode,
         },
         temporary,
     )
@@ -1091,12 +1151,20 @@ def _validate_caches(base: Path, augmentation: Path, config: FPNAAConfig) -> Non
         raise ValueError("Augmentation cache checkpoint does not match config")
 
 
-def _new_model(config: FPNAAConfig) -> BandwiseReferenceAdapter:
+def _new_model(config: FPNAAConfig, *, candidate: Candidate) -> BandwiseReferenceAdapter:
+    safety_mode = (
+        config.adapter.reference_safety_mode
+        if candidate == "c2_fault_preserving"
+        else "none"
+    )
     return BandwiseReferenceAdapter(
         embedding_dim=config.frontend.embedding_dim,
         hidden_dim=config.adapter.hidden_dim,
         attention_heads=config.adapter.attention_heads,
         dropout=config.adapter.dropout,
+        reference_safety_mode=safety_mode,
+        reference_safety_fraction=config.adapter.reference_safety_fraction,
+        maximum_reference_contraction=config.adapter.maximum_reference_contraction,
     )
 
 

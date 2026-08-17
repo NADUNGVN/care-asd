@@ -144,10 +144,13 @@ The controller validates required gates and artifact hashes before launching dep
 Explicit `start --stage ...` is required after a failed process so a transient failure cannot cause
 an infinite restart loop.
 
-After the valid v1 screening failure, new screening and downstream jobs use the versioned
-`configs/experiment/fp_naa_v2.yaml` tail-safe objective. The immutable v1 reports remain valid
-negative-ablation artifacts; the shared BEATs and augmentation caches are reusable because v2 does
-not change their frontend or augmentation contracts.
+After the valid v1 and v2 screening failures, new screening and downstream jobs use the versioned
+`configs/experiment/fp_naa_v3.yaml` RDP-salient reference-contraction projection. The immutable v1
+and v2 reports remain valid negative-ablation artifacts. The shared BEATs and augmentation caches
+are reusable because v3 does not change their frontend or augmentation contracts. V3 trains C1
+once per seed and derives the C2 checkpoint from that exact state dictionary, recording the C1
+checkpoint hash; C2 adds no trainable parameter or second optimization trajectory.
 
-The public `fp-naa runtime-check` also executes CUDA smoke probes for the tail-safe objective and
-primary-safe gradient projection, so server validation remains one short command.
+The public `fp-naa runtime-check` retains the historical tail-loss and gradient probes and also
+executes the v3 RDP-salient projection invariant on CUDA, so server validation remains one short
+command.

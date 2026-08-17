@@ -149,3 +149,79 @@ def test_primary_safe_backward_removes_conflicting_auxiliary_component() -> None
     assert conflict.item() == 1.0
     assert cosine.item() < 0.0
     torch.testing.assert_close(parameter.grad, torch.tensor([2.0, 1.0]))
+
+
+def test_v3_c2_reuses_c1_weights_with_parameter_free_projection(tmp_path: Path) -> None:
+    payload = yaml.safe_load(Path("configs/experiment/fp_naa_v3.yaml").read_text())
+    payload["frontend"].update(
+        {"embedding_dim": 8, "frequency_patches": 2, "inference_batch_size": 2}
+    )
+    payload["adapter"].update({"hidden_dim": 8, "attention_heads": 2, "dropout": 0.0})
+    payload["training"].update(
+        {
+            "epochs": 1,
+            "batch_size": 2,
+            "warmup_epochs": 0,
+            "workers": 1,
+            "mixed_precision": False,
+            "screening_seeds": [7],
+            "confirmatory_seeds": [7],
+        }
+    )
+    config = FPNAAConfig.model_validate(payload)
+    rng = np.random.default_rng(9)
+    shape = (4, 2, 2, 8)
+    teacher = rng.normal(size=shape).astype(np.float32)
+    reference = rng.normal(size=shape).astype(np.float32)
+    arrays = _TrainingArrays(
+        frame=pd.DataFrame(
+            {
+                "file_id": [f"clip-{index}" for index in range(4)],
+                "fault_family": ["periodic_resonance"] * 4,
+                "heldout": [False] * 4,
+                "machine_type": ["fan"] * 4,
+            }
+        ),
+        noisy_clean=(teacher + 0.1 * reference).astype(np.float32),
+        reference=reference,
+        teacher_clean=teacher,
+        fault_noisy=(teacher + 0.2 * reference).astype(np.float32),
+        teacher_fault=(teacher + 0.1).astype(np.float32),
+    )
+    checkpoint_dir = tmp_path / "checkpoints" / "seed7"
+    checkpoint_dir.mkdir(parents=True)
+    history_dir = tmp_path / "reports" / "seed7"
+    (history_dir / "c1_mse").mkdir(parents=True)
+    (history_dir / "c2_fault_preserving").mkdir(parents=True)
+    progress = tmp_path / "progress"
+    progress.mkdir()
+    common = {
+        "arrays": arrays,
+        "seed": 7,
+        "config": config,
+        "device": torch.device("cpu"),
+        "progress_output": progress,
+        "run_number": 1,
+        "total_runs": 2,
+    }
+    c1 = _load_or_train_model(
+        checkpoint=checkpoint_dir / "c1_mse.pt",
+        history_path=history_dir / "c1_mse" / "training_history.csv",
+        candidate="c1_mse",
+        **common,
+    )
+    c2 = _load_or_train_model(
+        checkpoint=checkpoint_dir / "c2_fault_preserving.pt",
+        history_path=history_dir / "c2_fault_preserving" / "training_history.csv",
+        candidate="c2_fault_preserving",
+        **common,
+    )
+    for c1_value, c2_value in zip(c1.state_dict().values(), c2.state_dict().values(), strict=True):
+        torch.testing.assert_close(c1_value, c2_value)
+    derived = torch.load(
+        checkpoint_dir / "c2_fault_preserving.pt", map_location="cpu", weights_only=True
+    )
+    assert derived["derived_from_c1_sha256"]
+    history = pd.read_csv(history_dir / "c2_fault_preserving" / "training_history.csv")
+    assert set(history["derived_from_candidate"]) == {"c1_mse"}
+    assert set(history["reference_safety_mode"]) == {"rdp_salient_contraction"}
