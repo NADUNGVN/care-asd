@@ -67,23 +67,37 @@ class OfficialBEATsFrontend:
             tokens, padding_mask = self._model.extract_features(source, padding_mask=None)
         if padding_mask is not None:
             raise RuntimeError("Fixed-duration BEATs extraction unexpectedly returned a padding mask")
-        if tokens.ndim != 3 or tokens.shape[1] % self.frequency_patches != 0:
-            raise RuntimeError(
-                f"Cannot reconstruct {self.frequency_patches} frequency patches from {tokens.shape}"
-            )
-        time_patches = tokens.shape[1] // self.frequency_patches
-        grid = tokens.reshape(
-            tokens.shape[0],
-            time_patches,
-            self.frequency_patches,
-            tokens.shape[2],
+        output = reconstruct_frequency_grid(
+            tokens.float().cpu().numpy(),
+            frequency_patches=self.frequency_patches,
         )
-        output = grid.float().cpu().numpy()
-        if not np.isfinite(output).all():
-            raise RuntimeError(
-                "BEATs produced non-finite tokens; disable frontend inference mixed precision"
-            )
         return output
+
+
+def reconstruct_frequency_grid(
+    tokens: np.ndarray,
+    *,
+    frequency_patches: int,
+) -> np.ndarray:
+    """Restore BEATs' time-major, frequency-minor flattened patch sequence."""
+    values = np.asarray(tokens)
+    if frequency_patches < 1:
+        raise ValueError("frequency_patches must be positive")
+    if values.ndim != 3 or values.shape[1] % frequency_patches != 0:
+        raise RuntimeError(
+            f"Cannot reconstruct {frequency_patches} frequency patches from {values.shape}"
+        )
+    if not np.isfinite(values).all():
+        raise RuntimeError(
+            "BEATs produced non-finite tokens; disable frontend inference mixed precision"
+        )
+    time_patches = values.shape[1] // frequency_patches
+    return values.reshape(
+        values.shape[0],
+        time_patches,
+        frequency_patches,
+        values.shape[2],
+    )
 
 
 def fixed_duration_waveform(

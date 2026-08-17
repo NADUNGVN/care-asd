@@ -11,7 +11,7 @@ import yaml
 
 from care_asd.data.beats_cache import build_beats_token_cache
 from care_asd.fp_naa_config import load_fp_naa_config
-from care_asd.models.beats_frontend import fixed_duration_waveform
+from care_asd.models.beats_frontend import fixed_duration_waveform, reconstruct_frequency_grid
 
 
 class _FakeFrontend:
@@ -266,3 +266,20 @@ def test_fixed_duration_waveform_and_checked_in_config() -> None:
     assert config.frontend.inference_batch_size == 16
     assert config.training.workers == 12
     assert config.gates.baseline_minimum_official_score == 0.605
+
+
+def test_frequency_grid_reconstruction_preserves_beats_patch_order() -> None:
+    tokens = np.arange(2 * 6 * 3, dtype=np.float32).reshape(2, 6, 3)
+    grid = reconstruct_frequency_grid(tokens, frequency_patches=2)
+    assert grid.shape == (2, 3, 2, 3)
+    for time_index in range(3):
+        for frequency_index in range(2):
+            np.testing.assert_array_equal(
+                grid[:, time_index, frequency_index],
+                tokens[:, time_index * 2 + frequency_index],
+            )
+    with pytest.raises(RuntimeError, match="non-finite tokens"):
+        reconstruct_frequency_grid(
+            np.full((1, 2, 3), np.nan, dtype=np.float32),
+            frequency_patches=2,
+        )
