@@ -288,6 +288,53 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
             )
             if not bool(torch.isfinite(safe.total)) or not bool(safe.total < erased.total):
                 raise RuntimeError("Tail-safe objective did not prefer the bounded-gain sample")
+            anchored_objective = FPObjectiveConfig(
+                normal_mse_weight=1.0,
+                fault_direction_weight=0.0,
+                fault_magnitude_weight=0.0,
+                fault_separation_weight=0.0,
+                reference_consistency_weight=0.0,
+                magnitude_huber_delta=0.05,
+                fault_loss_mode="anchored_tangent_transport",
+                tail_fraction=0.10,
+                tangent_transport_mean_weight=0.25,
+                tangent_transport_tail_weight=1.0,
+                tangent_relative_error_limit=0.25,
+                function_anchor_weight=10.0,
+                function_anchor_relative_limit=0.10,
+            )
+            anchor = clean + 0.1
+            transported = fp_naa_loss(
+                objective="c2_fault_preserving",
+                student_clean=anchor,
+                teacher_clean=clean,
+                student_fault=anchor + delta,
+                teacher_fault=teacher_fault,
+                anchor_clean=anchor,
+                config=anchored_objective,
+            )
+            anchored_erased = fp_naa_loss(
+                objective="c2_fault_preserving",
+                student_clean=anchor,
+                teacher_clean=clean,
+                student_fault=anchor,
+                teacher_fault=teacher_fault,
+                anchor_clean=anchor,
+                config=anchored_objective,
+            )
+            drifted = fp_naa_loss(
+                objective="c2_fault_preserving",
+                student_clean=anchor + 0.05,
+                teacher_clean=clean,
+                student_fault=anchor + 0.05 + delta,
+                teacher_fault=teacher_fault,
+                anchor_clean=anchor,
+                config=anchored_objective,
+            )
+            if not bool(transported.total < anchored_erased.total):
+                raise RuntimeError("Anchored tangent objective did not prefer teacher transport")
+            if not bool(drifted.function_anchor > 0.0):
+                raise RuntimeError("Anchored tangent objective ignored normal-function drift")
             parameter = torch.nn.Parameter(torch.tensor([1.0, 1.0], device="cuda"))
             cosine, conflict = _primary_safe_backward(
                 primary=parameter[0].square(),
@@ -381,6 +428,7 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
         checks["reference_responsiveness_probe"] = "passed"
         checks["target_perturbation_equivariance_probe"] = "passed"
         checks["target_jacobian_identity_probe"] = "passed"
+        checks["anchored_tangent_transport_probe"] = "passed"
     return {"schema_version": SCHEMA_VERSION, "runtime": checks}
 
 
@@ -993,7 +1041,7 @@ def _common_paths(ctx: FPNAAJobContext) -> dict[str, Path]:
     return {
         "manifest": ctx.repo_root / "data" / "manifests" / "dcase2026_dev.parquet",
         "audio_root": ctx.data_root / "raw" / "dcase2026" / "dev" / "extracted",
-        "config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v4.yaml",
+        "config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v5.yaml",
         "safety_config": ctx.repo_root
         / "configs"
         / "experiment"

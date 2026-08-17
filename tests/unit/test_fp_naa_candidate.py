@@ -110,6 +110,11 @@ def test_candidate_training_writes_resumable_checkpoint(
         "teacher_delta_norm",
         "student_delta_norm",
         "salient_distance_gain",
+        "frontend_observability",
+        "frontend_retention",
+        "adapter_delta_gain",
+        "adapter_retention",
+        "transport_relative_error",
     ]
     assert np.isfinite(diagnostics.to_numpy()).all()
     runtime = _deterministic_runtime_metadata()
@@ -155,6 +160,101 @@ def test_v3_and_v4_have_identical_c1_reuse_signatures() -> None:
     assert _c1_reuse_signature(v3) == _c1_reuse_signature(v4)
     v4["training"]["learning_rate"] *= 2.0
     assert _c1_reuse_signature(v3) != _c1_reuse_signature(v4)
+
+
+def test_v5_uses_registered_c1_checkpoint_for_anchored_finetune(tmp_path: Path) -> None:
+    payload = yaml.safe_load(Path("configs/experiment/fp_naa_v5.yaml").read_text())
+    source_run = str(payload["screening_c2_initialization_run_id"])
+    payload["frontend"].update(
+        {"embedding_dim": 8, "frequency_patches": 2, "inference_batch_size": 2}
+    )
+    payload["adapter"].update({"hidden_dim": 8, "attention_heads": 2, "dropout": 0.0})
+    payload["training"].update(
+        {
+            "epochs": 1,
+            "batch_size": 2,
+            "warmup_epochs": 0,
+            "workers": 1,
+            "mixed_precision": False,
+            "screening_seeds": [7],
+            "confirmatory_seeds": [7],
+            "c2_finetune_epochs": 1,
+            "c2_finetune_warmup_epochs": 0,
+        }
+    )
+    config = FPNAAConfig.model_validate(payload)
+    rng = np.random.default_rng(11)
+    shape = (4, 2, 2, 8)
+    teacher = rng.normal(size=shape).astype(np.float32)
+    reference = rng.normal(scale=0.2, size=shape).astype(np.float32)
+    noisy = (teacher + 0.1 * reference).astype(np.float32)
+    delta = rng.normal(scale=0.05, size=shape).astype(np.float32)
+    arrays = _TrainingArrays(
+        frame=pd.DataFrame(
+            {
+                "file_id": [f"clip-{index}" for index in range(4)],
+                "fault_family": ["periodic_resonance"] * 4,
+                "heldout": [False] * 4,
+                "machine_type": ["fan"] * 4,
+            }
+        ),
+        noisy_clean=noisy,
+        reference=reference,
+        teacher_clean=teacher,
+        fault_noisy=(noisy + 0.5 * delta).astype(np.float32),
+        teacher_fault=(teacher + delta).astype(np.float32),
+    )
+    checkpoints = tmp_path / "checkpoints"
+    source_checkpoint = checkpoints / source_run / "seed7" / "c1_mse.pt"
+    source_checkpoint.parent.mkdir(parents=True)
+    progress = tmp_path / "progress"
+    progress.mkdir()
+    source_history = tmp_path / "source" / "training_history.csv"
+    source_history.parent.mkdir()
+    _load_or_train_model(
+        checkpoint=source_checkpoint,
+        history_path=source_history,
+        arrays=arrays,
+        candidate="c1_mse",
+        seed=7,
+        config=config,
+        device=torch.device("cpu"),
+        progress_output=progress,
+        run_number=1,
+        total_runs=2,
+    )
+    current_checkpoint = checkpoints / "new-run" / "seed7" / "c2_fault_preserving.pt"
+    current_checkpoint.parent.mkdir(parents=True)
+    current_history = tmp_path / "current" / "training_history.csv"
+    current_history.parent.mkdir()
+    _load_or_train_model(
+        checkpoint=current_checkpoint,
+        history_path=current_history,
+        arrays=arrays,
+        candidate="c2_fault_preserving",
+        seed=7,
+        config=config,
+        device=torch.device("cpu"),
+        progress_output=progress,
+        run_number=2,
+        total_runs=2,
+    )
+    derived = torch.load(current_checkpoint, map_location="cpu", weights_only=True)
+    initialization = json.loads(
+        (current_history.parent / "initialization.json").read_text(encoding="utf-8")
+    )
+    assert derived["derived_from_c1_sha256"]
+    assert initialization["source_checkpoint_sha256"] == derived["derived_from_c1_sha256"]
+    history = pd.read_csv(current_history)
+    assert len(history) == 1
+    assert set(
+        [
+            "tangent_transport",
+            "function_anchor",
+            "tangent_relative_error",
+            "function_anchor_ratio",
+        ]
+    ).issubset(history.columns)
 
 
 def test_primary_safe_backward_removes_conflicting_auxiliary_component() -> None:

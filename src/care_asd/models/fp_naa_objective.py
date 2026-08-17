@@ -24,6 +24,10 @@ class FPNAALoss:
     fault_separation: Tensor
     reference_consistency: Tensor
     retention: Tensor
+    tangent_transport: Tensor
+    function_anchor: Tensor
+    tangent_relative_error: Tensor
+    function_anchor_ratio: Tensor
 
 
 def fp_naa_loss(
@@ -35,6 +39,7 @@ def fp_naa_loss(
     student_fault: Tensor | None = None,
     teacher_fault: Tensor | None = None,
     student_clean_corrupted_reference: Tensor | None = None,
+    anchor_clean: Tensor | None = None,
     eps: float = 1.0e-8,
 ) -> FPNAALoss:
     """Compute the capacity-controlled C1/C2/C3 objective.
@@ -51,6 +56,10 @@ def fp_naa_loss(
     magnitude = zero
     separation = zero
     retention = normal.new_ones(student_clean.shape[0])
+    tangent_transport = zero
+    function_anchor = zero
+    tangent_relative_error = normal.new_zeros(student_clean.shape[0])
+    function_anchor_ratio = normal.new_zeros(student_clean.shape[0])
     if objective in {"c2_fault_preserving", "c3_reference_safe"}:
         if student_fault is None or teacher_fault is None:
             raise ValueError(f"{objective} requires student_fault and teacher_fault")
@@ -70,7 +79,7 @@ def fp_naa_loss(
                 torch.zeros_like(log_ratio),
                 beta=config.magnitude_huber_delta,
             )
-        else:
+        elif config.fault_loss_mode == "tail_constrained":
             direction_violation = functional.relu(config.direction_cosine_floor - cosine)
             lower_violation = functional.relu(math.log(config.gain_lower_bound) - log_ratio)
             upper_violation = functional.relu(log_ratio - math.log(config.gain_upper_bound))
@@ -96,6 +105,30 @@ def fp_naa_loss(
                 gain=config.score_gain_lower_bound,
                 patch_fraction=config.score_patch_fraction,
             )
+        else:
+            if anchor_clean is None:
+                raise ValueError("anchored tangent transport requires anchor_clean")
+            _equal_shape(student_clean, anchor_clean, "student_clean", "anchor_clean")
+            tangent_relative_error = torch.linalg.vector_norm(
+                student_delta - teacher_delta, dim=1
+            ) / (teacher_norm + eps)
+            tangent_violation = functional.relu(
+                tangent_relative_error - config.tangent_relative_error_limit
+            )
+            tangent_transport = (
+                config.tangent_transport_mean_weight * tangent_relative_error.mean()
+                + config.tangent_transport_tail_weight
+                * _upper_tail_mean(tangent_violation, config.tail_fraction)
+            )
+            student_anchor_rms = _root_mean_square_per_item(student_clean - anchor_clean)
+            anchor_teacher_rms = _root_mean_square_per_item(anchor_clean - teacher_clean)
+            function_anchor_ratio = student_anchor_rms / (anchor_teacher_rms + eps)
+            function_anchor = _upper_tail_mean(
+                functional.relu(
+                    function_anchor_ratio - config.function_anchor_relative_limit
+                ),
+                config.tail_fraction,
+            )
     consistency = zero
     if objective == "c3_reference_safe":
         if student_clean_corrupted_reference is None:
@@ -113,8 +146,22 @@ def fp_naa_loss(
         + config.fault_magnitude_weight * magnitude
         + config.fault_separation_weight * separation
         + config.reference_consistency_weight * consistency
+        + tangent_transport
+        + config.function_anchor_weight * function_anchor
     )
-    return FPNAALoss(total, normal, direction, magnitude, separation, consistency, retention)
+    return FPNAALoss(
+        total,
+        normal,
+        direction,
+        magnitude,
+        separation,
+        consistency,
+        retention,
+        tangent_transport,
+        function_anchor,
+        tangent_relative_error,
+        function_anchor_ratio,
+    )
 
 
 def fault_delta_retention(
@@ -142,6 +189,11 @@ def _flatten_per_item(value: Tensor) -> Tensor:
     if value.ndim < 2 or value.shape[0] < 1:
         raise ValueError("representation tensors must have a non-empty batch dimension")
     return value.reshape(value.shape[0], -1)
+
+
+def _root_mean_square_per_item(value: Tensor) -> Tensor:
+    flattened = _flatten_per_item(value).float()
+    return flattened.square().mean(dim=1).sqrt()
 
 
 def _upper_tail_mean(value: Tensor, fraction: float) -> Tensor:

@@ -124,6 +124,60 @@ def test_upper_tail_mean_targets_worst_violations() -> None:
     assert _upper_tail_mean(values, 0.5).item() == pytest.approx(2.5)
 
 
+def test_anchored_tangent_transport_prefers_teacher_delta_and_penalizes_drift() -> None:
+    config = _objective_config().model_copy(
+        update={
+            "fault_direction_weight": 0.0,
+            "fault_magnitude_weight": 0.0,
+            "reference_consistency_weight": 0.0,
+            "fault_loss_mode": "anchored_tangent_transport",
+            "tail_fraction": 0.5,
+            "tangent_transport_mean_weight": 0.25,
+            "tangent_transport_tail_weight": 1.0,
+            "tangent_relative_error_limit": 0.25,
+            "function_anchor_weight": 10.0,
+            "function_anchor_relative_limit": 0.10,
+        }
+    )
+    teacher_clean = torch.zeros(4, 2, 2, 8)
+    anchor_clean = torch.full_like(teacher_clean, 0.1)
+    teacher_delta = torch.zeros_like(teacher_clean)
+    teacher_delta[..., 0] = 0.05
+    teacher_fault = teacher_clean + teacher_delta
+    transported = fp_naa_loss(
+        objective="c2_fault_preserving",
+        student_clean=anchor_clean,
+        teacher_clean=teacher_clean,
+        student_fault=anchor_clean + teacher_delta,
+        teacher_fault=teacher_fault,
+        anchor_clean=anchor_clean,
+        config=config,
+    )
+    erased = fp_naa_loss(
+        objective="c2_fault_preserving",
+        student_clean=anchor_clean,
+        teacher_clean=teacher_clean,
+        student_fault=anchor_clean,
+        teacher_fault=teacher_fault,
+        anchor_clean=anchor_clean,
+        config=config,
+    )
+    drifted_clean = anchor_clean + 0.05
+    drifted = fp_naa_loss(
+        objective="c2_fault_preserving",
+        student_clean=drifted_clean,
+        teacher_clean=teacher_clean,
+        student_fault=drifted_clean + teacher_delta,
+        teacher_fault=teacher_fault,
+        anchor_clean=anchor_clean,
+        config=config,
+    )
+    assert transported.tangent_transport.item() == pytest.approx(0.0, abs=1.0e-6)
+    assert transported.total < erased.total
+    assert drifted.function_anchor > 0.0
+    assert drifted.total > transported.total
+
+
 def test_rdp_salient_projection_bounds_only_high_disagreement_rows() -> None:
     reference = torch.zeros(1, 4, 2, 3)
     target = torch.stack(

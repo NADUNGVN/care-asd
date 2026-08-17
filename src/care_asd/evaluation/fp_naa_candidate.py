@@ -85,6 +85,18 @@ class _FaultDiagnosticRow(Protocol):
     teacher_delta_norm: float
     student_delta_norm: float
     salient_distance_gain: float
+    frontend_observability: float
+    frontend_retention: float
+    adapter_delta_gain: float
+    adapter_retention: float
+    transport_relative_error: float
+
+
+@dataclass(frozen=True)
+class _C1Initialization:
+    source_path: Path
+    source_sha256: str
+    model_state: dict[str, Tensor]
 
 
 class _CounterfactualDataset(Dataset[tuple[Tensor, Tensor, Tensor, Tensor, Tensor]]):
@@ -264,6 +276,30 @@ def run_fp_naa_screening(
                     "in_support_retention_q05": float(in_support.quantile(0.05)),
                     "heldout_retention_median": float(heldout.median()),
                     "heldout_retention_q05": float(heldout.quantile(0.05)),
+                    "in_support_frontend_retention_median": _diagnostic_quantile(
+                        retention, fault_set="in_support", column="frontend_retention", q=0.50
+                    ),
+                    "in_support_frontend_retention_q05": _diagnostic_quantile(
+                        retention, fault_set="in_support", column="frontend_retention", q=0.05
+                    ),
+                    "in_support_adapter_retention_median": _diagnostic_quantile(
+                        retention, fault_set="in_support", column="adapter_retention", q=0.50
+                    ),
+                    "in_support_adapter_retention_q05": _diagnostic_quantile(
+                        retention, fault_set="in_support", column="adapter_retention", q=0.05
+                    ),
+                    "in_support_transport_error_median": _diagnostic_quantile(
+                        retention,
+                        fault_set="in_support",
+                        column="transport_relative_error",
+                        q=0.50,
+                    ),
+                    "in_support_transport_error_q90": _diagnostic_quantile(
+                        retention,
+                        fault_set="in_support",
+                        column="transport_relative_error",
+                        q=0.90,
+                    ),
                     "trainable_parameters": (
                         reused_parameters
                         if reused_parameters is not None
@@ -366,6 +402,16 @@ def _screening_c1_reuse_manifest(
         "source_summary_sha256": _sha256(summary_path),
         "artifacts": artifacts,
     }
+
+
+def _diagnostic_quantile(
+    frame: pd.DataFrame, *, fault_set: str, column: str, q: float
+) -> float:
+    """Summarize a new diagnostic while allowing immutable older C1 artifacts."""
+    if column not in frame.columns:
+        return float("nan")
+    values = frame.loc[frame["fault_set"] == fault_set, column]
+    return float(values.quantile(q)) if not values.empty else float("nan")
 
 
 def _c1_reuse_signature(config: dict[str, object]) -> dict[str, object]:
@@ -618,6 +664,12 @@ def _load_or_train_model(
     total_runs: int,
 ) -> BandwiseReferenceAdapter:
     model = _new_model(config, candidate=candidate).to(device)
+    initialization = (
+        _load_c1_initialization(checkpoint=checkpoint, seed=seed, config=config, device=device)
+        if candidate == "c2_fault_preserving"
+        and config.objective.fault_loss_mode == "anchored_tangent_transport"
+        else None
+    )
     if checkpoint.is_file():
         payload = torch.load(checkpoint, map_location=device, weights_only=True)
         if payload.get("candidate") != candidate or int(payload.get("seed", -1)) != seed:
@@ -630,6 +682,12 @@ def _load_or_train_model(
                 raise FileNotFoundError(f"Shared C1 checkpoint not found: {source_checkpoint}")
             if payload.get("derived_from_c1_sha256") != _sha256(source_checkpoint):
                 raise ValueError(f"Shared C1 checkpoint hash mismatch: {checkpoint}")
+        if initialization is not None:
+            if payload.get("derived_from_c1_sha256") != initialization.source_sha256:
+                raise ValueError(f"Anchored C1 checkpoint hash mismatch: {checkpoint}")
+            _write_c1_initialization_contract(
+                history_path.parent / "initialization.json", initialization, seed=seed
+            )
         model.load_state_dict(payload["model_state"])
         return model.eval()
     if candidate == "c2_fault_preserving" and config.adapter.share_c1_weights_for_c2:
@@ -642,6 +700,15 @@ def _load_or_train_model(
         )
     _set_seed(seed)
     model = _new_model(config, candidate=candidate).to(device)
+    anchor_model: BandwiseReferenceAdapter | None = None
+    if initialization is not None:
+        model.load_state_dict(initialization.model_state)
+        anchor_model = _new_model(config, candidate="c1_mse").to(device)
+        anchor_model.load_state_dict(initialization.model_state)
+        anchor_model.requires_grad_(False).eval()
+        _write_c1_initialization_contract(
+            history_path.parent / "initialization.json", initialization, seed=seed
+        )
     dataset = _CounterfactualDataset(arrays)
     generator = torch.Generator().manual_seed(seed)
     loader = DataLoader(
@@ -652,22 +719,43 @@ def _load_or_train_model(
         num_workers=0,
         pin_memory=True,
     )
+    anchored_transport = initialization is not None
+    epochs = (
+        cast(int, config.training.c2_finetune_epochs)
+        if anchored_transport
+        else config.training.epochs
+    )
+    learning_rate = (
+        cast(float, config.training.c2_finetune_learning_rate)
+        if anchored_transport
+        else config.training.learning_rate
+    )
+    warmup_epochs = (
+        cast(int, config.training.c2_finetune_warmup_epochs)
+        if anchored_transport
+        else config.training.warmup_epochs
+    )
     optimizer = torch.optim.AdamW(
         model.parameters(),
-        lr=config.training.learning_rate,
+        lr=learning_rate,
         weight_decay=config.training.weight_decay,
     )
     scheduler = torch.optim.lr_scheduler.LambdaLR(
         optimizer,
-        lr_lambda=lambda epoch: _learning_rate_factor(epoch, config),
+        lr_lambda=lambda epoch: _cosine_learning_rate_factor(
+            epoch, epochs=epochs, warmup_epochs=warmup_epochs
+        ),
     )
     use_amp = config.training.mixed_precision and device.type == "cuda"
     scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
     history: list[dict[str, float | int]] = []
     objective = cast(FPNaaObjective, candidate)
-    model.train()
-    for epoch in range(config.training.epochs):
-        totals = torch.zeros(8, dtype=torch.float64, device=device)
+    if anchored_transport and config.training.c2_finetune_disable_dropout:
+        model.eval()
+    else:
+        model.train()
+    for epoch in range(epochs):
+        totals = torch.zeros(12, dtype=torch.float64, device=device)
         examples = 0
         auxiliary_scale = _auxiliary_scale(epoch, candidate=candidate, config=config)
         for noisy_clean, reference, teacher_clean, fault_noisy, teacher_fault in loader:
@@ -688,12 +776,17 @@ def _load_or_train_model(
                     fault_noisy = fault_noisy.to(device, non_blocking=True)
                     teacher_fault = teacher_fault.to(device, non_blocking=True)
                     student_fault = model(fault_noisy, reference)
+                    anchor_clean = None
+                    if anchor_model is not None:
+                        with torch.no_grad():
+                            anchor_clean = anchor_model(noisy_clean, reference)
                     loss = fp_naa_loss(
                         objective=objective,
                         student_clean=student_clean,
                         teacher_clean=teacher_clean,
                         student_fault=student_fault,
                         teacher_fault=teacher_fault,
+                        anchor_clean=anchor_clean,
                         config=config.objective,
                     )
                 primary = config.objective.normal_mse_weight * loss.normal_mse
@@ -736,6 +829,10 @@ def _load_or_train_model(
                     loss.retention.detach().mean(),
                     gradient_cosine.detach(),
                     gradient_conflict.detach(),
+                    loss.tangent_transport.detach(),
+                    loss.function_anchor.detach(),
+                    loss.tangent_relative_error.detach().mean(),
+                    loss.function_anchor_ratio.detach().mean(),
                 )
             ).to(dtype=torch.float64)
             examples += batch
@@ -753,6 +850,10 @@ def _load_or_train_model(
                 "gradient_cosine": epoch_totals[6],
                 "gradient_conflict_fraction": epoch_totals[7],
                 "auxiliary_scale": auxiliary_scale,
+                "tangent_transport": epoch_totals[8],
+                "function_anchor": epoch_totals[9],
+                "tangent_relative_error": epoch_totals[10],
+                "function_anchor_ratio": epoch_totals[11],
             }
         )
         scheduler.step()
@@ -772,11 +873,68 @@ def _load_or_train_model(
             "model_state": model.state_dict(),
             "config": config.model_dump(mode="json"),
             "deterministic_runtime": _deterministic_runtime_metadata(),
+            "derived_from_c1_sha256": (
+                initialization.source_sha256 if initialization is not None else None
+            ),
         },
         temporary,
     )
     os.replace(temporary, checkpoint)
     return model.eval()
+
+
+def _load_c1_initialization(
+    *,
+    checkpoint: Path,
+    seed: int,
+    config: FPNAAConfig,
+    device: torch.device,
+) -> _C1Initialization:
+    """Load the exact matching C1 state used to initialize anchored C2."""
+    sibling = checkpoint.with_name("c1_mse.pt")
+    if sibling.is_file():
+        source = sibling
+    else:
+        run_id = config.screening_c2_initialization_run_id
+        if run_id is None or len(checkpoint.parents) < 3:
+            raise FileNotFoundError("Anchored C2 cannot resolve its registered C1 checkpoint")
+        source = checkpoint.parents[2] / run_id / f"seed{seed}" / "c1_mse.pt"
+    if not source.is_file():
+        raise FileNotFoundError(f"Registered C1 initialization checkpoint is missing: {source}")
+    payload = torch.load(source, map_location=device, weights_only=True)
+    if payload.get("candidate") != "c1_mse" or int(payload.get("seed", -1)) != seed:
+        raise ValueError(f"C1 initialization checkpoint contract mismatch: {source}")
+    source_config = payload.get("config")
+    if not isinstance(source_config, dict):
+        raise ValueError(f"C1 initialization config is invalid: {source}")
+    if _c1_reuse_signature(source_config) != _c1_reuse_signature(
+        config.model_dump(mode="json")
+    ):
+        raise ValueError(f"C1 initialization training/scoring contract mismatch: {source}")
+    model_state = payload.get("model_state")
+    if not isinstance(model_state, dict):
+        raise ValueError(f"C1 initialization model state is invalid: {source}")
+    return _C1Initialization(
+        source_path=source.resolve(),
+        source_sha256=_sha256(source),
+        model_state=cast(dict[str, Tensor], model_state),
+    )
+
+
+def _write_c1_initialization_contract(
+    path: Path, initialization: _C1Initialization, *, seed: int
+) -> None:
+    _atomic_json(
+        path,
+        {
+            "schema_version": 1,
+            "candidate": "c2_fault_preserving",
+            "seed": seed,
+            "source_candidate": "c1_mse",
+            "source_checkpoint": str(initialization.source_path),
+            "source_checkpoint_sha256": initialization.source_sha256,
+        },
+    )
 
 
 def _materialize_reference_safe_c2(
@@ -828,6 +986,8 @@ def _materialize_reference_safe_c2(
 def _auxiliary_scale(epoch: int, *, candidate: Candidate, config: FPNAAConfig) -> float:
     if candidate == "c1_mse":
         return 0.0
+    if config.objective.fault_loss_mode == "anchored_tangent_transport":
+        return 1.0
     auxiliary_weights = (
         config.objective.fault_direction_weight,
         config.objective.fault_magnitude_weight,
@@ -980,6 +1140,11 @@ def _fault_diagnostic_row(
         "teacher_delta_norm": float(diagnostic.teacher_delta_norm),
         "student_delta_norm": float(diagnostic.student_delta_norm),
         "salient_distance_gain": float(diagnostic.salient_distance_gain),
+        "frontend_observability": float(diagnostic.frontend_observability),
+        "frontend_retention": float(diagnostic.frontend_retention),
+        "adapter_delta_gain": float(diagnostic.adapter_delta_gain),
+        "adapter_retention": float(diagnostic.adapter_retention),
+        "transport_relative_error": float(diagnostic.transport_relative_error),
     }
 
 
@@ -1001,6 +1166,11 @@ def _fault_diagnostics(
         "teacher_delta_norm": [],
         "student_delta_norm": [],
         "salient_distance_gain": [],
+        "frontend_observability": [],
+        "frontend_retention": [],
+        "adapter_delta_gain": [],
+        "adapter_retention": [],
+        "transport_relative_error": [],
     }
     batch_size = min(config.training.batch_size, 64)
     use_amp = config.training.mixed_precision and device.type == "cuda"
@@ -1022,10 +1192,21 @@ def _fault_diagnostics(
             fault_teacher = fault_teacher.float()
             student_delta = (fault_student - clean_student).reshape(len(clean_student), -1)
             teacher_delta = (fault_teacher - clean_teacher).reshape(len(clean_teacher), -1)
+            frontend_delta = (fault_input.float() - clean_input.float()).reshape(
+                len(clean_input), -1
+            )
             student_norm = torch.linalg.vector_norm(student_delta, dim=1)
             teacher_norm = torch.linalg.vector_norm(teacher_delta, dim=1)
+            frontend_norm = torch.linalg.vector_norm(frontend_delta, dim=1)
             gain = (student_norm + 1.0e-8) / (teacher_norm + 1.0e-8)
             retention = torch.exp(-torch.log(gain).abs())
+            frontend_gain = (frontend_norm + 1.0e-8) / (teacher_norm + 1.0e-8)
+            frontend_retention = torch.exp(-torch.log(frontend_gain).abs())
+            adapter_gain = (student_norm + 1.0e-8) / (frontend_norm + 1.0e-8)
+            adapter_retention = torch.exp(-torch.log(adapter_gain).abs())
+            transport_error = torch.linalg.vector_norm(student_delta - teacher_delta, dim=1) / (
+                teacher_norm + 1.0e-8
+            )
             direction = torch.nn.functional.cosine_similarity(student_delta, teacher_delta, dim=1)
             teacher_distance = (
                 1.0 - torch.nn.functional.cosine_similarity(fault_teacher, clean_teacher, dim=-1)
@@ -1052,6 +1233,11 @@ def _fault_diagnostics(
                 "teacher_delta_norm": teacher_norm,
                 "student_delta_norm": student_norm,
                 "salient_distance_gain": salient_gain,
+                "frontend_observability": frontend_gain,
+                "frontend_retention": frontend_retention,
+                "adapter_delta_gain": adapter_gain,
+                "adapter_retention": adapter_retention,
+                "transport_relative_error": transport_error,
             }
             for name, value in batch_values.items():
                 values[name].append(value.cpu().numpy())
@@ -1168,6 +1354,27 @@ def _screening_gate(
     in_q05 = float(c2_rows["in_support_retention_q05"].min())
     heldout_median = float(c2_rows["heldout_retention_median"].median())
     heldout_q05 = float(c2_rows["heldout_retention_q05"].min())
+    decomposition = {
+        "frontend_retention_median": float(
+            c2_rows["in_support_frontend_retention_median"].median()
+        ),
+        "frontend_retention_worst_seed_q05": float(
+            c2_rows["in_support_frontend_retention_q05"].min()
+        ),
+        "adapter_retention_median": float(
+            c2_rows["in_support_adapter_retention_median"].median()
+        ),
+        "adapter_retention_worst_seed_q05": float(
+            c2_rows["in_support_adapter_retention_q05"].min()
+        ),
+        "transport_error_median": float(
+            c2_rows["in_support_transport_error_median"].median()
+        ),
+        "transport_error_worst_seed_q90": float(
+            c2_rows["in_support_transport_error_q90"].max()
+        ),
+        "note": "diagnostic only; the frozen combined retention checks remain authoritative",
+    }
     machine_drops = _mean_machine_drops(output, c0_metrics, config.training.screening_seeds)
     worst_machine_drop = float(min(machine_drops.values()))
     checks = {
@@ -1203,6 +1410,7 @@ def _screening_gate(
             "heldout_median_across_seeds": heldout_median,
             "heldout_worst_seed_q05": heldout_q05,
         },
+        "observability_decomposition": decomposition,
         "machine_delta_c2_minus_c0": machine_drops,
         "checks": {**checks, "core_screening": core, "lomo": None},
         "passed": False,
@@ -1349,10 +1557,17 @@ def _new_model(config: FPNAAConfig, *, candidate: Candidate) -> BandwiseReferenc
 
 
 def _learning_rate_factor(epoch: int, config: FPNAAConfig) -> float:
-    warmup = config.training.warmup_epochs
-    if epoch < warmup:
-        return (epoch + 1) / max(warmup, 1)
-    progress = (epoch - warmup) / max(config.training.epochs - warmup - 1, 1)
+    return _cosine_learning_rate_factor(
+        epoch,
+        epochs=config.training.epochs,
+        warmup_epochs=config.training.warmup_epochs,
+    )
+
+
+def _cosine_learning_rate_factor(epoch: int, *, epochs: int, warmup_epochs: int) -> float:
+    if epoch < warmup_epochs:
+        return (epoch + 1) / max(warmup_epochs, 1)
+    progress = (epoch - warmup_epochs) / max(epochs - warmup_epochs - 1, 1)
     return 0.5 * (1.0 + math.cos(math.pi * min(progress, 1.0)))
 
 

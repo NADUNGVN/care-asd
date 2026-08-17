@@ -83,7 +83,9 @@ class FPObjectiveConfig(BaseModel):
     fault_separation_weight: float = Field(default=0.0, ge=0.0)
     reference_consistency_weight: float = Field(ge=0.0)
     magnitude_huber_delta: float = Field(gt=0.0)
-    fault_loss_mode: Literal["exact", "tail_constrained"] = "exact"
+    fault_loss_mode: Literal[
+        "exact", "tail_constrained", "anchored_tangent_transport"
+    ] = "exact"
     direction_cosine_floor: float = Field(default=0.0, ge=-1.0, le=1.0)
     gain_lower_bound: float = Field(default=1.0, gt=0.0)
     gain_upper_bound: float = Field(default=1.0, gt=0.0)
@@ -93,6 +95,11 @@ class FPObjectiveConfig(BaseModel):
     auxiliary_start_epoch: int = Field(default=0, ge=0)
     auxiliary_ramp_epochs: int = Field(default=0, ge=0)
     primary_safe_gradient_projection: bool = False
+    tangent_transport_mean_weight: float = Field(default=0.0, ge=0.0)
+    tangent_transport_tail_weight: float = Field(default=0.0, ge=0.0)
+    tangent_relative_error_limit: float = Field(default=0.25, gt=0.0)
+    function_anchor_weight: float = Field(default=0.0, ge=0.0)
+    function_anchor_relative_limit: float = Field(default=0.10, gt=0.0)
 
 
 class FPTrainingConfig(BaseModel):
@@ -108,6 +115,10 @@ class FPTrainingConfig(BaseModel):
     mixed_precision: bool
     screening_seeds: list[int]
     confirmatory_seeds: list[int]
+    c2_finetune_epochs: int | None = Field(default=None, gt=0)
+    c2_finetune_learning_rate: float | None = Field(default=None, gt=0.0)
+    c2_finetune_warmup_epochs: int | None = Field(default=None, ge=0)
+    c2_finetune_disable_dropout: bool = False
 
 
 class FPGatesConfig(BaseModel):
@@ -137,6 +148,10 @@ class FPNAAConfig(BaseModel):
     schema_version: int
     experiment_id: str
     screening_c1_reuse_run_id: str | None = Field(
+        default=None,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$",
+    )
+    screening_c2_initialization_run_id: str | None = Field(
         default=None,
         pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$",
     )
@@ -229,4 +244,38 @@ def load_fp_naa_config(path: str | Path) -> FPNAAConfig:
             raise ValueError("reference-only C2 requires zero auxiliary-objective weights")
         if objective.primary_safe_gradient_projection:
             raise ValueError("reference-only C2 cannot enable auxiliary-gradient projection")
+    if objective.fault_loss_mode == "anchored_tangent_transport":
+        if config.screening_c2_initialization_run_id is None:
+            raise ValueError("anchored tangent transport requires a registered C1 initialization")
+        if config.screening_c2_initialization_run_id != config.screening_c1_reuse_run_id:
+            raise ValueError("C1 comparator reuse and C2 initialization must use the same run")
+        if adapter.c2_conditioning_mode != "target_conditioned":
+            raise ValueError("anchored tangent transport requires target-conditioned C2")
+        if adapter.reference_safety_mode != "none" or adapter.share_c1_weights_for_c2:
+            raise ValueError("anchored tangent transport cannot use output safety projections")
+        auxiliary_weights = (
+            objective.fault_direction_weight,
+            objective.fault_magnitude_weight,
+            objective.fault_separation_weight,
+            objective.reference_consistency_weight,
+        )
+        if any(weight != 0.0 for weight in auxiliary_weights):
+            raise ValueError("anchored tangent transport owns the complete auxiliary objective")
+        if objective.primary_safe_gradient_projection:
+            raise ValueError("anchored tangent transport cannot use auxiliary-gradient projection")
+        if objective.tangent_transport_tail_weight <= 0.0:
+            raise ValueError("anchored tangent transport requires a positive tail weight")
+        if objective.function_anchor_weight <= 0.0:
+            raise ValueError("anchored tangent transport requires a positive function anchor")
+        c2_schedule = (
+            config.training.c2_finetune_epochs,
+            config.training.c2_finetune_learning_rate,
+            config.training.c2_finetune_warmup_epochs,
+        )
+        if any(value is None for value in c2_schedule):
+            raise ValueError("anchored tangent transport requires a complete C2 fine-tune schedule")
+        if config.training.c2_finetune_warmup_epochs >= config.training.c2_finetune_epochs:
+            raise ValueError("C2 fine-tune warmup must be shorter than its schedule")
+    elif config.screening_c2_initialization_run_id is not None:
+        raise ValueError("registered C2 initialization is only valid for anchored tangent transport")
     return config

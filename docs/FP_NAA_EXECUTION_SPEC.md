@@ -297,6 +297,14 @@ The unchanged three-seed C1 comparator is reused byte-for-byte from that V3 run 
 score/artifact SHA-256 validation; only the three V4 C2 trajectories are newly trained during core
 screening. There is no fallback to an incompatible or partially matching C1 run.
 
+V4 subsequently completed the valid run `server02_fp_naa_screening_20260817T165229Z`. It reached
+63.3105%, +1.3338 points over C0 but -0.0951 point versus C1. Its in-support median/q05 retention
+was 0.7731/0.1340 and held-out retention was 0.9516/0.5745, so V4 is closed without LOMO. The
+diagnostics separate upstream BEATs observability from adapter-level preservation and motivate a
+new C1-initialized, function-anchored counterfactual tangent objective. The mechanism, schedule,
+unchanged gates, and novelty boundary are preregistered in
+[`FP_NAA_V5_ANCHORED_COUNTERFACTUAL_TANGENT_TRANSPORT.md`](FP_NAA_V5_ANCHORED_COUNTERFACTUAL_TANGENT_TRANSPORT.md).
+
 ## 8. Primary prior art used to set the boundary
 
 - [DCASE 2026 Task 2 setup and exact metric](https://arxiv.org/abs/2606.01578)

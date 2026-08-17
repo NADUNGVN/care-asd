@@ -8,11 +8,12 @@ import yaml
 from care_asd.fp_naa_config import load_fp_naa_config
 
 
-def test_v1_through_v4_configs_are_versioned_without_changing_frozen_gates() -> None:
+def test_v1_through_v5_configs_are_versioned_without_changing_frozen_gates() -> None:
     v1 = load_fp_naa_config(Path("configs/experiment/fp_naa_v1.yaml"))
     v2 = load_fp_naa_config(Path("configs/experiment/fp_naa_v2.yaml"))
     v3 = load_fp_naa_config(Path("configs/experiment/fp_naa_v3.yaml"))
     v4 = load_fp_naa_config(Path("configs/experiment/fp_naa_v4.yaml"))
+    v5 = load_fp_naa_config(Path("configs/experiment/fp_naa_v5.yaml"))
 
     assert v1.objective.fault_loss_mode == "exact"
     assert v1.objective.primary_safe_gradient_projection is False
@@ -48,6 +49,18 @@ def test_v1_through_v4_configs_are_versioned_without_changing_frozen_gates() -> 
     assert v4.augmentation == v1.augmentation
     assert v4.backend == v1.backend
     assert v4.gates == v1.gates
+    assert v5.experiment_id == "fp_naa_v5_anchored_counterfactual_tangent_transport"
+    assert v5.screening_c2_initialization_run_id == v5.screening_c1_reuse_run_id
+    assert v5.adapter.c2_conditioning_mode == "target_conditioned"
+    assert v5.objective.fault_loss_mode == "anchored_tangent_transport"
+    assert v5.objective.tangent_relative_error_limit == 0.25
+    assert v5.objective.function_anchor_relative_limit == 0.10
+    assert v5.training.c2_finetune_epochs == 30
+    assert v5.training.c2_finetune_disable_dropout is True
+    assert v5.frontend == v1.frontend
+    assert v5.augmentation == v1.augmentation
+    assert v5.backend == v1.backend
+    assert v5.gates == v1.gates
 
 
 def test_tail_safe_gain_bounds_must_be_ordered(tmp_path: Path) -> None:
@@ -98,4 +111,14 @@ def test_c1_reuse_run_id_rejects_filesystem_paths(tmp_path: Path) -> None:
     path.write_text(yaml.safe_dump(payload), encoding="utf-8")
 
     with pytest.raises(ValueError, match="screening_c1_reuse_run_id"):
+        load_fp_naa_config(path)
+
+
+def test_anchored_transport_requires_matching_registered_c1(tmp_path: Path) -> None:
+    payload = yaml.safe_load(Path("configs/experiment/fp_naa_v5.yaml").read_text())
+    payload["screening_c2_initialization_run_id"] = "another-run"
+    path = tmp_path / "invalid.yaml"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="same run"):
         load_fp_naa_config(path)
