@@ -1,0 +1,40 @@
+{
+  "checks": {
+    "absolute_score": true,
+    "core_screening": false,
+    "gain_over_c0": false,
+    "gain_over_c1": false,
+    "heldout_retention_median": true,
+    "heldout_retention_q05": true,
+    "in_support_retention_median": true,
+    "in_support_retention_q05": false,
+    "lomo": null,
+    "worst_machine_drop": true
+  },
+  "gate": "G2_screening_core",
+  "machine_delta_c2_minus_c0": {
+    "ToyCar": -0.0007023036046286402,
+    "ToyCarEmu": -0.00417671120633567,
+    "bearingEmu": 0.009982454085115666,
+    "fan": 0.004586138776576543,
+    "gearboxEmu": 0.01245845457931205,
+    "sliderEmu": -0.007280378291648737,
+    "valveEmu": 0.011185514624647452
+  },
+  "note": "passed remains false until the preregistered LOMO gate is run",
+  "passed": false,
+  "retention": {
+    "heldout_median_across_seeds": 0.9681347012519836,
+    "heldout_worst_seed_q05": 0.729199868440628,
+    "in_support_median_across_seeds": 0.9542049467563629,
+    "in_support_worst_seed_q05": 0.4654216602444651
+  },
+  "schema_version": 1,
+  "scores": {
+    "c0": 0.6197676455378447,
+    "c1_mean": 0.63405655228682,
+    "c2_mean": 0.623062129801012,
+    "c2_minus_c0": 0.003294484263167363,
+    "c2_minus_c1": -0.010994422485807953
+  }
+}

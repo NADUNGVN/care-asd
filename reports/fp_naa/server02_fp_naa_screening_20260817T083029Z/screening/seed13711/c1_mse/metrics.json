@@ -1,0 +1,44 @@
+{
+  "cell_count": 21,
+  "groups": {
+    "ToyCar/section_00": {
+      "auc_source": 0.4742,
+      "auc_target": 0.9148000000000001,
+      "pauc_all_max_fpr_0_1": 0.5631578947368421
+    },
+    "ToyCarEmu/section_00": {
+      "auc_source": 0.4998,
+      "auc_target": 0.9182,
+      "pauc_all_max_fpr_0_1": 0.5263157894736842
+    },
+    "bearingEmu/section_00": {
+      "auc_source": 0.6654,
+      "auc_target": 0.6152,
+      "pauc_all_max_fpr_0_1": 0.618421052631579
+    },
+    "fan/section_00": {
+      "auc_source": 0.5558,
+      "auc_target": 0.48840000000000006,
+      "pauc_all_max_fpr_0_1": 0.5305263157894737
+    },
+    "gearboxEmu/section_00": {
+      "auc_source": 0.7746,
+      "auc_target": 0.7505999999999999,
+      "pauc_all_max_fpr_0_1": 0.5442105263157895
+    },
+    "sliderEmu/section_00": {
+      "auc_source": 0.6796,
+      "auc_target": 0.706,
+      "pauc_all_max_fpr_0_1": 0.6010526315789474
+    },
+    "valveEmu/section_00": {
+      "auc_source": 0.8828000000000001,
+      "auc_target": 0.8622,
+      "pauc_all_max_fpr_0_1": 0.7394736842105263
+    }
+  },
+  "metric_contract": "DCASE2026: domain normal versus all anomalies; pooled pAUC@0.1; harmonic mean over every cell",
+  "official_score": 0.6344057638841025,
+  "official_score_percent": 63.44057638841025,
+  "score_file": "scores.csv"
+}

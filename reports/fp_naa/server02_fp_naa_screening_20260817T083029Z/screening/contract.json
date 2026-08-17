@@ -1,0 +1,109 @@
+{
+  "augmentation_cache_metadata_sha256": "82020d0abb3f7896bbc8a40c7334e05c3133346224cdd4c86e6d48bde5ede6cd",
+  "base_cache_metadata_sha256": "dbc5c8b1ba1da693b164ad63e0b872c6061c1005e8230ad5fba0a6f1e9fe739e",
+  "c0_scores_sha256": "e6ddc371cf7d380f4efee117c23e02bba70b885912ce0cc97d207b92b618a6d4",
+  "config": {
+    "adapter": {
+      "attention_heads": 8,
+      "dropout": 0.1,
+      "hidden_dim": 256,
+      "reference_corruption_probability": 0.3,
+      "reference_dropout_probability": 0.2
+    },
+    "augmentation": {
+      "fault_delta_level_db_max": -12.0,
+      "fault_delta_level_db_min": -24.0,
+      "heldout_fault_family": "friction_burst",
+      "heldout_fraction": 0.1,
+      "noise_snr_db_max": 10.0,
+      "noise_snr_db_min": -10.0,
+      "peak_limit": 1.0,
+      "seed": 2608,
+      "train_fault_families": [
+        "periodic_resonance",
+        "amplitude_modulation",
+        "frequency_modulation"
+      ]
+    },
+    "backend": {
+      "cosine_distance_scale": 0.5,
+      "eps": 1e-12,
+      "local_density_neighbors": 4,
+      "rdp_gamma": 8.0,
+      "score_rescaling": "variance_minimization_train_all",
+      "scorer": "beam",
+      "temporal_pooling": "rdp"
+    },
+    "experiment_id": "fp_naa_v1",
+    "frontend": {
+      "cache_dtype": "float16",
+      "channels": [
+        "near",
+        "far"
+      ],
+      "duration_seconds": 10.0,
+      "embedding_dim": 768,
+      "frequency_patches": 8,
+      "inference_batch_size": 16,
+      "inference_mixed_precision": false,
+      "sample_rate": 16000
+    },
+    "gates": {
+      "baseline_minimum_official_score": 0.605,
+      "bootstrap_iterations": 10000,
+      "confirmatory_bootstrap_ci_low_minimum": 0.0,
+      "confirmatory_maximum_machine_drop": 0.01,
+      "confirmatory_minimum_ensemble_official_score": 0.63,
+      "confirmatory_minimum_gain_over_c1": 0.0075,
+      "confirmatory_positive_lomo_folds_minimum": 6,
+      "fault_delta_retention_median_minimum": 0.9,
+      "fault_delta_retention_q05_minimum": 0.75,
+      "heldout_fault_delta_retention_median_minimum": 0.85,
+      "heldout_fault_delta_retention_q05_minimum": 0.65,
+      "screening_maximum_machine_drop": 0.02,
+      "screening_minimum_gain_over_c0": 0.01,
+      "screening_minimum_gain_over_c1": 0.005,
+      "screening_minimum_official_score": 0.62,
+      "screening_positive_lomo_folds_minimum": 5
+    },
+    "objective": {
+      "fault_direction_weight": 1.0,
+      "fault_magnitude_weight": 0.5,
+      "magnitude_huber_delta": 0.1,
+      "normal_mse_weight": 1.0,
+      "reference_consistency_weight": 0.25
+    },
+    "provenance": {
+      "beats_commit": "833df7e7832e5064a281131ee64a481afa8e5b95",
+      "beats_repository": "https://github.com/microsoft/unilm.git",
+      "checkpoint_sha256": "8d1b234032a9ccff353612dc6c20982346dc2968b205b79d97303eb5e77bfb34",
+      "checkpoint_url": "https://huggingface.co/lpepino/beats_ckpts/resolve/a2ddb6b0411c39942ae144a6414872e14e5a4329/BEATs_iter3.pt"
+    },
+    "schema_version": 1,
+    "training": {
+      "batch_size": 128,
+      "confirmatory_seeds": [
+        13711,
+        42,
+        2026,
+        3407,
+        777
+      ],
+      "epochs": 60,
+      "gradient_clip_norm": 1.0,
+      "learning_rate": 0.0003,
+      "mixed_precision": true,
+      "screening_seeds": [
+        13711,
+        42,
+        2026
+      ],
+      "warmup_epochs": 5,
+      "weight_decay": 0.0001,
+      "workers": 12
+    }
+  },
+  "experiment_id": "server02_fp_naa_screening_20260817T083029Z",
+  "kind": "fp_naa_screening",
+  "schema_version": 1
+}
