@@ -2,6 +2,11 @@
 
 Status: preregistered working protocol on branch `research/fp-naa`.
 
+The current primary-source novelty and performance context is frozen in
+`docs/FP_NAA_LITERATURE_UPDATE_20260817.md`. It narrows the possible positive claim to an
+objective-and-safety contribution and explicitly prohibits a state-of-the-art claim from the
+registered 63% development gate alone.
+
 This track succeeds the frozen CARE-ASD/AP-CARE audit. It does not reinterpret or overwrite the
 negative identifiability and cancellation results. The new objective is to obtain a strong,
 statistically credible DCASE 2026 result and a contribution that remains distinct from the current
