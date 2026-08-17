@@ -7,6 +7,27 @@ negative identifiability and cancellation results. The new objective is to obtai
 statistically credible DCASE 2026 result and a contribution that remains distinct from the current
 noise-aware ASD frontier.
 
+## 0. Frozen server environment
+
+SERVER-02 experiments run only in the dedicated Conda environment `care-asd-fp-naa`. Conda owns
+Python 3.11 and the environment lifecycle; the exact Python dependency set is frozen in
+`requirements/fp-naa-cu118.lock.txt`. The Linux runtime is pinned to PyTorch and torchaudio
+`2.6.0+cu118`, CUDA runtime 11.8, and cuDNN 9.1. No FP-NAA wrapper invokes the repository `.venv`
+or `uv run`.
+
+The environment definition is `environments/fp-naa-cu118.yml`. Setup must finish with a real GPU
+convolution probe, not only `torch.cuda.is_available()`. Jobs execute through
+`scripts/server/fp_naa_conda_run.sh`, so they select the named environment even when the interactive
+SSH prompt displays `(base)`.
+
+```bash
+bash scripts/server/setup_fp_naa_conda.sh
+```
+
+```bash
+bash scripts/server/status_fp_naa_conda.sh
+```
+
 ## 1. Research question
 
 Can a dual-microphone noise-aware representation adapter improve first-shot anomalous sound

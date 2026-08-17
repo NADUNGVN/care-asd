@@ -33,6 +33,15 @@ on a server it cannot directly access.
 The server must use a clean worktree before a new task. If it is not clean, the
 researcher should stop and send the output rather than discarding changes.
 
+### FP-NAA environment exception
+
+The FP-NAA research branch uses the dedicated Conda environment `care-asd-fp-naa`; its server
+wrappers must not use the repository `.venv`. The researcher does not need to activate this env:
+checked-in wrappers select it with `conda run`, so `(base)` in the prompt is harmless. Dependency
+changes are made only through `environments/fp-naa-cu118.yml` and
+`requirements/fp-naa-cu118.lock.txt`; ad-hoc `pip install`, `uv sync`, and installation into Conda
+`base` are prohibited for FP-NAA jobs.
+
 ## Required preflight artifact
 
 Run this after cloning/syncing a server, and after a material environment

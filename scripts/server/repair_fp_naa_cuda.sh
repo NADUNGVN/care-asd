@@ -9,7 +9,5 @@ if pgrep -af '[r]un_fp_naa_' >/dev/null; then
     exit 1
 fi
 
-printf 'Synchronizing the frozen Torch 2.6.0 CUDA 11.8 environment.\n'
-env -u LD_LIBRARY_PATH -u LD_PRELOAD uv sync --frozen --extra full --extra official-alignment
-bash scripts/server/setup_fp_naa_beats.sh
-printf 'FP-NAA CUDA repair complete; cuDNN convolution probe passed.\n'
+printf 'The FP-NAA runtime is now managed by a dedicated Conda environment.\n'
+exec bash scripts/server/setup_fp_naa_conda.sh
