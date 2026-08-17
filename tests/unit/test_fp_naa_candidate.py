@@ -15,6 +15,7 @@ from care_asd.evaluation.fp_naa_candidate import (
     _auxiliary_scale,
     _deterministic_runtime_metadata,
     _exclude_machine,
+    _fault_diagnostics,
     _load_or_train_model,
     _primary_safe_backward,
     _TrainingArrays,
@@ -90,6 +91,25 @@ def test_candidate_training_writes_resumable_checkpoint(
     assert json.loads(json.dumps(payload["config"]))["training"]["epochs"] == 1
     output = model(torch.from_numpy(noisy_clean[:1]), torch.from_numpy(reference[:1]))
     assert output.shape == torch.Size((1, 2, 2, 8))
+    diagnostics = _fault_diagnostics(
+        model=model,
+        noisy_clean=arrays.noisy_clean,
+        reference=arrays.reference,
+        teacher_clean=arrays.teacher_clean,
+        fault_noisy=arrays.fault_noisy,
+        teacher_fault=arrays.teacher_fault,
+        config=_tiny_config(),
+        device=torch.device("cpu"),
+    )
+    assert list(diagnostics) == [
+        "retention",
+        "delta_gain",
+        "direction_cosine",
+        "teacher_delta_norm",
+        "student_delta_norm",
+        "salient_distance_gain",
+    ]
+    assert np.isfinite(diagnostics.to_numpy()).all()
     runtime = _deterministic_runtime_metadata()
     assert runtime["cublas_workspace_config"] == ":4096:8"
     assert runtime["deterministic_algorithms"] is True

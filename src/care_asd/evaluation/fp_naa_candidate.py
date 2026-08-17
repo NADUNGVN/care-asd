@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal, cast
+from typing import Literal, Protocol, cast
 
 import numpy as np
 import pandas as pd
@@ -30,7 +30,7 @@ from care_asd.evaluation.fp_naa_backend import accelerated_beam_scores, accelera
 from care_asd.evaluation.official_baseline import SCORE_COLUMNS
 from care_asd.fp_naa_config import FPNAAConfig, load_fp_naa_config
 from care_asd.models.fp_naa_adapter import BandwiseReferenceAdapter, trainable_parameter_count
-from care_asd.models.fp_naa_objective import FPNaaObjective, fault_delta_retention, fp_naa_loss
+from care_asd.models.fp_naa_objective import FPNaaObjective, fp_naa_loss
 
 Candidate = Literal["c1_mse", "c2_fault_preserving"]
 CANDIDATES: tuple[Candidate, ...] = ("c1_mse", "c2_fault_preserving")
@@ -75,6 +75,15 @@ class _TrainingArrays:
     teacher_clean: np.ndarray
     fault_noisy: np.ndarray
     teacher_fault: np.ndarray
+
+
+class _FaultDiagnosticRow(Protocol):
+    retention: float
+    delta_gain: float
+    direction_cosine: float
+    teacher_delta_norm: float
+    student_delta_norm: float
+    salient_distance_gain: float
 
 
 class _CounterfactualDataset(Dataset[tuple[Tensor, Tensor, Tensor, Tensor, Tensor]]):
@@ -663,7 +672,7 @@ def _write_retention_diagnostics(
     workers: int,
 ) -> None:
     rows: list[dict[str, object]] = []
-    in_support = _retention_values(
+    in_support = _fault_diagnostics(
         model=model,
         noisy_clean=arrays.noisy_clean,
         reference=arrays.reference,
@@ -673,14 +682,16 @@ def _write_retention_diagnostics(
         config=config,
         device=device,
     )
-    for row, value in zip(arrays.frame.itertuples(index=False), in_support, strict=True):
+    for row, diagnostic in zip(
+        arrays.frame.itertuples(index=False), in_support.itertuples(index=False), strict=True
+    ):
         rows.append(
-            {
-                "file_id": str(row.file_id),
-                "fault_set": "in_support",
-                "fault_family": str(row.fault_family),
-                "retention": float(value),
-            }
+            _fault_diagnostic_row(
+                file_id=str(row.file_id),
+                fault_set="in_support",
+                fault_family=str(row.fault_family),
+                diagnostic=diagnostic,
+            )
         )
     heldout_frame = arrays.frame.loc[arrays.frame["heldout"].astype(bool)].reset_index(drop=True)
     heldout = _load_named_augmentation_arrays(
@@ -695,7 +706,7 @@ def _write_retention_diagnostics(
         workers=workers,
     )
     teacher_clean, _ = base_store.select(heldout_frame)
-    heldout_values = _retention_values(
+    heldout_values = _fault_diagnostics(
         model=model,
         noisy_clean=heldout[0],
         reference=heldout[1],
@@ -705,19 +716,39 @@ def _write_retention_diagnostics(
         config=config,
         device=device,
     )
-    for row, value in zip(heldout_frame.itertuples(index=False), heldout_values, strict=True):
+    for row, diagnostic in zip(
+        heldout_frame.itertuples(index=False),
+        heldout_values.itertuples(index=False),
+        strict=True,
+    ):
         rows.append(
-            {
-                "file_id": str(row.file_id),
-                "fault_set": "heldout",
-                "fault_family": str(row.heldout_fault_family),
-                "retention": float(value),
-            }
+            _fault_diagnostic_row(
+                file_id=str(row.file_id),
+                fault_set="heldout",
+                fault_family=str(row.heldout_fault_family),
+                diagnostic=diagnostic,
+            )
         )
     _atomic_csv(output_path, pd.DataFrame(rows))
 
 
-def _retention_values(
+def _fault_diagnostic_row(
+    *, file_id: str, fault_set: str, fault_family: str, diagnostic: _FaultDiagnosticRow
+) -> dict[str, object]:
+    return {
+        "file_id": file_id,
+        "fault_set": fault_set,
+        "fault_family": fault_family,
+        "retention": float(diagnostic.retention),
+        "delta_gain": float(diagnostic.delta_gain),
+        "direction_cosine": float(diagnostic.direction_cosine),
+        "teacher_delta_norm": float(diagnostic.teacher_delta_norm),
+        "student_delta_norm": float(diagnostic.student_delta_norm),
+        "salient_distance_gain": float(diagnostic.salient_distance_gain),
+    }
+
+
+def _fault_diagnostics(
     *,
     model: BandwiseReferenceAdapter,
     noisy_clean: np.ndarray,
@@ -727,8 +758,15 @@ def _retention_values(
     teacher_fault: np.ndarray,
     config: FPNAAConfig,
     device: torch.device,
-) -> np.ndarray:
-    values: list[np.ndarray] = []
+) -> pd.DataFrame:
+    values: dict[str, list[np.ndarray]] = {
+        "retention": [],
+        "delta_gain": [],
+        "direction_cosine": [],
+        "teacher_delta_norm": [],
+        "student_delta_norm": [],
+        "salient_distance_gain": [],
+    }
     batch_size = min(config.training.batch_size, 64)
     use_amp = config.training.mixed_precision and device.type == "cuda"
     model.eval()
@@ -743,14 +781,48 @@ def _retention_values(
             with torch.autocast(device_type=device.type, enabled=use_amp):
                 clean_student = model(clean_input, ref)
                 fault_student = model(fault_input, ref)
-            retention = fault_delta_retention(
-                clean_student.float(),
-                fault_student.float(),
-                clean_teacher.float(),
-                fault_teacher.float(),
+            clean_student = clean_student.float()
+            fault_student = fault_student.float()
+            clean_teacher = clean_teacher.float()
+            fault_teacher = fault_teacher.float()
+            student_delta = (fault_student - clean_student).reshape(len(clean_student), -1)
+            teacher_delta = (fault_teacher - clean_teacher).reshape(len(clean_teacher), -1)
+            student_norm = torch.linalg.vector_norm(student_delta, dim=1)
+            teacher_norm = torch.linalg.vector_norm(teacher_delta, dim=1)
+            gain = (student_norm + 1.0e-8) / (teacher_norm + 1.0e-8)
+            retention = torch.exp(-torch.log(gain).abs())
+            direction = torch.nn.functional.cosine_similarity(student_delta, teacher_delta, dim=1)
+            teacher_distance = (
+                1.0 - torch.nn.functional.cosine_similarity(fault_teacher, clean_teacher, dim=-1)
+            ).clamp_min(0.0)
+            student_distance = (
+                1.0 - torch.nn.functional.cosine_similarity(fault_student, clean_student, dim=-1)
+            ).clamp_min(0.0)
+            teacher_patches = teacher_distance.reshape(len(clean_teacher), -1)
+            student_patches = student_distance.reshape(len(clean_student), -1)
+            patch_count = max(
+                1, math.ceil(config.objective.score_patch_fraction * teacher_patches.shape[1])
             )
-            values.append(retention.cpu().numpy())
-    return np.concatenate(values).astype(np.float64)
+            teacher_salient, indices = torch.topk(
+                teacher_patches, k=patch_count, dim=1, largest=True, sorted=False
+            )
+            student_salient = torch.gather(student_patches, 1, indices)
+            salient_gain = (student_salient.sum(dim=1) + 1.0e-8) / (
+                teacher_salient.sum(dim=1) + 1.0e-8
+            )
+            batch_values = {
+                "retention": retention,
+                "delta_gain": gain,
+                "direction_cosine": direction,
+                "teacher_delta_norm": teacher_norm,
+                "student_delta_norm": student_norm,
+                "salient_distance_gain": salient_gain,
+            }
+            for name, value in batch_values.items():
+                values[name].append(value.cpu().numpy())
+    return pd.DataFrame(
+        {name: np.concatenate(chunks).astype(np.float64) for name, chunks in values.items()}
+    )
 
 
 def _score_adapter(

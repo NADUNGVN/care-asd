@@ -42,6 +42,9 @@ the frozen teacher responds most strongly to the pseudo fault. It requires at le
 teacher's clean-to-fault cosine distance. This replaces the v1 assumption that matching a single
 flattened representation delta necessarily improves downstream BEAM ranking.
 
+Every retention row also records delta gain, direction cosine, teacher/student delta norms, and
+salient-patch distance gain. These diagnostics are observational only and cannot change a gate.
+
 The architecture, parameter count, data, pseudo-fault families, held-out friction-burst family,
 BEATs checkpoint, seeds, optimizer, epochs, backend, and all contribution gates are unchanged. The
 authoritative configuration is `configs/experiment/fp_naa_v2.yaml`.
