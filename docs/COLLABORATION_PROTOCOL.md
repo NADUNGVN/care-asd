@@ -24,10 +24,10 @@ on a server it cannot directly access.
 
 ## Standard server lifecycle
 
-1. Codex pushes source changes to `main`.
+1. Codex pushes source changes to the active research branch (`research/fp-naa` for FP-NAA).
 2. The researcher runs a one-line sync/setup command on the server.
 3. The researcher runs the requested one-line task command.
-4. The command writes a small, reviewable artifact in `reports/server/`, commits it, and pushes it to `main`.
+4. The command writes a small, reviewable artifact in `reports/server/`, commits it, and pushes it to the active research branch.
 5. Codex pulls the artifact, checks it against the intended contract, then issues the next task.
 
 The server must use a clean worktree before a new task. If it is not clean, the
@@ -36,9 +36,8 @@ researcher should stop and send the output rather than discarding changes.
 ### FP-NAA environment exception
 
 The FP-NAA research branch uses the dedicated Conda environment `care-asd-fp-naa` and must not use
-the repository `.venv`. The researcher does not need to activate this env: every public command
-starts with `env -u LD_LIBRARY_PATH -u LD_PRELOAD conda run -n care-asd-fp-naa`, so `(base)` in
-the prompt cannot contaminate the selected CUDA runtime. Dependency
+the repository `.venv`. When that environment is active, every public command first unsets
+`LD_LIBRARY_PATH` and `LD_PRELOAD`; otherwise use `conda run -n care-asd-fp-naa`. Dependency
 changes are made only through `environments/fp-naa-cu118.yml` and
 `requirements/fp-naa-cu118.lock.txt`; ad-hoc installation into Conda `base` is prohibited.
 A failed FP-NAA CUDA environment is removed and recreated from those files; an in-place Conda
@@ -48,6 +47,12 @@ FP-NAA has no `scripts/server/*fp_naa*.sh` wrappers. Its stable public interface
 `care-asd fp-naa runtime-check` plus `care-asd fp-naa job {start,status,list,continue}`. Commands
 return structured JSON. `status` is read-only and never sleeps, starts a process, or infers success
 from GPU utilization.
+
+The current frozen-frontend observability preflight is started explicitly with stage
+`frontend-probe`. It is not selected by `job continue`, because a failed screening gate must never
+silently advance the main experiment sequence. It uses only normal development audio and frozen
+pseudo-fault plans to select a BEATs tap; anomaly labels and held-out friction results are not used
+for selection.
 
 ## Required preflight artifact
 
@@ -76,15 +81,26 @@ and returns the user to the SSH prompt. Do **not** commit raw data or a huge log
 
 ## Detached long-running jobs
 
-For a task that must survive a closed SSH connection, the repository must
-provide a short `start_*.sh` wrapper and a short status wrapper. Do not paste a
-full training pipeline into the interactive terminal. The start wrapper owns
-`nohup`, `setsid`, redirection, run ID creation, and state-file creation, so the
-interactive shell never owns the long-running job.
+For legacy tasks that must survive a closed SSH connection, the repository may
+provide a short `start_*.sh` wrapper and a short status wrapper. FP-NAA is the
+exception: its Python job controller owns process detachment, redirection, run
+ID creation, and atomic state files, so the interactive shell never owns the
+long-running job. Do not add FP-NAA shell wrappers or paste a full training
+pipeline into the terminal.
 
 ```bash
 git pull --ff-only && bash scripts/server/start_<phase>.sh
 bash scripts/server/status_<task>.sh
+```
+
+For FP-NAA use the stable CLI instead:
+
+```bash
+care-asd fp-naa job start --stage frontend-probe --workers 12
+```
+
+```bash
+care-asd fp-naa job status
 ```
 
 The start command must return the run ID and PID immediately. Status is read

@@ -65,9 +65,9 @@ class FPAdapterConfig(BaseModel):
     dropout: float = Field(ge=0.0, lt=1.0)
     reference_dropout_probability: float = Field(ge=0.0, le=1.0)
     reference_corruption_probability: float = Field(ge=0.0, le=1.0)
-    c2_conditioning_mode: Literal[
-        "target_conditioned", "reference_only_equivariant"
-    ] = "target_conditioned"
+    c2_conditioning_mode: Literal["target_conditioned", "reference_only_equivariant"] = (
+        "target_conditioned"
+    )
     reference_safety_mode: Literal["none", "rdp_salient_contraction"] = "none"
     reference_safety_fraction: float = Field(default=0.20, gt=0.0, le=1.0)
     maximum_reference_contraction: float = Field(default=1.0, ge=0.0, le=1.0)
@@ -83,9 +83,7 @@ class FPObjectiveConfig(BaseModel):
     fault_separation_weight: float = Field(default=0.0, ge=0.0)
     reference_consistency_weight: float = Field(ge=0.0)
     magnitude_huber_delta: float = Field(gt=0.0)
-    fault_loss_mode: Literal[
-        "exact", "tail_constrained", "anchored_tangent_transport"
-    ] = "exact"
+    fault_loss_mode: Literal["exact", "tail_constrained", "anchored_tangent_transport"] = "exact"
     direction_cosine_floor: float = Field(default=0.0, ge=-1.0, le=1.0)
     gain_lower_bound: float = Field(default=1.0, gt=0.0)
     gain_upper_bound: float = Field(default=1.0, gt=0.0)
@@ -119,6 +117,15 @@ class FPTrainingConfig(BaseModel):
     c2_finetune_learning_rate: float | None = Field(default=None, gt=0.0)
     c2_finetune_warmup_epochs: int | None = Field(default=None, ge=0)
     c2_finetune_disable_dropout: bool = False
+
+
+class FPObservabilityConfig(BaseModel):
+    """Normal-only encoder taps used to localize counterfactual information loss."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    encoder_taps: list[int]
+    selection_rule: Literal["deepest_eligible"] = "deepest_eligible"
 
 
 class FPGatesConfig(BaseModel):
@@ -162,6 +169,7 @@ class FPNAAConfig(BaseModel):
     adapter: FPAdapterConfig
     objective: FPObjectiveConfig
     training: FPTrainingConfig
+    observability: FPObservabilityConfig | None = None
     gates: FPGatesConfig
 
 
@@ -201,6 +209,12 @@ def load_fp_naa_config(path: str | Path) -> FPNAAConfig:
         raise ValueError("adapter hidden_dim must be divisible by attention_heads")
     if config.training.warmup_epochs >= config.training.epochs:
         raise ValueError("warmup_epochs must be smaller than epochs")
+    if config.observability is not None:
+        taps = config.observability.encoder_taps
+        if not taps or taps != sorted(set(taps)):
+            raise ValueError("observability encoder_taps must be sorted and unique")
+        if taps[0] < 0 or taps[-1] > 12:
+            raise ValueError("observability encoder_taps must be in [0, 12]")
     objective = config.objective
     if objective.gain_lower_bound > objective.gain_upper_bound:
         raise ValueError("gain_lower_bound must not exceed gain_upper_bound")
@@ -267,15 +281,17 @@ def load_fp_naa_config(path: str | Path) -> FPNAAConfig:
             raise ValueError("anchored tangent transport requires a positive tail weight")
         if objective.function_anchor_weight <= 0.0:
             raise ValueError("anchored tangent transport requires a positive function anchor")
-        c2_schedule = (
-            config.training.c2_finetune_epochs,
-            config.training.c2_finetune_learning_rate,
-            config.training.c2_finetune_warmup_epochs,
-        )
+        c2_epochs = config.training.c2_finetune_epochs
+        c2_learning_rate = config.training.c2_finetune_learning_rate
+        c2_warmup = config.training.c2_finetune_warmup_epochs
+        c2_schedule = (c2_epochs, c2_learning_rate, c2_warmup)
         if any(value is None for value in c2_schedule):
             raise ValueError("anchored tangent transport requires a complete C2 fine-tune schedule")
-        if config.training.c2_finetune_warmup_epochs >= config.training.c2_finetune_epochs:
+        assert c2_epochs is not None and c2_learning_rate is not None and c2_warmup is not None
+        if c2_warmup >= c2_epochs:
             raise ValueError("C2 fine-tune warmup must be shorter than its schedule")
     elif config.screening_c2_initialization_run_id is not None:
-        raise ValueError("registered C2 initialization is only valid for anchored tangent transport")
+        raise ValueError(
+            "registered C2 initialization is only valid for anchored tangent transport"
+        )
     return config

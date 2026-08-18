@@ -48,6 +48,7 @@ class JobStage(StrEnum):
     CONFIRMATORY = "confirmatory"
     CONFIRMATORY_LOMO = "confirmatory-lomo"
     REFERENCE_SAFETY = "reference-safety"
+    FRONTEND_PROBE = "frontend-probe"
 
 
 class JobStatus(StrEnum):
@@ -55,6 +56,16 @@ class JobStatus(StrEnum):
     RUNNING = "RUNNING"
     DONE = "DONE"
     FAILED = "FAILED"
+
+
+_AUTOMATIC_STAGE_ORDER = (
+    JobStage.C0,
+    JobStage.SCREENING,
+    JobStage.LOMO,
+    JobStage.CONFIRMATORY,
+    JobStage.CONFIRMATORY_LOMO,
+    JobStage.REFERENCE_SAFETY,
+)
 
 
 class JobError(RuntimeError):
@@ -156,6 +167,7 @@ _STAGE_PREFIX = {
     JobStage.CONFIRMATORY: "server02_fp_naa_confirmatory",
     JobStage.CONFIRMATORY_LOMO: "server02_fp_naa_confirmatory_lomo",
     JobStage.REFERENCE_SAFETY: "server02_fp_naa_reference_safety",
+    JobStage.FRONTEND_PROBE: "server02_fp_naa_frontend_probe",
 }
 
 _GATE_CONTRACT = {
@@ -165,6 +177,7 @@ _GATE_CONTRACT = {
     JobStage.CONFIRMATORY: ("confirmatory", "core_confirmatory"),
     JobStage.CONFIRMATORY_LOMO: ("confirmatory_lomo", "passed"),
     JobStage.REFERENCE_SAFETY: ("reference_safety", "passed"),
+    JobStage.FRONTEND_PROBE: ("frontend_probe", "passed"),
 }
 
 
@@ -783,6 +796,7 @@ def _execute_stage(
         JobStage.CONFIRMATORY: _run_confirmatory,
         JobStage.CONFIRMATORY_LOMO: _run_confirmatory_lomo,
         JobStage.REFERENCE_SAFETY: _run_reference_safety,
+        JobStage.FRONTEND_PROBE: _run_frontend_probe,
     }
     return handlers[stage](ctx, state_path, run_id, workers)
 
@@ -1114,11 +1128,58 @@ def _run_reference_safety(
     return _stage_result(report / "gate.json", "passed", report / "reference_safety_summary.csv")
 
 
+def _run_frontend_probe(
+    ctx: FPNAAJobContext, state_path: Path, run_id: str, workers: int
+) -> StageResult:
+    paths = _common_paths(ctx)
+    _require_gate(ctx, JobStage.C0)
+    report = ctx.reports_root / run_id / "frontend_probe"
+    cache = ctx.data_root / "fp_naa" / "observability_cache" / "dev" / "beats_depth_v6"
+    _set_step(state_path, "assets")
+    beats_source, checkpoint = _ensure_beats_assets(ctx)
+    _run_pytest(
+        ctx,
+        "tests/unit/test_beats_frontend.py",
+        "tests/unit/test_fp_naa_observability.py",
+    )
+    _set_step(state_path, "frontend-observability")
+    _call_cli(
+        ctx,
+        "fp-naa",
+        "observability-dev",
+        "--base-cache-dir",
+        str(paths["base_cache"]),
+        "--audio-root",
+        str(paths["audio_root"]),
+        "--cache-dir",
+        str(cache),
+        "--output-dir",
+        str(report),
+        "--config",
+        str(paths["v6_config"]),
+        "--beats-source",
+        str(beats_source),
+        "--checkpoint",
+        str(checkpoint),
+        "--workers",
+        str(workers),
+        "--device",
+        "cuda",
+    )
+    return _stage_result(
+        report / "gate.json",
+        "passed",
+        report / "tap_summary.csv",
+        report / "family_summary.csv",
+    )
+
+
 def _common_paths(ctx: FPNAAJobContext) -> dict[str, Path]:
     return {
         "manifest": ctx.repo_root / "data" / "manifests" / "dcase2026_dev.parquet",
         "audio_root": ctx.data_root / "raw" / "dcase2026" / "dev" / "extracted",
         "config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v5.yaml",
+        "v6_config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v6.yaml",
         "safety_config": ctx.repo_root
         / "configs"
         / "experiment"
@@ -1154,13 +1215,14 @@ def _validate_stage_prerequisites(ctx: FPNAAJobContext, stage: JobStage) -> None
             JobStage.CONFIRMATORY,
             JobStage.CONFIRMATORY_LOMO,
         ),
+        JobStage.FRONTEND_PROBE: (JobStage.C0,),
     }
     for prerequisite in prerequisites[stage]:
         _require_gate(ctx, prerequisite)
 
 
 def _next_stage(ctx: FPNAAJobContext) -> JobStage:
-    for stage in JobStage:
+    for stage in _AUTOMATIC_STAGE_ORDER:
         gate = _latest_gate(ctx, stage)
         if gate is None:
             return stage

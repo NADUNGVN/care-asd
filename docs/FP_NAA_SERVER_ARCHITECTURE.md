@@ -144,6 +144,17 @@ The controller validates required gates and artifact hashes before launching dep
 Explicit `start --stage ...` is required after a failed process so a transient failure cannot cause
 an infinite restart loop.
 
+`frontend-probe` is an explicit side-stage after the valid V5 negative result. It is intentionally
+outside the automatic sequence above: it diagnoses whether in-support counterfactual perturbations
+remain observable at frozen BEATs taps 0, 4, 8, and 12 before another adapter is trained. Its
+selection gate uses normal development audio and in-support pseudo-faults only; held-out friction
+is reported only as a diagnostic. If no tap reaches the frozen median/q05 retention gate, the
+pre-encoder successor is rejected without consulting development anomaly labels or running LOMO.
+
+```bash
+care-asd fp-naa job start --stage frontend-probe --workers 12
+```
+
 After the valid v1--v4 screening failures, new screening and downstream jobs use the versioned
 `configs/experiment/fp_naa_v5.yaml` anchored counterfactual tangent transport mechanism. The
 immutable v1--v4 reports remain valid negative-ablation artifacts. The shared BEATs and

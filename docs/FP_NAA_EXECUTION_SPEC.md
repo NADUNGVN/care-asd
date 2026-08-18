@@ -305,6 +305,14 @@ new C1-initialized, function-anchored counterfactual tangent objective. The mech
 unchanged gates, and novelty boundary are preregistered in
 [`FP_NAA_V5_ANCHORED_COUNTERFACTUAL_TANGENT_TRANSPORT.md`](FP_NAA_V5_ANCHORED_COUNTERFACTUAL_TANGENT_TRANSPORT.md).
 
+The valid V5 rerun `server02_fp_naa_screening_20260818T020554Z` closed ACTT without LOMO:
+C2 reached 63.4158%, only +0.0101 percentage point over C1, while in-support retention remained
+0.7224/0.1011 (median/q05). The adapter-level median was 0.9351, but the frozen final BEATs
+frontend was only 0.7731/0.1340. The successor therefore begins with the label-free depth audit in
+[`FP_NAA_V6_PRE_ENCODER_OBSERVABILITY.md`](FP_NAA_V6_PRE_ENCODER_OBSERVABILITY.md); no V6
+performance candidate is authorized unless a frozen pre-encoder tap passes the unchanged
+in-support retention thresholds.
+
 ## 8. Primary prior art used to set the boundary
 
 - [DCASE 2026 Task 2 setup and exact metric](https://arxiv.org/abs/2606.01578)

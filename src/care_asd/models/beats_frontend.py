@@ -59,19 +59,83 @@ class OfficialBEATsFrontend:
         torch = self._torch
         source = torch.from_numpy(values).to(self.device, non_blocking=True)
         autocast_enabled = self.mixed_precision and self.device.startswith("cuda")
-        with torch.inference_mode(), torch.autocast(
-            device_type="cuda",
-            dtype=torch.float16,
-            enabled=autocast_enabled,
+        with (
+            torch.inference_mode(),
+            torch.autocast(
+                device_type="cuda",
+                dtype=torch.float16,
+                enabled=autocast_enabled,
+            ),
         ):
             tokens, padding_mask = self._model.extract_features(source, padding_mask=None)
         if padding_mask is not None:
-            raise RuntimeError("Fixed-duration BEATs extraction unexpectedly returned a padding mask")
+            raise RuntimeError(
+                "Fixed-duration BEATs extraction unexpectedly returned a padding mask"
+            )
         output = reconstruct_frequency_grid(
             tokens.float().cpu().numpy(),
             frequency_patches=self.frequency_patches,
         )
         return output
+
+    def extract_encoder_taps(
+        self,
+        waveforms: np.ndarray,
+        *,
+        taps: tuple[int, ...],
+    ) -> dict[int, np.ndarray]:
+        """Extract the patch projection (tap 0) and frozen Transformer depths 1--12.
+
+        Tap zero is the normalized patch projection before positional convolution. Tap ``k``
+        is the output after the first ``k`` Transformer blocks. The implementation deliberately
+        uses the pinned upstream modules without editing the external BEATs checkout.
+        """
+        values = np.asarray(waveforms, dtype=np.float32)
+        if values.ndim != 2 or min(values.shape) < 1 or not np.isfinite(values).all():
+            raise ValueError("waveforms must be a finite [batch, samples] array")
+        if not taps or tuple(sorted(set(taps))) != taps:
+            raise ValueError("taps must be a non-empty sorted tuple of unique depths")
+        encoder_layers = int(self._model.cfg.encoder_layers)
+        if taps[0] < 0 or taps[-1] > encoder_layers:
+            raise ValueError(f"taps must be in [0, {encoder_layers}]")
+
+        torch = self._torch
+        source = torch.from_numpy(values).to(self.device, non_blocking=True)
+        autocast_enabled = self.mixed_precision and self.device.startswith("cuda")
+        with (
+            torch.inference_mode(),
+            torch.autocast(
+                device_type="cuda",
+                dtype=torch.float16,
+                enabled=autocast_enabled,
+            ),
+        ):
+            fbank = self._model.preprocess(source)
+            features = self._model.patch_embedding(fbank.unsqueeze(1))
+            features = features.reshape(features.shape[0], features.shape[1], -1).transpose(1, 2)
+            features = self._model.layer_norm(features)
+            if self._model.post_extract_proj is not None:
+                features = self._model.post_extract_proj(features)
+            selected: dict[int, Any] = {0: features}
+            positive = tuple(tap for tap in taps if tap > 0)
+            if positive:
+                encoded_input = self._model.dropout_input(features)
+                _, layer_results = self._model.encoder(
+                    encoded_input,
+                    padding_mask=None,
+                    layer=max(positive) - 1,
+                )
+                for tap in positive:
+                    layer_value = layer_results[tap][0]
+                    selected[tap] = layer_value.transpose(0, 1)
+
+        return {
+            tap: reconstruct_frequency_grid(
+                selected[tap].float().cpu().numpy(),
+                frequency_patches=self.frequency_patches,
+            )
+            for tap in taps
+        }
 
 
 def reconstruct_frequency_grid(

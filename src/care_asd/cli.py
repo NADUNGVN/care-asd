@@ -32,6 +32,7 @@ from care_asd.data import (
     download_dcase2026_split,
     extract_dcase2026_split,
     normalize_split,
+    run_fp_naa_observability_probe,
 )
 from care_asd.deployment import validate_deployment_bundle, validate_tensorrt_model_latency_report
 from care_asd.evaluation import (
@@ -1627,6 +1628,41 @@ def fp_naa_screen_dev(
     status = "passed" if result.core_gate_passed else "failed"
     console.print(
         f"[green]FP-NAA C1/C2 screening complete.[/green] core_gate={status} "
+        f"summary={result.summary_path}"
+    )
+
+
+@fp_naa_app.command("observability-dev")
+def fp_naa_observability_dev(
+    base_cache_dir: Annotated[Path, typer.Option("--base-cache-dir")],
+    audio_root: Annotated[Path, typer.Option("--audio-root")],
+    cache_dir: Annotated[Path, typer.Option("--cache-dir")],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    config: Annotated[Path, typer.Option("--config")],
+    beats_source: Annotated[Path, typer.Option("--beats-source")],
+    checkpoint: Annotated[Path, typer.Option("--checkpoint")],
+    workers: Annotated[int, typer.Option("--workers", min=0, max=16)] = 12,
+    device: Annotated[str, typer.Option("--device")] = "cuda",
+) -> None:
+    """Audit fault observability at frozen BEATs depths without development labels."""
+    try:
+        result = run_fp_naa_observability_probe(
+            base_cache_directory=base_cache_dir,
+            audio_root=audio_root,
+            cache_directory=cache_dir,
+            output_directory=output_dir,
+            config_path=config,
+            beats_source_directory=beats_source,
+            checkpoint_path=checkpoint,
+            workers=workers,
+            device=device,
+        )
+    except (FileNotFoundError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]FP-NAA observability preflight failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    status = "passed" if result.gate_passed else "failed"
+    console.print(
+        f"[green]FP-NAA observability preflight complete.[/green] gate={status} "
         f"summary={result.summary_path}"
     )
 

@@ -21,6 +21,10 @@ from care_asd.data.fp_naa_augmentation_cache import (
     FPNaaAugmentationCache,
     build_fp_naa_augmentation_cache,
 )
+from care_asd.data.fp_naa_observability import (
+    FPNaaObservabilityResult,
+    run_fp_naa_observability_probe,
+)
 from care_asd.data.neural_cache import BASE_CHANNELS, NeuralFeatureCache, build_neural_feature_cache
 from care_asd.data.official_vector_cache import (
     OFFICIAL_FEATURE_DIM,
@@ -39,6 +43,7 @@ __all__ = [
     "DownloadedArchive",
     "ExtractionSummary",
     "FPNaaAugmentationCache",
+    "FPNaaObservabilityResult",
     "NeuralFeatureCache",
     "OfficialVectorCache",
     "ReliabilityIndex",
@@ -54,4 +59,5 @@ __all__ = [
     "download_dcase2026_split",
     "extract_dcase2026_split",
     "normalize_split",
+    "run_fp_naa_observability_probe",
 ]
