@@ -1,0 +1,8 @@
+{
+  "identity_relative_error": 0.0,
+  "identity_relative_error_maximum": 1e-07,
+  "optimizer_update_norm": 0.0443628985493007,
+  "schema_version": 1,
+  "status": "passed",
+  "trainable_parameters": 989696
+}

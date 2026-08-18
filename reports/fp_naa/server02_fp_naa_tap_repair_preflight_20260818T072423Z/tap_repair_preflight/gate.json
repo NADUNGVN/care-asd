@@ -1,0 +1,53 @@
+{
+  "authorization": "A pass authorizes V9 three-seed G2 implementation and execution only. It is not a development performance result and does not authorize LOMO.",
+  "checks": {
+    "finite_real_updates": true,
+    "gpu_runtime_probe": true,
+    "heldout_retention_median": false,
+    "heldout_retention_q05": false,
+    "in_support_retention_median": false,
+    "in_support_retention_q05": false,
+    "median_gain_over_p1": false,
+    "normal_function_anchor": true,
+    "q05_gain_over_p1": false
+  },
+  "criteria": {
+    "heldout_retention_median_minimum": 0.85,
+    "heldout_retention_q05_minimum": 0.65,
+    "normal_function_drift_maximum": 0.1,
+    "retention_median_gain_minimum": 0.05,
+    "retention_median_minimum": 0.9,
+    "retention_q05_gain_minimum": 0.1,
+    "retention_q05_minimum": 0.6
+  },
+  "gate": "V9_M_preencoder_tangent_repair_preflight",
+  "metrics": {
+    "p1_in_support_retention_median": 0.6708682361987046,
+    "p1_in_support_retention_q05": 0.21595105178636728,
+    "p2_heldout_retention_median": 0.6738546778193547,
+    "p2_heldout_retention_q05": 0.3694460716659703,
+    "p2_in_support_retention_median": 0.6674408029673516,
+    "p2_in_support_retention_q05": 0.2432705069768551,
+    "p2_minus_p1_retention_median": -0.003427433231352972,
+    "p2_minus_p1_retention_q05": 0.027319455190487812,
+    "p2_normal_function_drift_median": 0.08878308543868199,
+    "raw_in_support_retention_median": 0.8429365080475992,
+    "raw_in_support_retention_q05": 0.4239946948553664
+  },
+  "optimizer_update_norms": {
+    "common": 13.75015040889074,
+    "p1": 5.1123656881804695,
+    "p2": 2.2299964984460607
+  },
+  "passed": false,
+  "runtime_probe": {
+    "identity_relative_error": 0.0,
+    "identity_relative_error_maximum": 1e-07,
+    "optimizer_update_norm": 0.0443628985493007,
+    "schema_version": 1,
+    "status": "passed",
+    "trainable_parameters": 989696
+  },
+  "schema_version": 1,
+  "trainable_parameters": 989696
+}
