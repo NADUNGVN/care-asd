@@ -377,9 +377,7 @@ def _screening_c1_reuse_manifest(
     source_config = contract.get("config")
     if not isinstance(source_config, dict):
         raise ValueError(f"Registered C1 reuse config is invalid: {source}")
-    if _c1_reuse_signature(source_config) != _c1_reuse_signature(
-        config.model_dump(mode="json")
-    ):
+    if _c1_reuse_signature(source_config) != _c1_reuse_signature(config.model_dump(mode="json")):
         raise ValueError(f"Registered C1 training/scoring contract mismatch: {source}")
 
     summary = pd.read_csv(summary_path)
@@ -404,9 +402,7 @@ def _screening_c1_reuse_manifest(
     }
 
 
-def _diagnostic_quantile(
-    frame: pd.DataFrame, *, fault_set: str, column: str, q: float
-) -> float:
+def _diagnostic_quantile(frame: pd.DataFrame, *, fault_set: str, column: str, q: float) -> float:
     """Summarize a new diagnostic while allowing immutable older C1 artifacts."""
     if column not in frame.columns:
         return float("nan")
@@ -477,9 +473,7 @@ def _materialize_reused_c1_variant(
             raise ValueError(f"Reused C1 artifact copy failed: {target}")
         copied[name] = expected
     summary = pd.read_csv(source_directory / "screening_summary.csv")
-    row = summary.loc[
-        (summary["candidate"] == "c1_mse") & (summary["seed"].astype(int) == seed)
-    ]
+    row = summary.loc[(summary["candidate"] == "c1_mse") & (summary["seed"].astype(int) == seed)]
     if len(row) != 1:
         raise ValueError(f"Reused C1 summary row is invalid for seed {seed}")
     parameters = int(row.iloc[0]["trainable_parameters"])
@@ -808,7 +802,11 @@ def _load_or_train_model(
             else:
                 scaler.scale(effective_total).backward()
                 scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), config.training.gradient_clip_norm)
+            torch.nn.utils.clip_grad_norm_(
+                model.parameters(),
+                config.training.gradient_clip_norm,
+                error_if_nonfinite=True,
+            )
             if (
                 candidate == "c2_fault_preserving"
                 and auxiliary_scale > 0.0
@@ -907,9 +905,7 @@ def _load_c1_initialization(
     source_config = payload.get("config")
     if not isinstance(source_config, dict):
         raise ValueError(f"C1 initialization config is invalid: {source}")
-    if _c1_reuse_signature(source_config) != _c1_reuse_signature(
-        config.model_dump(mode="json")
-    ):
+    if _c1_reuse_signature(source_config) != _c1_reuse_signature(config.model_dump(mode="json")):
         raise ValueError(f"C1 initialization training/scoring contract mismatch: {source}")
     model_state = payload.get("model_state")
     if not isinstance(model_state, dict):
@@ -1361,18 +1357,12 @@ def _screening_gate(
         "frontend_retention_worst_seed_q05": float(
             c2_rows["in_support_frontend_retention_q05"].min()
         ),
-        "adapter_retention_median": float(
-            c2_rows["in_support_adapter_retention_median"].median()
-        ),
+        "adapter_retention_median": float(c2_rows["in_support_adapter_retention_median"].median()),
         "adapter_retention_worst_seed_q05": float(
             c2_rows["in_support_adapter_retention_q05"].min()
         ),
-        "transport_error_median": float(
-            c2_rows["in_support_transport_error_median"].median()
-        ),
-        "transport_error_worst_seed_q90": float(
-            c2_rows["in_support_transport_error_q90"].max()
-        ),
+        "transport_error_median": float(c2_rows["in_support_transport_error_median"].median()),
+        "transport_error_worst_seed_q90": float(c2_rows["in_support_transport_error_q90"].max()),
         "note": "diagnostic only; the frozen combined retention checks remain authoritative",
     }
     machine_drops = _mean_machine_drops(output, c0_metrics, config.training.screening_seeds)
@@ -1536,9 +1526,7 @@ def _validate_caches(base: Path, augmentation: Path, config: FPNAAConfig) -> Non
 
 def _new_model(config: FPNAAConfig, *, candidate: Candidate) -> BandwiseReferenceAdapter:
     safety_mode = (
-        config.adapter.reference_safety_mode
-        if candidate == "c2_fault_preserving"
-        else "none"
+        config.adapter.reference_safety_mode if candidate == "c2_fault_preserving" else "none"
     )
     return BandwiseReferenceAdapter(
         embedding_dim=config.frontend.embedding_dim,

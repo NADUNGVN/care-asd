@@ -240,11 +240,17 @@ def test_v5_uses_registered_c1_checkpoint_for_anchored_finetune(tmp_path: Path) 
         total_runs=2,
     )
     derived = torch.load(current_checkpoint, map_location="cpu", weights_only=True)
+    source = torch.load(source_checkpoint, map_location="cpu", weights_only=True)
     initialization = json.loads(
         (current_history.parent / "initialization.json").read_text(encoding="utf-8")
     )
     assert derived["derived_from_c1_sha256"]
     assert initialization["source_checkpoint_sha256"] == derived["derived_from_c1_sha256"]
+    assert any(
+        not torch.equal(derived["model_state"][name], source["model_state"][name])
+        for name in source["model_state"]
+    )
+    assert all(torch.isfinite(value).all() for value in derived["model_state"].values())
     history = pd.read_csv(current_history)
     assert len(history) == 1
     assert set(

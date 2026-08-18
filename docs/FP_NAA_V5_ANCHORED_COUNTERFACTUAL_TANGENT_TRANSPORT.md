@@ -114,3 +114,21 @@ A defensible positive claim requires the frozen V5 mechanism to pass G2 core, LO
 paired bootstrap, and reference-safety tests. If it fails G2, V5 is reported as another bounded
 negative mechanism and is not rescued by changing its thresholds or inspecting the held-out fault
 family for optimization.
+
+## Execution audit: first V5 run is invalid
+
+The first server execution, `server02_fp_naa_screening_20260817T234156Z` at source SHA
+`bcabc4331e727557d679b3db4adb224a5f2368c2`, completed operationally but is not a scientific V5
+result. All three C2 outputs exactly matched their corresponding C1 outputs, and the training log
+reported that the learning-rate scheduler advanced before any optimizer step.
+
+The cause was the exact-anchor expression `sqrt(mean((F_theta-A)^2))`: V5 initializes with
+`F_theta == A`, where that expression has an undefined derivative. The resulting non-finite
+gradient caused AMP to skip every optimizer update. The repair replaces it with the exact-zero,
+finite-gradient smooth norm `sqrt(mean(x^2)+eps^2)-eps`, makes non-finite gradient clipping fail
+fast, and adds regressions requiring both finite exact-anchor gradients and a finite C2 checkpoint
+that differs from its C1 initialization.
+
+No config value, data split, candidate seed, score backend, or frozen G2/G3 threshold was changed.
+The unchanged preregistered V5 experiment must be rerun from fresh C2 checkpoints before ACTT can
+be accepted or rejected.

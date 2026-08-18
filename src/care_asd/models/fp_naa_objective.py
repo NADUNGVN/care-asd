@@ -124,9 +124,7 @@ def fp_naa_loss(
             anchor_teacher_rms = _root_mean_square_per_item(anchor_clean - teacher_clean)
             function_anchor_ratio = student_anchor_rms / (anchor_teacher_rms + eps)
             function_anchor = _upper_tail_mean(
-                functional.relu(
-                    function_anchor_ratio - config.function_anchor_relative_limit
-                ),
+                functional.relu(function_anchor_ratio - config.function_anchor_relative_limit),
                 config.tail_fraction,
             )
     consistency = zero
@@ -191,9 +189,19 @@ def _flatten_per_item(value: Tensor) -> Tensor:
     return value.reshape(value.shape[0], -1)
 
 
-def _root_mean_square_per_item(value: Tensor) -> Tensor:
+def _root_mean_square_per_item(value: Tensor, *, eps: float = 1.0e-8) -> Tensor:
+    """Return an RMS with a finite zero-residual derivative.
+
+    ``sqrt(mean(x**2))`` has an undefined derivative at ``x == 0``.  The
+    anchored C2 fine-tune starts exactly at that point, so the naive formula
+    produced NaN gradients and caused AMP to skip every optimizer step.  The
+    shifted smooth norm preserves an exact zero value while keeping its
+    derivative finite.
+    """
+    if eps <= 0.0:
+        raise ValueError("eps must be positive")
     flattened = _flatten_per_item(value).float()
-    return flattened.square().mean(dim=1).sqrt()
+    return (flattened.square().mean(dim=1) + eps**2).sqrt() - eps
 
 
 def _upper_tail_mean(value: Tensor, fraction: float) -> Tensor:

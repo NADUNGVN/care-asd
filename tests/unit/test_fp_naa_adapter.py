@@ -178,11 +178,46 @@ def test_anchored_tangent_transport_prefers_teacher_delta_and_penalizes_drift() 
     assert drifted.total > transported.total
 
 
+def test_anchored_tangent_transport_has_finite_gradient_at_exact_anchor() -> None:
+    config = _objective_config().model_copy(
+        update={
+            "fault_direction_weight": 0.0,
+            "fault_magnitude_weight": 0.0,
+            "reference_consistency_weight": 0.0,
+            "fault_loss_mode": "anchored_tangent_transport",
+            "tail_fraction": 0.5,
+            "tangent_transport_mean_weight": 0.25,
+            "tangent_transport_tail_weight": 1.0,
+            "tangent_relative_error_limit": 0.25,
+            "function_anchor_weight": 10.0,
+            "function_anchor_relative_limit": 0.10,
+        }
+    )
+    teacher_clean = torch.zeros(4, 2, 2, 8)
+    anchor_clean = torch.full_like(teacher_clean, 0.1)
+    teacher_delta = torch.zeros_like(teacher_clean)
+    teacher_delta[..., 0] = 0.05
+    student_clean = anchor_clean.clone().requires_grad_()
+    student_fault = (anchor_clean + 0.5 * teacher_delta).clone().requires_grad_()
+    loss = fp_naa_loss(
+        objective="c2_fault_preserving",
+        student_clean=student_clean,
+        teacher_clean=teacher_clean,
+        student_fault=student_fault,
+        teacher_fault=teacher_clean + teacher_delta,
+        anchor_clean=anchor_clean,
+        config=config,
+    )
+    loss.total.backward()
+    assert student_clean.grad is not None
+    assert student_fault.grad is not None
+    assert torch.isfinite(student_clean.grad).all()
+    assert torch.isfinite(student_fault.grad).all()
+
+
 def test_rdp_salient_projection_bounds_only_high_disagreement_rows() -> None:
     reference = torch.zeros(1, 4, 2, 3)
-    target = torch.stack(
-        [torch.full((1, 2, 3), float(index + 1)) for index in range(4)], dim=1
-    )
+    target = torch.stack([torch.full((1, 2, 3), float(index + 1)) for index in range(4)], dim=1)
     correction = -target
     projected = rdp_salient_contraction_projection(
         correction=correction,
