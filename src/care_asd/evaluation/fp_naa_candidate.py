@@ -679,8 +679,20 @@ def _load_or_train_model(
         if initialization is not None:
             if payload.get("derived_from_c1_sha256") != initialization.source_sha256:
                 raise ValueError(f"Anchored C1 checkpoint hash mismatch: {checkpoint}")
+            parameter_update = payload.get("parameter_update")
+            if (
+                not isinstance(parameter_update, dict)
+                or not math.isfinite(float(parameter_update.get("relative_l2", float("nan"))))
+                or float(parameter_update["relative_l2"]) <= 0.0
+            ):
+                raise ValueError(
+                    f"Anchored C2 checkpoint has no valid parameter update: {checkpoint}"
+                )
             _write_c1_initialization_contract(
-                history_path.parent / "initialization.json", initialization, seed=seed
+                history_path.parent / "initialization.json",
+                initialization,
+                seed=seed,
+                parameter_update=cast(dict[str, float], parameter_update),
             )
         model.load_state_dict(payload["model_state"])
         return model.eval()
@@ -862,6 +874,17 @@ def _load_or_train_model(
             total=total_runs,
         )
     _atomic_csv(history_path, pd.DataFrame(history))
+    parameter_update = None
+    if initialization is not None:
+        parameter_update = _parameter_update_diagnostics(model, initialization.model_state)
+        if parameter_update["relative_l2"] <= 0.0:
+            raise RuntimeError("Anchored C2 optimizer produced no parameter update")
+        _write_c1_initialization_contract(
+            history_path.parent / "initialization.json",
+            initialization,
+            seed=seed,
+            parameter_update=parameter_update,
+        )
     temporary = checkpoint.with_suffix(checkpoint.suffix + ".tmp")
     torch.save(
         {
@@ -874,6 +897,7 @@ def _load_or_train_model(
             "derived_from_c1_sha256": (
                 initialization.source_sha256 if initialization is not None else None
             ),
+            "parameter_update": parameter_update,
         },
         temporary,
     )
@@ -918,19 +942,56 @@ def _load_c1_initialization(
 
 
 def _write_c1_initialization_contract(
-    path: Path, initialization: _C1Initialization, *, seed: int
+    path: Path,
+    initialization: _C1Initialization,
+    *,
+    seed: int,
+    parameter_update: dict[str, float] | None = None,
 ) -> None:
-    _atomic_json(
-        path,
-        {
-            "schema_version": 1,
-            "candidate": "c2_fault_preserving",
-            "seed": seed,
-            "source_candidate": "c1_mse",
-            "source_checkpoint": str(initialization.source_path),
-            "source_checkpoint_sha256": initialization.source_sha256,
-        },
-    )
+    payload: dict[str, object] = {
+        "schema_version": 1,
+        "candidate": "c2_fault_preserving",
+        "seed": seed,
+        "source_candidate": "c1_mse",
+        "source_checkpoint": str(initialization.source_path),
+        "source_checkpoint_sha256": initialization.source_sha256,
+    }
+    if parameter_update is not None:
+        payload["parameter_update"] = parameter_update
+    _atomic_json(path, payload)
+
+
+def _parameter_update_diagnostics(
+    model: BandwiseReferenceAdapter, source_state: dict[str, Tensor]
+) -> dict[str, float]:
+    """Measure the finite C2 displacement from its registered C1 initialization."""
+    current_state = model.state_dict()
+    if current_state.keys() != source_state.keys():
+        raise ValueError("Anchored C2 and C1 state dictionaries do not match")
+    device = next(model.parameters()).device
+    update_square = torch.zeros((), dtype=torch.float64, device=device)
+    source_square = torch.zeros((), dtype=torch.float64, device=device)
+    for name, current in current_state.items():
+        source = source_state[name].to(device=current.device)
+        if current.is_floating_point():
+            current_work = current.detach().to(dtype=torch.float64)
+            source_work = source.detach().to(dtype=torch.float64)
+            if not bool(torch.isfinite(current_work).all()):
+                raise RuntimeError(f"Anchored C2 parameter is non-finite: {name}")
+            update_square += (current_work - source_work).square().sum()
+            source_square += source_work.square().sum()
+        elif not torch.equal(current, source):
+            raise RuntimeError(f"Anchored C2 changed a non-floating state tensor: {name}")
+    update_l2 = float(update_square.sqrt().item())
+    source_l2 = float(source_square.sqrt().item())
+    relative_l2 = update_l2 / (source_l2 + 1.0e-12)
+    if not all(math.isfinite(value) for value in (update_l2, source_l2, relative_l2)):
+        raise RuntimeError("Anchored C2 parameter-update diagnostic is non-finite")
+    return {
+        "l2": update_l2,
+        "source_l2": source_l2,
+        "relative_l2": relative_l2,
+    }
 
 
 def _materialize_reference_safe_c2(

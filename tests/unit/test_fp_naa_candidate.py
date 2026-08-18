@@ -246,6 +246,8 @@ def test_v5_uses_registered_c1_checkpoint_for_anchored_finetune(tmp_path: Path) 
     )
     assert derived["derived_from_c1_sha256"]
     assert initialization["source_checkpoint_sha256"] == derived["derived_from_c1_sha256"]
+    assert derived["parameter_update"]["relative_l2"] > 0.0
+    assert initialization["parameter_update"] == derived["parameter_update"]
     assert any(
         not torch.equal(derived["model_state"][name], source["model_state"][name])
         for name in source["model_state"]
