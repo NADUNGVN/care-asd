@@ -335,6 +335,61 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
                 raise RuntimeError("Anchored tangent objective did not prefer teacher transport")
             if not bool(drifted.function_anchor > 0.0):
                 raise RuntimeError("Anchored tangent objective ignored normal-function drift")
+            probe_model = BandwiseReferenceAdapter(
+                embedding_dim=8,
+                hidden_dim=8,
+                attention_heads=2,
+                dropout=0.0,
+                conditioning_mode="target_conditioned",
+            ).cuda()
+            probe_anchor = BandwiseReferenceAdapter(
+                embedding_dim=8,
+                hidden_dim=8,
+                attention_heads=2,
+                dropout=0.0,
+                conditioning_mode="target_conditioned",
+            ).cuda()
+            probe_anchor.load_state_dict(probe_model.state_dict())
+            probe_anchor.requires_grad_(False).eval()
+            probe_optimizer = torch.optim.AdamW(probe_model.parameters(), lr=1.0e-3)
+            probe_scaler = torch.amp.GradScaler("cuda", enabled=True)
+            probe_clean = torch.randn(4, 2, 2, 8, device="cuda")
+            probe_reference = torch.randn_like(probe_clean)
+            probe_teacher_clean = probe_clean - 0.02 * probe_reference
+            probe_teacher_delta = torch.zeros_like(probe_clean)
+            probe_teacher_delta[..., 0] = 0.05
+            probe_fault = probe_clean + 0.5 * probe_teacher_delta
+            probe_optimizer.zero_grad(set_to_none=True)
+            with torch.autocast(device_type="cuda", enabled=True):
+                probe_student_clean = probe_model(probe_clean, probe_reference)
+                probe_student_fault = probe_model(probe_fault, probe_reference)
+                with torch.no_grad():
+                    probe_anchor_clean = probe_anchor(probe_clean, probe_reference)
+                probe_loss = fp_naa_loss(
+                    objective="c2_fault_preserving",
+                    student_clean=probe_student_clean,
+                    teacher_clean=probe_teacher_clean,
+                    student_fault=probe_student_fault,
+                    teacher_fault=probe_teacher_clean + probe_teacher_delta,
+                    anchor_clean=probe_anchor_clean,
+                    config=anchored_objective,
+                )
+            probe_before = [parameter.detach().clone() for parameter in probe_model.parameters()]
+            probe_scale_before = probe_scaler.get_scale()
+            probe_scaler.scale(probe_loss.total).backward()
+            probe_scaler.unscale_(probe_optimizer)
+            torch.nn.utils.clip_grad_norm_(probe_model.parameters(), 1.0, error_if_nonfinite=True)
+            probe_scaler.step(probe_optimizer)
+            probe_scaler.update()
+            if probe_scaler.get_scale() < probe_scale_before:
+                raise RuntimeError("Exact-anchor AMP optimizer step was skipped")
+            if not any(
+                not torch.equal(before, after)
+                for before, after in zip(probe_before, probe_model.parameters(), strict=True)
+            ):
+                raise RuntimeError("Exact-anchor optimizer did not update model parameters")
+            if not all(torch.isfinite(parameter).all() for parameter in probe_model.parameters()):
+                raise RuntimeError("Exact-anchor optimizer produced non-finite parameters")
             parameter = torch.nn.Parameter(torch.tensor([1.0, 1.0], device="cuda"))
             cosine, conflict = _primary_safe_backward(
                 primary=parameter[0].square(),
@@ -369,13 +424,17 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
                 raise RuntimeError("RDP-salient projection changed an unprotected temporal row")
             torch.manual_seed(2608)
             torch.cuda.manual_seed_all(2608)
-            equivariant = BandwiseReferenceAdapter(
-                embedding_dim=8,
-                hidden_dim=8,
-                attention_heads=2,
-                dropout=0.0,
-                conditioning_mode="reference_only_equivariant",
-            ).cuda().eval()
+            equivariant = (
+                BandwiseReferenceAdapter(
+                    embedding_dim=8,
+                    hidden_dim=8,
+                    attention_heads=2,
+                    dropout=0.0,
+                    conditioning_mode="reference_only_equivariant",
+                )
+                .cuda()
+                .eval()
+            )
             with torch.no_grad():
                 output_projection = equivariant.fusion[-1]
                 if not isinstance(output_projection, torch.nn.Linear):
@@ -395,17 +454,17 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
                 rtol=1.0e-5,
                 atol=1.0e-6,
             ):
-                raise RuntimeError("Reference-only adapter violated target perturbation equivariance")
+                raise RuntimeError(
+                    "Reference-only adapter violated target perturbation equivariance"
+                )
             reference_response = (
-                reference_shifted_output - clean_output
-            ).float().square().mean().sqrt()
+                (reference_shifted_output - clean_output).float().square().mean().sqrt()
+            )
             if not bool(torch.isfinite(reference_response)) or not bool(
                 reference_response > 1.0e-7
             ):
                 raise RuntimeError("Reference-only adapter ignored its reference input")
-            differentiable_near = torch.randn(
-                1, 3, 2, 8, device="cuda", requires_grad=True
-            )
+            differentiable_near = torch.randn(1, 3, 2, 8, device="cuda", requires_grad=True)
             cotangent = torch.randn_like(differentiable_near)
             (equivariant(differentiable_near, far[:1, :3]) * cotangent).sum().backward()
             if differentiable_near.grad is None or not torch.allclose(
@@ -429,6 +488,7 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
         checks["target_perturbation_equivariance_probe"] = "passed"
         checks["target_jacobian_identity_probe"] = "passed"
         checks["anchored_tangent_transport_probe"] = "passed"
+        checks["anchored_optimizer_update_probe"] = "passed"
     return {"schema_version": SCHEMA_VERSION, "runtime": checks}
 
 

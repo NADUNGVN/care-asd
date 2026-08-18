@@ -127,7 +127,9 @@ The cause was the exact-anchor expression `sqrt(mean((F_theta-A)^2))`: V5 initia
 gradient caused AMP to skip every optimizer update. The repair replaces it with the exact-zero,
 finite-gradient smooth norm `sqrt(mean(x^2)+eps^2)-eps`, makes non-finite gradient clipping fail
 fast, and adds regressions requiring both finite exact-anchor gradients and a finite C2 checkpoint
-that differs from its C1 initialization.
+that differs from its C1 initialization. The server runtime check also performs an AMP
+exact-anchor optimizer step and requires both an unchanged loss scale and changed finite model
+parameters before any experiment may start.
 
 No config value, data split, candidate seed, score backend, or frozen G2/G3 threshold was changed.
 The unchanged preregistered V5 experiment must be rerun from fresh C2 checkpoints before ACTT can
