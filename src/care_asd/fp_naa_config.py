@@ -128,6 +128,36 @@ class FPObservabilityConfig(BaseModel):
     selection_rule: Literal["deepest_eligible"] = "deepest_eligible"
 
 
+class FPLayerwiseConfig(BaseModel):
+    """Frozen architecture and bounded mechanism-preflight contract for FP-NAA v8."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    insertion_layers: list[int]
+    preflight_seed: int = Field(ge=0)
+    preflight_train_clips: int = Field(gt=0)
+    preflight_validation_clips: int = Field(gt=0)
+    preflight_heldout_clips: int = Field(gt=0)
+    common_epochs: int = Field(gt=0)
+    branch_epochs: int = Field(gt=0)
+    batch_size: int = Field(gt=0)
+    learning_rate: float = Field(gt=0.0)
+    weight_decay: float = Field(ge=0.0)
+    gradient_clip_norm: float = Field(gt=0.0)
+    tangent_mean_weight: float = Field(ge=0.0)
+    tangent_tail_weight: float = Field(gt=0.0)
+    tangent_relative_error_limit: float = Field(gt=0.0)
+    tangent_tail_fraction: float = Field(gt=0.0, le=1.0)
+    function_anchor_weight: float = Field(gt=0.0)
+    function_anchor_relative_limit: float = Field(gt=0.0)
+    retention_median_minimum: float = Field(ge=0.0)
+    retention_q05_minimum: float = Field(ge=0.0)
+    retention_median_gain_minimum: float = Field(ge=0.0)
+    retention_q05_gain_minimum: float = Field(ge=0.0)
+    heldout_retention_median_minimum: float = Field(ge=0.0)
+    heldout_retention_q05_minimum: float = Field(ge=0.0)
+
+
 class FPGatesConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -170,6 +200,7 @@ class FPNAAConfig(BaseModel):
     objective: FPObjectiveConfig
     training: FPTrainingConfig
     observability: FPObservabilityConfig | None = None
+    layerwise: FPLayerwiseConfig | None = None
     gates: FPGatesConfig
 
 
@@ -215,6 +246,14 @@ def load_fp_naa_config(path: str | Path) -> FPNAAConfig:
             raise ValueError("observability encoder_taps must be sorted and unique")
         if taps[0] < 0 or taps[-1] > 12:
             raise ValueError("observability encoder_taps must be in [0, 12]")
+    if config.layerwise is not None:
+        layers = config.layerwise.insertion_layers
+        if not layers or layers != sorted(set(layers)):
+            raise ValueError("layerwise insertion_layers must be sorted and unique")
+        if layers[0] < 1 or layers[-1] > 12:
+            raise ValueError("layerwise insertion_layers must be in [1, 12]")
+        if config.layerwise.preflight_heldout_clips > config.layerwise.preflight_validation_clips:
+            raise ValueError("preflight heldout clips cannot exceed validation clips")
     objective = config.objective
     if objective.gain_lower_bound > objective.gain_upper_bound:
         raise ValueError("gain_lower_bound must not exceed gain_upper_bound")

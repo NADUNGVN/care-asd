@@ -200,6 +200,7 @@ def test_server_pipeline_uses_the_versioned_equivariant_config(tmp_path: Path) -
     context = _context(tmp_path)
     assert _common_paths(context)["config"].name == "fp_naa_v5.yaml"
     assert _common_paths(context)["v6_config"].name == "fp_naa_v6.yaml"
+    assert _common_paths(context)["v8_config"].name == "fp_naa_v8.yaml"
 
 
 def test_state_schema_is_validated() -> None:

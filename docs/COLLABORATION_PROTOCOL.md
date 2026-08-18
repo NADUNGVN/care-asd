@@ -54,6 +54,10 @@ silently advance the main experiment sequence. It uses only normal development a
 pseudo-fault plans to select a BEATs tap; anomaly labels and held-out friction results are not used
 for selection.
 
+After the valid V6 no-tap result, V8 uses the equally explicit `layerwise-preflight` stage. It is a
+normal-only bounded mechanism test, not a performance screen, and is never selected by
+`job continue`.
+
 ## Required preflight artifact
 
 Run this after cloning/syncing a server, and after a material environment

@@ -155,6 +155,16 @@ pre-encoder successor is rejected without consulting development anomaly labels 
 care-asd fp-naa job start --stage frontend-probe --workers 12
 ```
 
+`layerwise-preflight` is the explicit normal-only V8 mechanism gate after V6 selects no eligible
+tap. It is not part of automatic continuation and cannot start unless the immutable V6 report has
+`passed=false` and `selected_tap=null`. It caches only the frozen 1,536-clip preregistered subset,
+trains a common branch point, and gives the MSE control and tangent candidate the same continuation
+step count. A failed mechanism gate stops V8 before development anomaly labels or LOMO are used.
+
+```bash
+care-asd fp-naa job start --stage layerwise-preflight --workers 12
+```
+
 After the valid v1--v4 screening failures, new screening and downstream jobs use the versioned
 `configs/experiment/fp_naa_v5.yaml` anchored counterfactual tangent transport mechanism. The
 immutable v1--v4 reports remain valid negative-ablation artifacts. The shared BEATs and

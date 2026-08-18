@@ -320,6 +320,15 @@ It combines the immutable final C1 branch with an exact target-equivariant selec
 cross-fitted normal-calibrated evidence union. Implementation remains prohibited unless V6 selects
 an eligible tap, and ordinary raw multi-depth fusion is a mandatory mechanism comparator.
 
+The valid V6 run `server02_fp_naa_frontend_probe_20260818T033118Z` selected no tap: even tap 0
+reached only 0.8465/0.4094 median/q05 in-support retention, and tap 12 reproduced the V4/V5
+frontend loss at 0.7731/0.1340. V7 is therefore closed without implementation and its gate cannot
+be relaxed. The successor is the capacity-matched layerwise noise-aware encoder specified in
+[`FP_NAA_V8_LAYERWISE_TANGENT_RESTORATION.md`](FP_NAA_V8_LAYERWISE_TANGENT_RESTORATION.md).
+Its architecture is treated as prior art from NA-BEATs; the only candidate contribution is the
+counterfactual tangent/tail objective against an identical MSE-only layerwise control. A bounded
+normal-only mechanism preflight must pass before any new development-anomaly screening.
+
 ## 8. Primary prior art used to set the boundary
 
 - [DCASE 2026 Task 2 setup and exact metric](https://arxiv.org/abs/2606.01578)
