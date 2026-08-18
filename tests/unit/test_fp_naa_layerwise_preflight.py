@@ -78,6 +78,7 @@ def test_v8_gate_requires_capacity_matched_retention_gain() -> None:
         layerwise=config.layerwise,
         update_norms={"common": 1.0, "l1": 0.5, "l2": 0.7},
         trainable_parameters=123,
+        runtime_probe={"status": "passed", "frozen_path_relative_error": 0.0},
     )
     assert gate["passed"] is True
     assert gate["checks"]["median_gain_over_l1"] is True

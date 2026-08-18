@@ -153,6 +153,14 @@ def run_layerwise_mechanism_preflight(
         frequency_patches=config.frontend.frequency_patches,
         mixed_precision=False,
     )
+    runtime_probe = _run_actual_beats_probe(
+        frontend,
+        selected[0],
+        config=config,
+        layerwise=layerwise,
+        device=device,
+    )
+    _atomic_json(output / "runtime_probe.json", runtime_probe)
     for batch in _chunks(pending, config.frontend.inference_batch_size):
         if workers == 0:
             prepared = [_prepare_item(plan, config) for plan in batch]
@@ -286,6 +294,7 @@ def run_layerwise_mechanism_preflight(
             "l2": l2_update_norm,
         },
         trainable_parameters=model.trainable_parameter_count(),
+        runtime_probe=runtime_probe,
     )
     _atomic_csv(diagnostics_path, diagnostics)
     _atomic_csv(summary_path, summary)
@@ -326,6 +335,74 @@ def _select_plans(
     if len(training) != layerwise.preflight_train_clips:
         raise ValueError("Insufficient deterministic clips for the V8 training split")
     return training, validation
+
+
+def _run_actual_beats_probe(
+    frontend: OfficialBEATsFrontend,
+    plan: _AugmentationPlan,
+    *,
+    config: FPNAAConfig,
+    layerwise: FPLayerwiseConfig,
+    device: str,
+) -> dict[str, object]:
+    """Verify the custom layer loop against the pinned real BEATs implementation."""
+    prepared = _prepare_item(plan, config)
+    taps = frontend.extract_encoder_taps(prepared.waveforms, taps=(0, 12))
+    noisy_index = prepared.positions["noisy_clean"]
+    reference_index = prepared.positions["reference"]
+    _seed_all(layerwise.preflight_seed)
+    model = LayerwiseNoiseAwareEncoder(
+        beats_model=frontend._model,
+        frequency_patches=config.frontend.frequency_patches,
+        embedding_dim=config.frontend.embedding_dim,
+        hidden_dim=config.adapter.hidden_dim,
+        attention_heads=config.adapter.attention_heads,
+        dropout=config.adapter.dropout,
+        insertion_layers=tuple(layerwise.insertion_layers),
+    ).to(device)
+    model.eval()
+    target = _to_device(taps[0][noisy_index : noisy_index + 1], device)
+    reference = _to_device(taps[0][reference_index : reference_index + 1], device)
+    expected = _to_device(taps[12][noisy_index : noisy_index + 1], device)
+    with torch.no_grad():
+        predicted = model(target, reference)
+    relative_error = float(
+        (
+            (predicted - expected).reshape(1, -1).norm(dim=1)
+            / expected.reshape(1, -1).norm(dim=1).clamp_min(1.0e-8)
+        ).item()
+    )
+    if not math.isfinite(relative_error) or relative_error > 1.0e-5:
+        raise RuntimeError(
+            "V8 layerwise zero-adapter path does not reproduce pinned BEATs: "
+            f"relative_error={relative_error:.8g}"
+        )
+    before = model.clone_adapter_state_dict()
+    model.train()
+    optimizer = torch.optim.AdamW(model.adapters.parameters(), lr=layerwise.learning_rate)
+    optimizer.zero_grad(set_to_none=True)
+    output = model(target, reference)
+    loss = functional.mse_loss(output, expected + 0.01)
+    _optimizer_step(model, optimizer, loss, layerwise.gradient_clip_norm)
+    updated, update_norm = finite_adapter_update(before, model.adapter_state_dict())
+    if not updated or not math.isfinite(update_norm):
+        raise RuntimeError("V8 actual-BEATs optimizer probe produced no finite adapter update")
+    trainable_parameters = model.trainable_parameter_count()
+    del optimizer, model, target, reference, expected, predicted, output, loss
+    torch.cuda.empty_cache()
+    print(
+        "V8 actual-BEATs runtime probe passed. "
+        f"frozen_path_relative_error={relative_error:.3e} update_norm={update_norm:.3e}",
+        flush=True,
+    )
+    return {
+        "schema_version": 1,
+        "status": "passed",
+        "frozen_path_relative_error": relative_error,
+        "frozen_path_relative_error_maximum": 1.0e-5,
+        "optimizer_update_norm": update_norm,
+        "trainable_parameters": trainable_parameters,
+    }
 
 
 def _prepare_item(plan: _AugmentationPlan, config: FPNAAConfig) -> _Prepared:
@@ -645,6 +722,7 @@ def _make_gate(
     layerwise: FPLayerwiseConfig,
     update_norms: Mapping[str, float],
     trainable_parameters: int,
+    runtime_probe: Mapping[str, object],
 ) -> dict[str, object]:
     def row(candidate: str, fault_set: str) -> pd.Series:
         selected = summary.loc[
@@ -658,6 +736,7 @@ def _make_gate(
     l2 = row("l2_layerwise_fault_transport", "in_support")
     heldout = row("l2_layerwise_fault_transport", "heldout")
     checks = {
+        "actual_beats_runtime_probe": runtime_probe.get("status") == "passed",
         "finite_real_updates": all(
             math.isfinite(value) and value > 0.0 for value in update_norms.values()
         ),
@@ -702,6 +781,7 @@ def _make_gate(
         },
         "optimizer_update_norms": dict(update_norms),
         "trainable_parameters": trainable_parameters,
+        "runtime_probe": dict(runtime_probe),
         "authorization": (
             "A pass authorizes V8 three-seed G2 implementation and execution only. It is not a "
             "development performance result and does not authorize LOMO."

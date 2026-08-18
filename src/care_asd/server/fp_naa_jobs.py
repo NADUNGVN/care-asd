@@ -1234,6 +1234,7 @@ def _run_layerwise_preflight(
         report / "gate.json",
         "passed",
         report / "summary.csv",
+        report / "runtime_probe.json",
     )
 
 

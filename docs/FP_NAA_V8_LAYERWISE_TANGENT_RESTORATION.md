@@ -94,6 +94,8 @@ V8 uses two compute gates to avoid another open-ended phase:
 
 V8-M passes only if all checks hold on its stable validation split:
 
+- a one-clip real-GPU zero-adapter path reproduces pinned BEATs within relative error 1e-5 and a
+  subsequent optimizer probe creates a finite non-zero adapter update;
 - `L2` in-support retention median >= 0.90;
 - `L2` in-support retention q05 >= 0.60;
 - `L2 - L1` retention median >= 0.05;
