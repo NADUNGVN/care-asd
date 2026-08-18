@@ -1,0 +1,14 @@
+{
+  "artifacts": {
+    "metrics.json": "da6c67f8cbea15dc554bf700b42a0b7c378f5ddd2bde17296c0cb28a70521f41",
+    "retention.csv": "f48121277ec7ec6ee1610a1761ef8166c1ad36cfd920a4db40448d855121efff",
+    "scores.csv": "3b22aa7a6428b77a58c5bdd5fe3762d9a33528ab805d0f18433e3d4696b7f737",
+    "training_history.csv": "df2a0ff2aca289c2fae584c89d359e135563e4906f649b4d038a82c53b05c51e"
+  },
+  "candidate": "c1_mse",
+  "schema_version": 1,
+  "seed": 13711,
+  "source_contract_sha256": "9b1d1d3ed96aae35b712cffd118a2b852702394f87e2736d804afa87ac62fd23",
+  "source_run_id": "server02_fp_naa_screening_20260817T145911Z",
+  "trainable_parameters": 989696
+}
