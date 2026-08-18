@@ -1,0 +1,18 @@
+{
+  "base_cache_index_sha256": "368d93ef85a801e28bef9955f494963433fcdf44fb950ae982ac3264bd597944",
+  "base_cache_metadata_sha256": "dbc5c8b1ba1da693b164ad63e0b872c6061c1005e8230ad5fba0a6f1e9fe739e",
+  "beats_commit": "833df7e7832e5064a281131ee64a481afa8e5b95",
+  "checkpoint_sha256": "8d1b234032a9ccff353612dc6c20982346dc2968b205b79d97303eb5e77bfb34",
+  "config_sha256": "e8241ac8efd2be97c799dae0beaa5c0fc7e81d03bcf4f2980baa80668edf9604",
+  "encoder_taps": [
+    0,
+    4,
+    8,
+    12
+  ],
+  "heldout_family_use": "diagnostic_only",
+  "kind": "fp_naa_encoder_observability",
+  "schema_version": 1,
+  "selection_rule": "deepest_eligible",
+  "selection_uses": "in_support_pseudo_faults_only"
+}

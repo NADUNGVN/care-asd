@@ -1,0 +1,22 @@
+{
+  "checks": {
+    "tap_0": false,
+    "tap_12": false,
+    "tap_4": false,
+    "tap_8": false
+  },
+  "criteria": {
+    "in_support_retention_median_minimum": 0.9,
+    "in_support_retention_q05_minimum": 0.75
+  },
+  "gate": "V6_frontend_observability_preflight",
+  "heldout_family": {
+    "name": "friction_burst",
+    "role": "diagnostic only; never used for tap selection"
+  },
+  "note": "A pass only authorizes implementation of a pre-encoder candidate. It is not a G2 performance result and does not authorize LOMO.",
+  "passed": false,
+  "schema_version": 1,
+  "selected_tap": null,
+  "selection_rule": "deepest eligible tap using in-support pseudo-faults only"
+}
