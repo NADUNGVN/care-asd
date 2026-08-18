@@ -11,6 +11,11 @@ from care_asd.models.beats_frontend import OfficialBEATsFrontend
 
 
 class _FakeEncoder(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.layer_norm_first = False
+        self.layer_norm = _Offset(100.0)
+
     def forward(
         self, values: torch.Tensor, padding_mask: object = None, layer: int | None = None
     ) -> tuple[torch.Tensor, list[tuple[torch.Tensor, None]]]:
@@ -22,6 +27,15 @@ class _FakeEncoder(nn.Module):
             time_major = time_major + 1.0
             results.append((time_major, None))
         return time_major.transpose(0, 1), results
+
+
+class _Offset(nn.Module):
+    def __init__(self, value: float) -> None:
+        super().__init__()
+        self.value = value
+
+    def forward(self, values: torch.Tensor) -> torch.Tensor:
+        return values + self.value
 
 
 class _FakeBEATs(nn.Module):
@@ -57,6 +71,15 @@ def test_extract_encoder_taps_preserves_declared_depths() -> None:
     assert result[0].shape == (2, 2, 2, 3)
     np.testing.assert_allclose(result[1], result[0] + 1.0)
     np.testing.assert_allclose(result[2], result[0] + 2.0)
+
+
+def test_final_encoder_tap_applies_the_official_pre_norm_epilogue() -> None:
+    frontend = _frontend()
+    frontend._model.encoder.layer_norm_first = True
+    result = frontend.extract_encoder_taps(
+        np.arange(4, dtype=np.float32).reshape(1, 4), taps=(0, 2)
+    )
+    np.testing.assert_allclose(result[2], result[0] + 102.0)
 
 
 @pytest.mark.parametrize("taps", [(), (1, 0), (0, 0), (0, 3)])

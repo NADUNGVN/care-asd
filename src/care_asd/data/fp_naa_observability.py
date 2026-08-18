@@ -147,6 +147,7 @@ def run_fp_naa_observability_probe(
             cursor += len(item.waveforms)
         waveforms = np.concatenate([item.waveforms for item in prepared], axis=0)
         extracted = frontend.extract_encoder_taps(waveforms, taps=taps)
+        _validate_tapped_output(extracted, taps=taps, expected_batch=len(waveforms))
         for item, offset in zip(prepared, offsets, strict=True):
             item_rows = _diagnose_item(item, offset=offset, extracted=extracted, taps=taps)
             _atomic_json(item.shard, {"schema_version": 1, "rows": item_rows})
@@ -299,6 +300,19 @@ def _diagnose_item(
                 }
             )
     return rows
+
+
+def _validate_tapped_output(
+    extracted: dict[int, np.ndarray], *, taps: tuple[int, ...], expected_batch: int
+) -> None:
+    if set(extracted) != set(taps):
+        raise RuntimeError("BEATs encoder-tap output does not match the requested depths")
+    for tap in taps:
+        values = np.asarray(extracted[tap])
+        if values.ndim != 4 or len(values) != expected_batch:
+            raise RuntimeError(f"Unexpected BEATs tap {tap} output shape: {values.shape}")
+        if not np.isfinite(values).all():
+            raise RuntimeError(f"BEATs tap {tap} produced non-finite values")
 
 
 def _summarize_taps(

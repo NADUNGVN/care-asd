@@ -127,6 +127,8 @@ class OfficialBEATsFrontend:
                 )
                 for tap in positive:
                     layer_value = layer_results[tap][0]
+                    if tap == encoder_layers and bool(self._model.encoder.layer_norm_first):
+                        layer_value = self._model.encoder.layer_norm(layer_value)
                     selected[tap] = layer_value.transpose(0, 1)
 
         return {
