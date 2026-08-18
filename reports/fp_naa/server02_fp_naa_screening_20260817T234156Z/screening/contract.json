@@ -1,0 +1,156 @@
+{
+  "augmentation_cache_metadata_sha256": "82020d0abb3f7896bbc8a40c7334e05c3133346224cdd4c86e6d48bde5ede6cd",
+  "base_cache_metadata_sha256": "dbc5c8b1ba1da693b164ad63e0b872c6061c1005e8230ad5fba0a6f1e9fe739e",
+  "c0_scores_sha256": "e6ddc371cf7d380f4efee117c23e02bba70b885912ce0cc97d207b92b618a6d4",
+  "config": {
+    "adapter": {
+      "attention_heads": 8,
+      "c2_conditioning_mode": "target_conditioned",
+      "dropout": 0.1,
+      "hidden_dim": 256,
+      "maximum_reference_contraction": 1.0,
+      "reference_corruption_probability": 0.3,
+      "reference_dropout_probability": 0.2,
+      "reference_safety_fraction": 0.2,
+      "reference_safety_mode": "none",
+      "share_c1_weights_for_c2": false
+    },
+    "augmentation": {
+      "fault_delta_level_db_max": -12.0,
+      "fault_delta_level_db_min": -24.0,
+      "heldout_fault_family": "friction_burst",
+      "heldout_fraction": 0.1,
+      "noise_snr_db_max": 10.0,
+      "noise_snr_db_min": -10.0,
+      "peak_limit": 1.0,
+      "seed": 2608,
+      "train_fault_families": [
+        "periodic_resonance",
+        "amplitude_modulation",
+        "frequency_modulation"
+      ]
+    },
+    "backend": {
+      "cosine_distance_scale": 0.5,
+      "eps": 1e-12,
+      "local_density_neighbors": 4,
+      "rdp_gamma": 8.0,
+      "score_rescaling": "variance_minimization_train_all",
+      "scorer": "beam",
+      "temporal_pooling": "rdp"
+    },
+    "experiment_id": "fp_naa_v5_anchored_counterfactual_tangent_transport",
+    "frontend": {
+      "cache_dtype": "float16",
+      "channels": [
+        "near",
+        "far"
+      ],
+      "duration_seconds": 10.0,
+      "embedding_dim": 768,
+      "frequency_patches": 8,
+      "inference_batch_size": 16,
+      "inference_mixed_precision": false,
+      "sample_rate": 16000
+    },
+    "gates": {
+      "baseline_minimum_official_score": 0.605,
+      "bootstrap_iterations": 10000,
+      "confirmatory_bootstrap_ci_low_minimum": 0.0,
+      "confirmatory_maximum_machine_drop": 0.01,
+      "confirmatory_minimum_ensemble_official_score": 0.63,
+      "confirmatory_minimum_gain_over_c1": 0.0075,
+      "confirmatory_positive_lomo_folds_minimum": 6,
+      "fault_delta_retention_median_minimum": 0.9,
+      "fault_delta_retention_q05_minimum": 0.75,
+      "heldout_fault_delta_retention_median_minimum": 0.85,
+      "heldout_fault_delta_retention_q05_minimum": 0.65,
+      "screening_maximum_machine_drop": 0.02,
+      "screening_minimum_gain_over_c0": 0.01,
+      "screening_minimum_gain_over_c1": 0.005,
+      "screening_minimum_official_score": 0.62,
+      "screening_positive_lomo_folds_minimum": 5
+    },
+    "objective": {
+      "auxiliary_ramp_epochs": 0,
+      "auxiliary_start_epoch": 0,
+      "direction_cosine_floor": 0.0,
+      "fault_direction_weight": 0.0,
+      "fault_loss_mode": "anchored_tangent_transport",
+      "fault_magnitude_weight": 0.0,
+      "fault_separation_weight": 0.0,
+      "function_anchor_relative_limit": 0.1,
+      "function_anchor_weight": 10.0,
+      "gain_lower_bound": 1.0,
+      "gain_upper_bound": 1.0,
+      "magnitude_huber_delta": 0.05,
+      "normal_mse_weight": 1.0,
+      "primary_safe_gradient_projection": false,
+      "reference_consistency_weight": 0.0,
+      "score_gain_lower_bound": 1.0,
+      "score_patch_fraction": 0.2,
+      "tail_fraction": 0.1,
+      "tangent_relative_error_limit": 0.25,
+      "tangent_transport_mean_weight": 0.25,
+      "tangent_transport_tail_weight": 1.0
+    },
+    "provenance": {
+      "beats_commit": "833df7e7832e5064a281131ee64a481afa8e5b95",
+      "beats_repository": "https://github.com/microsoft/unilm.git",
+      "checkpoint_sha256": "8d1b234032a9ccff353612dc6c20982346dc2968b205b79d97303eb5e77bfb34",
+      "checkpoint_url": "https://huggingface.co/lpepino/beats_ckpts/resolve/a2ddb6b0411c39942ae144a6414872e14e5a4329/BEATs_iter3.pt"
+    },
+    "schema_version": 1,
+    "screening_c1_reuse_run_id": "server02_fp_naa_screening_20260817T145911Z",
+    "screening_c2_initialization_run_id": "server02_fp_naa_screening_20260817T145911Z",
+    "training": {
+      "batch_size": 128,
+      "c2_finetune_disable_dropout": true,
+      "c2_finetune_epochs": 30,
+      "c2_finetune_learning_rate": 5e-05,
+      "c2_finetune_warmup_epochs": 2,
+      "confirmatory_seeds": [
+        13711,
+        42,
+        2026,
+        3407,
+        777
+      ],
+      "epochs": 60,
+      "gradient_clip_norm": 1.0,
+      "learning_rate": 0.0003,
+      "mixed_precision": true,
+      "screening_seeds": [
+        13711,
+        42,
+        2026
+      ],
+      "warmup_epochs": 5,
+      "weight_decay": 0.0001,
+      "workers": 12
+    }
+  },
+  "experiment_id": "server02_fp_naa_screening_20260817T234156Z",
+  "kind": "fp_naa_screening",
+  "schema_version": 1,
+  "screening_c1_reuse": {
+    "artifacts": {
+      "seed13711/c1_mse/metrics.json": "da6c67f8cbea15dc554bf700b42a0b7c378f5ddd2bde17296c0cb28a70521f41",
+      "seed13711/c1_mse/retention.csv": "f48121277ec7ec6ee1610a1761ef8166c1ad36cfd920a4db40448d855121efff",
+      "seed13711/c1_mse/scores.csv": "3b22aa7a6428b77a58c5bdd5fe3762d9a33528ab805d0f18433e3d4696b7f737",
+      "seed13711/c1_mse/training_history.csv": "df2a0ff2aca289c2fae584c89d359e135563e4906f649b4d038a82c53b05c51e",
+      "seed2026/c1_mse/metrics.json": "cb2c5b8c6dcf96fe59c70b3c9dfcb02ba5d216124a58376fbcfa34180c650cc1",
+      "seed2026/c1_mse/retention.csv": "c74466a2abed75c1e77f237e814ad0d326918c7b24e0d153eb0f76af0b6ae916",
+      "seed2026/c1_mse/scores.csv": "aa30ee453fb0ab4bc52a3efac7a669e4491ced19ff82c4c66c0491ba81683dde",
+      "seed2026/c1_mse/training_history.csv": "7a62b9d458f39cb282ededaadfe7e1c460fab0ec2f57fa191c84e1e0cd031b3c",
+      "seed42/c1_mse/metrics.json": "4a5f025bc4aaba02da98c137d5dc8f946e71fa35d8a4bf2264d4426924156e77",
+      "seed42/c1_mse/retention.csv": "70945c1bf97e48bd844b6841a8d8753bc3bac924f2d05156e6e0e78c144cb216",
+      "seed42/c1_mse/scores.csv": "da28a133072113a21d97ae8ad152fdf26d20f78e20521679ce2b17bad8359602",
+      "seed42/c1_mse/training_history.csv": "7cee42a41d2c315e71a8641e52f1b004a0a757beb33743e44c28814c3588e7bf"
+    },
+    "source_contract_sha256": "9b1d1d3ed96aae35b712cffd118a2b852702394f87e2736d804afa87ac62fd23",
+    "source_directory": "/home/ubuntu/Dung_TDTU/CARE_ASD/reports/fp_naa/server02_fp_naa_screening_20260817T145911Z/screening",
+    "source_run_id": "server02_fp_naa_screening_20260817T145911Z",
+    "source_summary_sha256": "678aa7a6ee9263b971b544a807688bd3060dbc120bbd26ed23733de15dcfac5d"
+  }
+}

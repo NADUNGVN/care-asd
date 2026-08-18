@@ -1,0 +1,8 @@
+{
+  "candidate": "c2_fault_preserving",
+  "schema_version": 1,
+  "seed": 2026,
+  "source_candidate": "c1_mse",
+  "source_checkpoint": "/home/ubuntu/Dung_TDTU/data/CARE_ASD/fp_naa/checkpoints/server02_fp_naa_screening_20260817T145911Z/seed2026/c1_mse.pt",
+  "source_checkpoint_sha256": "65123dbb4d7b17a27e6b26729c4eea248ef2dc5a65ff0d99afc582aa857a421d"
+}
