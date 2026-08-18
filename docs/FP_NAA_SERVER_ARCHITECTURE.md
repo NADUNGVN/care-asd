@@ -165,6 +165,16 @@ step count. A failed mechanism gate stops V8 before development anomaly labels o
 care-asd fp-naa job start --stage layerwise-preflight --workers 12
 ```
 
+`tap-repair-preflight` is the explicit V9 mechanism gate after the valid V8 failure. It refuses to
+start without the exact `V8_M_layerwise_mechanism_preflight` artifact with `passed=false`. The job
+uses the frozen 1,024/512 normal-only split, keeps friction burst optimizer-hidden, and compares
+capacity-matched tap-0 MSE and ACTT branches. Its score path bypasses all twelve Transformer
+blocks. A failure closes V9; a pass authorizes implementation of the three-seed V9 G2 screen only.
+
+```bash
+care-asd fp-naa job start --stage tap-repair-preflight --workers 12
+```
+
 After the valid v1--v4 screening failures, new screening and downstream jobs use the versioned
 `configs/experiment/fp_naa_v5.yaml` anchored counterfactual tangent transport mechanism. The
 immutable v1--v4 reports remain valid negative-ablation artifacts. The shared BEATs and

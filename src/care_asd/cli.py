@@ -1708,6 +1708,47 @@ def fp_naa_layerwise_preflight_dev(
     )
 
 
+@fp_naa_app.command("tap-repair-preflight-dev")
+def fp_naa_tap_repair_preflight_dev(
+    base_cache_dir: Annotated[Path, typer.Option("--base-cache-dir")],
+    audio_root: Annotated[Path, typer.Option("--audio-root")],
+    cache_dir: Annotated[Path, typer.Option("--cache-dir")],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    checkpoint_dir: Annotated[Path, typer.Option("--checkpoint-dir")],
+    config: Annotated[Path, typer.Option("--config")],
+    beats_source: Annotated[Path, typer.Option("--beats-source")],
+    checkpoint: Annotated[Path, typer.Option("--checkpoint")],
+    workers: Annotated[int, typer.Option("--workers", min=0, max=16)] = 12,
+    device: Annotated[str, typer.Option("--device")] = "cuda",
+) -> None:
+    """Run the bounded normal-only V9 tap-0 repair mechanism preflight."""
+    try:
+        from care_asd.evaluation.fp_naa_tap_repair_preflight import (
+            run_tap_repair_preflight,
+        )
+
+        result = run_tap_repair_preflight(
+            base_cache_directory=base_cache_dir,
+            audio_root=audio_root,
+            cache_directory=cache_dir,
+            output_directory=output_dir,
+            checkpoint_directory=checkpoint_dir,
+            config_path=config,
+            beats_source_directory=beats_source,
+            checkpoint_path=checkpoint,
+            workers=workers,
+            device=device,
+        )
+    except (FileNotFoundError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]FP-NAA V9 tap-repair preflight failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    status = "passed" if result.gate_passed else "failed"
+    console.print(
+        f"[green]FP-NAA V9 tap-repair preflight complete.[/green] gate={status} "
+        f"summary={result.summary_path}"
+    )
+
+
 @fp_naa_app.command("cache-reference-safety")
 def fp_naa_cache_reference_safety(
     base_cache_dir: Annotated[Path, typer.Option("--base-cache-dir")],

@@ -329,6 +329,16 @@ Its architecture is treated as prior art from NA-BEATs; the only candidate contr
 counterfactual tangent/tail objective against an identical MSE-only layerwise control. A bounded
 normal-only mechanism preflight must pass before any new development-anomaly screening.
 
+The valid V8-M run `server02_fp_naa_layerwise_preflight_20260818T060510Z` completed the real-BEATs
+probe and all registered epochs but failed the mechanism gate. L2 improved in-support median over
+L1 by 0.0665, while q05 improved by only 0.0255; absolute L2 in-support retention was
+0.7811/0.1092 and held-out friction retention was 0.8311/0.3002. V8 is closed without G2 or a
+weight/layer sweep. The next bounded hypothesis localizes one ACTT repair at tap 0 and scores that
+branch without the twelve downstream Transformer blocks. Its architecture, capacity-matched
+preflight, raw/MSE controls, unchanged scientific gates, and novelty limits are frozen in
+[`FP_NAA_V9_PREENCODER_TANGENT_REPAIR.md`](FP_NAA_V9_PREENCODER_TANGENT_REPAIR.md) before any V9
+result is generated.
+
 ## 8. Primary prior art used to set the boundary
 
 - [DCASE 2026 Task 2 setup and exact metric](https://arxiv.org/abs/2606.01578)

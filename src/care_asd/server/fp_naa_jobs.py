@@ -50,6 +50,7 @@ class JobStage(StrEnum):
     REFERENCE_SAFETY = "reference-safety"
     FRONTEND_PROBE = "frontend-probe"
     LAYERWISE_PREFLIGHT = "layerwise-preflight"
+    TAP_REPAIR_PREFLIGHT = "tap-repair-preflight"
 
 
 class JobStatus(StrEnum):
@@ -170,6 +171,7 @@ _STAGE_PREFIX = {
     JobStage.REFERENCE_SAFETY: "server02_fp_naa_reference_safety",
     JobStage.FRONTEND_PROBE: "server02_fp_naa_frontend_probe",
     JobStage.LAYERWISE_PREFLIGHT: "server02_fp_naa_layerwise_preflight",
+    JobStage.TAP_REPAIR_PREFLIGHT: "server02_fp_naa_tap_repair_preflight",
 }
 
 _GATE_CONTRACT = {
@@ -181,6 +183,7 @@ _GATE_CONTRACT = {
     JobStage.REFERENCE_SAFETY: ("reference_safety", "passed"),
     JobStage.FRONTEND_PROBE: ("frontend_probe", "passed"),
     JobStage.LAYERWISE_PREFLIGHT: ("layerwise_preflight", "passed"),
+    JobStage.TAP_REPAIR_PREFLIGHT: ("tap_repair_preflight", "passed"),
 }
 
 
@@ -801,6 +804,7 @@ def _execute_stage(
         JobStage.REFERENCE_SAFETY: _run_reference_safety,
         JobStage.FRONTEND_PROBE: _run_frontend_probe,
         JobStage.LAYERWISE_PREFLIGHT: _run_layerwise_preflight,
+        JobStage.TAP_REPAIR_PREFLIGHT: _run_tap_repair_preflight,
     }
     return handlers[stage](ctx, state_path, run_id, workers)
 
@@ -1238,6 +1242,73 @@ def _run_layerwise_preflight(
     )
 
 
+def _run_tap_repair_preflight(
+    ctx: FPNAAJobContext, state_path: Path, run_id: str, workers: int
+) -> StageResult:
+    paths = _common_paths(ctx)
+    _require_gate(ctx, JobStage.C0)
+    v8_gate_path = _latest_gate(ctx, JobStage.LAYERWISE_PREFLIGHT)
+    if v8_gate_path is None:
+        raise JobError(
+            "V8_EVIDENCE_MISSING",
+            "V9 requires the completed V8 layerwise mechanism gate",
+        )
+    v8_gate = _read_json(v8_gate_path)
+    if (
+        v8_gate.get("gate") != "V8_M_layerwise_mechanism_preflight"
+        or v8_gate.get("passed") is not False
+    ):
+        raise JobError(
+            "V8_CLOSURE_MISMATCH",
+            "V9 is authorized only by the frozen failed V8 mechanism result",
+            v8_gate,
+        )
+    report = ctx.reports_root / run_id / "tap_repair_preflight"
+    cache = ctx.data_root / "fp_naa" / "tap_repair_preflight_cache" / "v9_seed2608"
+    checkpoints = ctx.data_root / "fp_naa" / "checkpoints" / run_id
+    _set_step(state_path, "assets")
+    beats_source, checkpoint = _ensure_beats_assets(ctx)
+    _run_pytest(
+        ctx,
+        "tests/unit/test_fp_naa_tap_repair_preflight.py",
+        "tests/unit/test_fp_naa_adapter.py",
+        "tests/unit/test_fp_naa_config.py",
+    )
+    _set_step(state_path, "tap-repair-preflight")
+    _call_cli(
+        ctx,
+        "fp-naa",
+        "tap-repair-preflight-dev",
+        "--base-cache-dir",
+        str(paths["base_cache"]),
+        "--audio-root",
+        str(paths["audio_root"]),
+        "--cache-dir",
+        str(cache),
+        "--output-dir",
+        str(report),
+        "--checkpoint-dir",
+        str(checkpoints),
+        "--config",
+        str(paths["v9_config"]),
+        "--beats-source",
+        str(beats_source),
+        "--checkpoint",
+        str(checkpoint),
+        "--workers",
+        str(workers),
+        "--device",
+        "cuda",
+    )
+    return _stage_result(
+        report / "gate.json",
+        "passed",
+        report / "summary.csv",
+        report / "runtime_probe.json",
+        report / "diagnostics.csv",
+    )
+
+
 def _common_paths(ctx: FPNAAJobContext) -> dict[str, Path]:
     return {
         "manifest": ctx.repo_root / "data" / "manifests" / "dcase2026_dev.parquet",
@@ -1245,6 +1316,7 @@ def _common_paths(ctx: FPNAAJobContext) -> dict[str, Path]:
         "config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v5.yaml",
         "v6_config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v6.yaml",
         "v8_config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v8.yaml",
+        "v9_config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v9.yaml",
         "safety_config": ctx.repo_root
         / "configs"
         / "experiment"
@@ -1282,6 +1354,7 @@ def _validate_stage_prerequisites(ctx: FPNAAJobContext, stage: JobStage) -> None
         ),
         JobStage.FRONTEND_PROBE: (JobStage.C0,),
         JobStage.LAYERWISE_PREFLIGHT: (JobStage.C0,),
+        JobStage.TAP_REPAIR_PREFLIGHT: (JobStage.C0,),
     }
     for prerequisite in prerequisites[stage]:
         _require_gate(ctx, prerequisite)

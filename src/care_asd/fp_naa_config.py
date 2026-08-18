@@ -158,6 +158,36 @@ class FPLayerwiseConfig(BaseModel):
     heldout_retention_q05_minimum: float = Field(ge=0.0)
 
 
+class FPTapRepairConfig(BaseModel):
+    """Frozen pre-encoder repair and mechanism-preflight contract for FP-NAA v9."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    tap: Literal[0]
+    preflight_seed: int = Field(ge=0)
+    preflight_train_clips: int = Field(gt=0)
+    preflight_validation_clips: int = Field(gt=0)
+    preflight_heldout_clips: int = Field(gt=0)
+    common_epochs: int = Field(gt=0)
+    branch_epochs: int = Field(gt=0)
+    batch_size: int = Field(gt=0)
+    learning_rate: float = Field(gt=0.0)
+    weight_decay: float = Field(ge=0.0)
+    gradient_clip_norm: float = Field(gt=0.0)
+    tangent_mean_weight: float = Field(ge=0.0)
+    tangent_tail_weight: float = Field(gt=0.0)
+    tangent_relative_error_limit: float = Field(gt=0.0)
+    tangent_tail_fraction: float = Field(gt=0.0, le=1.0)
+    function_anchor_weight: float = Field(gt=0.0)
+    function_anchor_relative_limit: float = Field(gt=0.0)
+    retention_median_minimum: float = Field(ge=0.0)
+    retention_q05_minimum: float = Field(ge=0.0)
+    retention_median_gain_minimum: float = Field(ge=0.0)
+    retention_q05_gain_minimum: float = Field(ge=0.0)
+    heldout_retention_median_minimum: float = Field(ge=0.0)
+    heldout_retention_q05_minimum: float = Field(ge=0.0)
+
+
 class FPGatesConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -201,6 +231,7 @@ class FPNAAConfig(BaseModel):
     training: FPTrainingConfig
     observability: FPObservabilityConfig | None = None
     layerwise: FPLayerwiseConfig | None = None
+    tap_repair: FPTapRepairConfig | None = None
     gates: FPGatesConfig
 
 
@@ -254,6 +285,11 @@ def load_fp_naa_config(path: str | Path) -> FPNAAConfig:
             raise ValueError("layerwise insertion_layers must be in [1, 12]")
         if config.layerwise.preflight_heldout_clips > config.layerwise.preflight_validation_clips:
             raise ValueError("preflight heldout clips cannot exceed validation clips")
+    if config.tap_repair is not None:
+        if config.tap_repair.preflight_heldout_clips > config.tap_repair.preflight_validation_clips:
+            raise ValueError("tap-repair heldout clips cannot exceed validation clips")
+        if config.layerwise is not None:
+            raise ValueError("tap-repair and layerwise preflights are mutually exclusive")
     objective = config.objective
     if objective.gain_lower_bound > objective.gain_upper_bound:
         raise ValueError("gain_lower_bound must not exceed gain_upper_bound")

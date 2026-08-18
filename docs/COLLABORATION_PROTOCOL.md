@@ -58,6 +58,11 @@ After the valid V6 no-tap result, V8 uses the equally explicit `layerwise-prefli
 normal-only bounded mechanism test, not a performance screen, and is never selected by
 `job continue`.
 
+After the valid V8 mechanism failure, V9 uses the explicit `tap-repair-preflight` stage. It is the
+only authorized next experiment: a normal-only tap-0 repair test with immutable MSE and ACTT
+branches. The controller requires the exact failed V8 gate before it starts, and it does not read
+development anomaly labels or enter the automatic main sequence.
+
 ## Required preflight artifact
 
 Run this after cloning/syncing a server, and after a material environment
@@ -108,7 +113,7 @@ care-asd fp-naa job status
 ```
 
 The start command must return the run ID and PID immediately. Status is read
-from `state.env` (`RUNNING`, `DONE`, or `FAILED`) and the latest log tail; it
+from the atomic `state.json` (`RUNNING`, `DONE`, or `FAILED`) and the latest log tail; it
 must not contain a polling sleep. Completion is determined by `DONE`,
 `task_status=0`, and the durable report commit, not by GPU utilization or an
 interactive-shell notification.

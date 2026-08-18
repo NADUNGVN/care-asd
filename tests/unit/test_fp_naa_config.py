@@ -35,10 +35,7 @@ def test_v1_through_v5_configs_are_versioned_without_changing_frozen_gates() -> 
     assert v3.backend == v1.backend
     assert v3.gates == v1.gates
     assert v4.experiment_id == "fp_naa_v4_reference_only_equivariant"
-    assert (
-        v4.screening_c1_reuse_run_id
-        == "server02_fp_naa_screening_20260817T145911Z"
-    )
+    assert v4.screening_c1_reuse_run_id == "server02_fp_naa_screening_20260817T145911Z"
     assert v4.adapter.c2_conditioning_mode == "reference_only_equivariant"
     assert v4.adapter.reference_safety_mode == "none"
     assert v4.adapter.share_c1_weights_for_c2 is False
@@ -61,6 +58,22 @@ def test_v1_through_v5_configs_are_versioned_without_changing_frozen_gates() -> 
     assert v5.augmentation == v1.augmentation
     assert v5.backend == v1.backend
     assert v5.gates == v1.gates
+
+
+def test_v9_freezes_tap0_repair_without_changing_scientific_gates() -> None:
+    v1 = load_fp_naa_config(Path("configs/experiment/fp_naa_v1.yaml"))
+    v9 = load_fp_naa_config(Path("configs/experiment/fp_naa_v9.yaml"))
+
+    assert v9.experiment_id == "fp_naa_v9_preencoder_tangent_repair"
+    assert v9.layerwise is None
+    assert v9.tap_repair is not None
+    assert v9.tap_repair.tap == 0
+    assert v9.tap_repair.preflight_seed == 2608
+    assert v9.tap_repair.heldout_retention_q05_minimum == 0.65
+    assert v9.frontend == v1.frontend
+    assert v9.augmentation == v1.augmentation
+    assert v9.backend == v1.backend
+    assert v9.gates == v1.gates
 
 
 def test_tail_safe_gain_bounds_must_be_ordered(tmp_path: Path) -> None:
