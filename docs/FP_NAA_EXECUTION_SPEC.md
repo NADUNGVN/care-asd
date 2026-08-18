@@ -313,6 +313,13 @@ frontend was only 0.7731/0.1340. The successor therefore begins with the label-f
 performance candidate is authorized unless a frozen pre-encoder tap passes the unchanged
 in-support retention thresholds.
 
+Before any V6 tap result was available, the conditional successor and its anti-leakage decisions
+were frozen in
+[`FP_NAA_V7_CONDITIONAL_EVIDENCE_BYPASS.md`](FP_NAA_V7_CONDITIONAL_EVIDENCE_BYPASS.md).
+It combines the immutable final C1 branch with an exact target-equivariant selected-tap branch via
+cross-fitted normal-calibrated evidence union. Implementation remains prohibited unless V6 selects
+an eligible tap, and ordinary raw multi-depth fusion is a mandatory mechanism comparator.
+
 ## 8. Primary prior art used to set the boundary
 
 - [DCASE 2026 Task 2 setup and exact metric](https://arxiv.org/abs/2606.01578)
