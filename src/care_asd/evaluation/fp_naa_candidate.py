@@ -8,6 +8,7 @@ import math
 import os
 import random
 import shutil
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -763,6 +764,8 @@ def _load_or_train_model(
     for epoch in range(epochs):
         totals = torch.zeros(12, dtype=torch.float64, device=device)
         examples = 0
+        optimizer_steps = 0
+        skipped_optimizer_steps = 0
         auxiliary_scale = _auxiliary_scale(epoch, candidate=candidate, config=config)
         for noisy_clean, reference, teacher_clean, fault_noisy, teacher_fault in loader:
             noisy_clean = noisy_clean.to(device, non_blocking=True)
@@ -811,23 +814,31 @@ def _load_or_train_model(
                     parameters=list(model.parameters()),
                     auxiliary_scale=auxiliary_scale,
                 )
+                torch.nn.utils.clip_grad_norm_(
+                    model.parameters(),
+                    config.training.gradient_clip_norm,
+                    error_if_nonfinite=True,
+                )
+                optimizer.step()
+                optimizer_steps += 1
             else:
                 scaler.scale(effective_total).backward()
                 scaler.unscale_(optimizer)
-            torch.nn.utils.clip_grad_norm_(
-                model.parameters(),
-                config.training.gradient_clip_norm,
-                error_if_nonfinite=True,
-            )
-            if (
-                candidate == "c2_fault_preserving"
-                and auxiliary_scale > 0.0
-                and config.objective.primary_safe_gradient_projection
-            ):
-                optimizer.step()
-            else:
+                gradients_finite = _gradients_are_finite(model.parameters())
+                if gradients_finite:
+                    torch.nn.utils.clip_grad_norm_(
+                        model.parameters(),
+                        config.training.gradient_clip_norm,
+                        error_if_nonfinite=True,
+                    )
+                elif not use_amp:
+                    raise RuntimeError("Non-AMP optimizer produced non-finite gradients")
                 scaler.step(optimizer)
                 scaler.update()
+                if gradients_finite:
+                    optimizer_steps += 1
+                else:
+                    skipped_optimizer_steps += 1
             batch = len(noisy_clean)
             totals += batch * torch.stack(
                 (
@@ -846,6 +857,12 @@ def _load_or_train_model(
                 )
             ).to(dtype=torch.float64)
             examples += batch
+        if optimizer_steps == 0:
+            raise RuntimeError(
+                "No optimizer step succeeded in epoch "
+                f"{epoch + 1}; skipped_steps={skipped_optimizer_steps}; "
+                f"amp_scale={scaler.get_scale()}"
+            )
         epoch_totals = (totals / examples).cpu().tolist()
         history.append(
             {
@@ -864,6 +881,9 @@ def _load_or_train_model(
                 "function_anchor": epoch_totals[9],
                 "tangent_relative_error": epoch_totals[10],
                 "function_anchor_ratio": epoch_totals[11],
+                "optimizer_steps": optimizer_steps,
+                "skipped_optimizer_steps": skipped_optimizer_steps,
+                "amp_scale": float(scaler.get_scale()),
             }
         )
         scheduler.step()
@@ -1110,6 +1130,14 @@ def _primary_safe_backward(
             auxiliary_value = auxiliary_value - coefficient * primary_gradient
         parameter.grad = primary_value + auxiliary_scale * auxiliary_value
     return cosine, conflict
+
+
+def _gradients_are_finite(parameters: Iterable[torch.nn.Parameter]) -> bool:
+    """Return whether every materialized optimizer gradient is finite."""
+    return all(
+        parameter.grad is None or bool(torch.isfinite(parameter.grad).all())
+        for parameter in parameters
+    )
 
 
 def _write_retention_diagnostics(

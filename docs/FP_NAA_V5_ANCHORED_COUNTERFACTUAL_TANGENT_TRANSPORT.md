@@ -125,11 +125,17 @@ reported that the learning-rate scheduler advanced before any optimizer step.
 The cause was the exact-anchor expression `sqrt(mean((F_theta-A)^2))`: V5 initializes with
 `F_theta == A`, where that expression has an undefined derivative. The resulting non-finite
 gradient caused AMP to skip every optimizer update. The repair replaces it with the exact-zero,
-finite-gradient smooth norm `sqrt(mean(x^2)+eps^2)-eps`, makes non-finite gradient clipping fail
-fast, and adds regressions requiring both finite exact-anchor gradients and a finite C2 checkpoint
-that differs from its C1 initialization. The server runtime check also performs an AMP
-exact-anchor optimizer step and requires both an unchanged loss scale and changed finite model
-parameters before any experiment may start.
+finite-gradient smooth norm `sqrt(mean(x^2)+eps^2)-eps` and adds regressions requiring both finite
+exact-anchor gradients and a finite C2 checkpoint that differs from its C1 initialization.
+
+The first CUDA preflight at commit `9c25874` also showed that the default AMP loss scale can
+overflow on the exact-anchor probe before backoff. That transient overflow is not equivalent to a
+scale-independent NaN. The repaired optimizer therefore lets `GradScaler` skip and reduce scale,
+but requires at least one finite optimizer update in every epoch. It records successful steps,
+skipped steps, and final scale; a persistent non-finite gradient fails the epoch. The server probe
+likewise permits at most 32 deterministic scale reductions, then requires changed finite model
+parameters. Post-training attestation records the absolute and relative C2 displacement from the
+registered C1 checkpoint.
 
 No config value, data split, candidate seed, score backend, or frozen G2/G3 threshold was changed.
 The unchanged preregistered V5 experiment must be rerun from fresh C2 checkpoints before ACTT can

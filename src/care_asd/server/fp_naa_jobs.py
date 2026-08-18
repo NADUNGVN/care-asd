@@ -241,7 +241,10 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
         checks["memory_efficient_sdp_enabled"] = torch.backends.cuda.mem_efficient_sdp_enabled()
         checks["math_sdp_enabled"] = torch.backends.cuda.math_sdp_enabled()
         try:
-            from care_asd.evaluation.fp_naa_candidate import _primary_safe_backward
+            from care_asd.evaluation.fp_naa_candidate import (
+                _gradients_are_finite,
+                _primary_safe_backward,
+            )
             from care_asd.fp_naa_config import FPObjectiveConfig
             from care_asd.models.fp_naa_adapter import (
                 BandwiseReferenceAdapter,
@@ -359,30 +362,43 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
             probe_teacher_delta = torch.zeros_like(probe_clean)
             probe_teacher_delta[..., 0] = 0.05
             probe_fault = probe_clean + 0.5 * probe_teacher_delta
-            probe_optimizer.zero_grad(set_to_none=True)
-            with torch.autocast(device_type="cuda", enabled=True):
-                probe_student_clean = probe_model(probe_clean, probe_reference)
-                probe_student_fault = probe_model(probe_fault, probe_reference)
-                with torch.no_grad():
-                    probe_anchor_clean = probe_anchor(probe_clean, probe_reference)
-                probe_loss = fp_naa_loss(
-                    objective="c2_fault_preserving",
-                    student_clean=probe_student_clean,
-                    teacher_clean=probe_teacher_clean,
-                    student_fault=probe_student_fault,
-                    teacher_fault=probe_teacher_clean + probe_teacher_delta,
-                    anchor_clean=probe_anchor_clean,
-                    config=anchored_objective,
-                )
             probe_before = [parameter.detach().clone() for parameter in probe_model.parameters()]
-            probe_scale_before = probe_scaler.get_scale()
-            probe_scaler.scale(probe_loss.total).backward()
-            probe_scaler.unscale_(probe_optimizer)
-            torch.nn.utils.clip_grad_norm_(probe_model.parameters(), 1.0, error_if_nonfinite=True)
-            probe_scaler.step(probe_optimizer)
-            probe_scaler.update()
-            if probe_scaler.get_scale() < probe_scale_before:
-                raise RuntimeError("Exact-anchor AMP optimizer step was skipped")
+            probe_skips = 0
+            probe_succeeded = False
+            for _ in range(32):
+                probe_optimizer.zero_grad(set_to_none=True)
+                with torch.autocast(device_type="cuda", enabled=True):
+                    probe_student_clean = probe_model(probe_clean, probe_reference)
+                    probe_student_fault = probe_model(probe_fault, probe_reference)
+                    with torch.no_grad():
+                        probe_anchor_clean = probe_anchor(probe_clean, probe_reference)
+                    probe_loss = fp_naa_loss(
+                        objective="c2_fault_preserving",
+                        student_clean=probe_student_clean,
+                        teacher_clean=probe_teacher_clean,
+                        student_fault=probe_student_fault,
+                        teacher_fault=probe_teacher_clean + probe_teacher_delta,
+                        anchor_clean=probe_anchor_clean,
+                        config=anchored_objective,
+                    )
+                probe_scaler.scale(probe_loss.total).backward()
+                probe_scaler.unscale_(probe_optimizer)
+                probe_gradients_finite = _gradients_are_finite(probe_model.parameters())
+                if probe_gradients_finite:
+                    torch.nn.utils.clip_grad_norm_(
+                        probe_model.parameters(), 1.0, error_if_nonfinite=True
+                    )
+                probe_scaler.step(probe_optimizer)
+                probe_scaler.update()
+                if probe_gradients_finite:
+                    probe_succeeded = True
+                    break
+                probe_skips += 1
+            if not probe_succeeded:
+                raise RuntimeError(
+                    "Exact-anchor AMP optimizer did not recover after 32 scale reductions; "
+                    f"final_scale={probe_scaler.get_scale()}"
+                )
             if not any(
                 not torch.equal(before, after)
                 for before, after in zip(probe_before, probe_model.parameters(), strict=True)
@@ -489,6 +505,7 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
         checks["target_jacobian_identity_probe"] = "passed"
         checks["anchored_tangent_transport_probe"] = "passed"
         checks["anchored_optimizer_update_probe"] = "passed"
+        checks["anchored_optimizer_overflow_retries"] = probe_skips
     return {"schema_version": SCHEMA_VERSION, "runtime": checks}
 
 

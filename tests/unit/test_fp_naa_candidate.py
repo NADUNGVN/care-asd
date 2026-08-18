@@ -17,6 +17,7 @@ from care_asd.evaluation.fp_naa_candidate import (
     _deterministic_runtime_metadata,
     _exclude_machine,
     _fault_diagnostics,
+    _gradients_are_finite,
     _load_or_train_model,
     _new_model,
     _primary_safe_backward,
@@ -261,6 +262,9 @@ def test_v5_uses_registered_c1_checkpoint_for_anchored_finetune(tmp_path: Path) 
             "function_anchor",
             "tangent_relative_error",
             "function_anchor_ratio",
+            "optimizer_steps",
+            "skipped_optimizer_steps",
+            "amp_scale",
         ]
     ).issubset(history.columns)
 
@@ -278,6 +282,15 @@ def test_primary_safe_backward_removes_conflicting_auxiliary_component() -> None
     assert conflict.item() == 1.0
     assert cosine.item() < 0.0
     torch.testing.assert_close(parameter.grad, torch.tensor([2.0, 1.0]))
+
+
+def test_gradient_finiteness_probe_distinguishes_amp_overflow() -> None:
+    parameter = torch.nn.Parameter(torch.tensor([1.0]))
+    assert _gradients_are_finite([parameter])
+    parameter.grad = torch.tensor([2.0])
+    assert _gradients_are_finite([parameter])
+    parameter.grad = torch.tensor([float("inf")])
+    assert not _gradients_are_finite([parameter])
 
 
 def test_v3_c2_reuses_c1_weights_with_parameter_free_projection(tmp_path: Path) -> None:
