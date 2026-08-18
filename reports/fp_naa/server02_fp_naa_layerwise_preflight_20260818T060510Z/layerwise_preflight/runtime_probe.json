@@ -1,0 +1,8 @@
+{
+  "frozen_path_relative_error": 5.869454184903589e-07,
+  "frozen_path_relative_error_maximum": 1e-05,
+  "optimizer_update_norm": 0.12832585127023874,
+  "schema_version": 1,
+  "status": "passed",
+  "trainable_parameters": 11876352
+}

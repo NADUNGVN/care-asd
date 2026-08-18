@@ -1,0 +1,51 @@
+{
+  "authorization": "A pass authorizes V8 three-seed G2 implementation and execution only. It is not a development performance result and does not authorize LOMO.",
+  "checks": {
+    "actual_beats_runtime_probe": true,
+    "finite_real_updates": true,
+    "heldout_retention_median": false,
+    "heldout_retention_q05": false,
+    "in_support_retention_median": false,
+    "in_support_retention_q05": false,
+    "median_gain_over_l1": true,
+    "normal_function_anchor": true,
+    "q05_gain_over_l1": false
+  },
+  "criteria": {
+    "heldout_retention_median_minimum": 0.85,
+    "heldout_retention_q05_minimum": 0.6,
+    "normal_function_drift_maximum": 0.1,
+    "retention_median_gain_minimum": 0.05,
+    "retention_median_minimum": 0.9,
+    "retention_q05_gain_minimum": 0.1,
+    "retention_q05_minimum": 0.6
+  },
+  "gate": "V8_M_layerwise_mechanism_preflight",
+  "metrics": {
+    "l1_in_support_retention_median": 0.7145631588768273,
+    "l1_in_support_retention_q05": 0.08373789190076787,
+    "l2_heldout_retention_median": 0.8310962627073277,
+    "l2_heldout_retention_q05": 0.30016171199612285,
+    "l2_in_support_retention_median": 0.7810628887341104,
+    "l2_in_support_retention_q05": 0.10920489090030029,
+    "l2_minus_l1_retention_median": 0.06649972985728314,
+    "l2_minus_l1_retention_q05": 0.02546699899953242,
+    "l2_normal_function_drift_median": 0.08185541358834326
+  },
+  "optimizer_update_norms": {
+    "common": 15.068397317954739,
+    "l1": 8.184771024333099,
+    "l2": 5.671692947421786
+  },
+  "passed": false,
+  "runtime_probe": {
+    "frozen_path_relative_error": 5.869454184903589e-07,
+    "frozen_path_relative_error_maximum": 1e-05,
+    "optimizer_update_norm": 0.12832585127023874,
+    "schema_version": 1,
+    "status": "passed",
+    "trainable_parameters": 11876352
+  },
+  "schema_version": 1,
+  "trainable_parameters": 11876352
+}
