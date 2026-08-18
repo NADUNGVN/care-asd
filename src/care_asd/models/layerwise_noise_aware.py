@@ -39,8 +39,6 @@ class LayerwiseNoiseAwareEncoder(nn.Module):
         layers = getattr(encoder, "layers", None)
         if encoder is None or layers is None or len(layers) < 1:
             raise ValueError("beats_model must expose a non-empty encoder.layers sequence")
-        if float(getattr(encoder, "layerdrop", 0.0)) != 0.0:
-            raise ValueError("Layerwise deterministic execution requires BEATs layerdrop=0")
         layer_count = len(layers)
         chosen = insertion_layers or tuple(range(1, layer_count + 1))
         if not chosen or tuple(sorted(set(chosen))) != chosen:

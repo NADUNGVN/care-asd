@@ -59,6 +59,26 @@ def test_zero_initialized_layerwise_adapter_preserves_frozen_path() -> None:
     torch.testing.assert_close(result, target + 0.2)
 
 
+def test_configured_layerdrop_is_inactive_on_the_frozen_eval_path() -> None:
+    beats = _FakeBEATs()
+    beats.encoder.layerdrop = 0.05
+    model = LayerwiseNoiseAwareEncoder(
+        beats_model=beats,
+        frequency_patches=2,
+        embedding_dim=4,
+        hidden_dim=4,
+        attention_heads=1,
+        dropout=0.0,
+        insertion_layers=(1, 2),
+    ).train()
+    target = torch.randn(2, 2, 2, 4)
+    reference = torch.randn_like(target)
+    result = model(target, reference)
+    torch.testing.assert_close(result, target + 0.2)
+    assert model.beats_model.training is False
+    assert all(layer.training is False for layer in model.beats_model.encoder.layers)
+
+
 def test_layerwise_optimizer_updates_only_adapter_state() -> None:
     model = _model().train()
     before = model.clone_adapter_state_dict()
