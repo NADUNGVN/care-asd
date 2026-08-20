@@ -37,6 +37,8 @@ CHECKPOINT_URL = (
     "https://huggingface.co/lpepino/beats_ckpts/resolve/"
     "a2ddb6b0411c39942ae144a6414872e14e5a4329/BEATs_iter3.pt"
 )
+V10_TAP_SOURCE_RUN_ID = "server02_fp_naa_tap_repair_preflight_20260818T072423Z"
+V10_C1_SOURCE_RUN_ID = "server02_fp_naa_screening_20260817T083029Z"
 
 
 class JobStage(StrEnum):
@@ -51,6 +53,7 @@ class JobStage(StrEnum):
     FRONTEND_PROBE = "frontend-probe"
     LAYERWISE_PREFLIGHT = "layerwise-preflight"
     TAP_REPAIR_PREFLIGHT = "tap-repair-preflight"
+    EVIDENCE_PREFLIGHT = "evidence-preflight"
 
 
 class JobStatus(StrEnum):
@@ -172,6 +175,7 @@ _STAGE_PREFIX = {
     JobStage.FRONTEND_PROBE: "server02_fp_naa_frontend_probe",
     JobStage.LAYERWISE_PREFLIGHT: "server02_fp_naa_layerwise_preflight",
     JobStage.TAP_REPAIR_PREFLIGHT: "server02_fp_naa_tap_repair_preflight",
+    JobStage.EVIDENCE_PREFLIGHT: "server02_fp_naa_evidence_preflight",
 }
 
 _GATE_CONTRACT = {
@@ -184,6 +188,7 @@ _GATE_CONTRACT = {
     JobStage.FRONTEND_PROBE: ("frontend_probe", "passed"),
     JobStage.LAYERWISE_PREFLIGHT: ("layerwise_preflight", "passed"),
     JobStage.TAP_REPAIR_PREFLIGHT: ("tap_repair_preflight", "passed"),
+    JobStage.EVIDENCE_PREFLIGHT: ("evidence_preflight", "passed"),
 }
 
 
@@ -264,6 +269,7 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
                 _gradients_are_finite,
                 _primary_safe_backward,
             )
+            from care_asd.evaluation.fp_naa_evidence_union import monotone_evidence_union
             from care_asd.fp_naa_config import FPObjectiveConfig
             from care_asd.models.fp_naa_adapter import (
                 BandwiseReferenceAdapter,
@@ -509,6 +515,18 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
                 atol=1.0e-6,
             ):
                 raise RuntimeError("Reference-only adapter target Jacobian is not identity")
+            import numpy as np
+
+            base_evidence = np.asarray([0.2, 0.7, 1.1], dtype=np.float64)
+            union_evidence = monotone_evidence_union(
+                base_evidence,
+                {"probe": np.asarray([0.9, 0.1, 1.4], dtype=np.float64)},
+                {"probe": 0.3},
+            )
+            if np.any(union_evidence < base_evidence) or not np.allclose(
+                union_evidence, np.asarray([0.6, 0.7, 1.1])
+            ):
+                raise RuntimeError("CC-MEU violated per-clip base monotonicity")
             torch.cuda.synchronize()
         except (AssertionError, RuntimeError, ValueError) as exc:
             raise JobError(
@@ -525,6 +543,7 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
         checks["anchored_tangent_transport_probe"] = "passed"
         checks["anchored_optimizer_update_probe"] = "passed"
         checks["anchored_optimizer_overflow_retries"] = probe_skips
+        checks["counterfactual_certified_monotone_evidence_union_probe"] = "passed"
     return {"schema_version": SCHEMA_VERSION, "runtime": checks}
 
 
@@ -805,6 +824,7 @@ def _execute_stage(
         JobStage.FRONTEND_PROBE: _run_frontend_probe,
         JobStage.LAYERWISE_PREFLIGHT: _run_layerwise_preflight,
         JobStage.TAP_REPAIR_PREFLIGHT: _run_tap_repair_preflight,
+        JobStage.EVIDENCE_PREFLIGHT: _run_evidence_preflight,
     }
     return handlers[stage](ctx, state_path, run_id, workers)
 
@@ -1309,6 +1329,69 @@ def _run_tap_repair_preflight(
     )
 
 
+def _run_evidence_preflight(
+    ctx: FPNAAJobContext, state_path: Path, run_id: str, workers: int
+) -> StageResult:
+    paths = _common_paths(ctx)
+    _require_gate(ctx, JobStage.C0)
+    v9_gate_path = ctx.reports_root / V10_TAP_SOURCE_RUN_ID / "tap_repair_preflight" / "gate.json"
+    if not v9_gate_path.is_file():
+        raise JobError(
+            "V9_EVIDENCE_MISSING",
+            "V10 requires the completed V9 tap-repair mechanism gate",
+        )
+    v9_gate = _read_json(v9_gate_path)
+    if (
+        v9_gate.get("gate") != "V9_M_preencoder_tangent_repair"
+        or v9_gate.get("passed") is not False
+    ):
+        raise JobError(
+            "V9_CLOSURE_MISMATCH",
+            "V10 is authorized only by the frozen failed V9 mechanism result",
+            v9_gate,
+        )
+    report = ctx.reports_root / run_id / "evidence_preflight"
+    tap_cache = ctx.data_root / "fp_naa" / "tap_repair_preflight_cache" / "v9_seed2608"
+    c1_checkpoints = ctx.data_root / "fp_naa" / "checkpoints" / V10_C1_SOURCE_RUN_ID
+    _run_pytest(
+        ctx,
+        "tests/unit/test_fp_naa_evidence_union.py",
+        "tests/unit/test_fp_naa_evidence_preflight.py",
+        "tests/unit/test_fp_naa_config.py",
+    )
+    _set_step(state_path, "evidence-preflight")
+    _call_cli(
+        ctx,
+        "fp-naa",
+        "evidence-preflight-dev",
+        "--base-cache-dir",
+        str(paths["base_cache"]),
+        "--augmentation-cache-dir",
+        str(paths["augmentation_cache"]),
+        "--tap-cache-dir",
+        str(tap_cache),
+        "--tap-contract",
+        str(v9_gate_path.parent / "contract.json"),
+        "--c1-checkpoint-dir",
+        str(c1_checkpoints),
+        "--output-dir",
+        str(report),
+        "--config",
+        str(paths["v10_config"]),
+        "--workers",
+        str(workers),
+        "--device",
+        "cuda",
+    )
+    return _stage_result(
+        report / "gate.json",
+        "passed",
+        report / "summary.csv",
+        report / "expert_certificates.csv",
+        report / "policy.json",
+    )
+
+
 def _common_paths(ctx: FPNAAJobContext) -> dict[str, Path]:
     return {
         "manifest": ctx.repo_root / "data" / "manifests" / "dcase2026_dev.parquet",
@@ -1317,6 +1400,7 @@ def _common_paths(ctx: FPNAAJobContext) -> dict[str, Path]:
         "v6_config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v6.yaml",
         "v8_config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v8.yaml",
         "v9_config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v9.yaml",
+        "v10_config": ctx.repo_root / "configs" / "experiment" / "fp_naa_v10.yaml",
         "safety_config": ctx.repo_root
         / "configs"
         / "experiment"
@@ -1355,6 +1439,7 @@ def _validate_stage_prerequisites(ctx: FPNAAJobContext, stage: JobStage) -> None
         JobStage.FRONTEND_PROBE: (JobStage.C0,),
         JobStage.LAYERWISE_PREFLIGHT: (JobStage.C0,),
         JobStage.TAP_REPAIR_PREFLIGHT: (JobStage.C0,),
+        JobStage.EVIDENCE_PREFLIGHT: (JobStage.C0,),
     }
     for prerequisite in prerequisites[stage]:
         _require_gate(ctx, prerequisite)

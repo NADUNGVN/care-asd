@@ -63,6 +63,30 @@ only authorized next experiment: a normal-only tap-0 repair test with immutable 
 branches. The controller requires the exact failed V8 gate before it starts, and it does not read
 development anomaly labels or enter the automatic main sequence.
 
+After the valid V9 mechanism failure, V10 uses the explicit `evidence-preflight` stage. It reuses
+immutable caches and C1 checkpoints, admits score experts using cross-fitted training-normal and
+in-support pseudo-fault evidence, and treats held-out friction as a gate only. The controller
+requires the exact failed V9 gate and never enters the automatic main sequence.
+
+## Interruption-resistant execution
+
+Neither the researcher terminal nor a Codex tool call may own a long-running task. This rule covers
+training, cache generation, complete test suites, downloads, and large report synthesis.
+
+- On SERVER-02, start long FP-NAA work only through `care-asd fp-naa job start`. It must detach,
+  return JSON immediately, and persist `state.json`, `job.log`, and a report path.
+- Codex runs any local check expected to exceed five seconds in a hidden detached process with
+  separate stdout/stderr files. Codex then uses short read-only process/log checks; it never waits
+  synchronously for the full process.
+- Status checks contain no `sleep`, watch loop, foreground `tail -f`, or interactive pager.
+- An interrupted UI/tool turn does not imply task failure. Completion comes only from the persisted
+  exit status and artifact, never from the disappearance of terminal output.
+- A task is never restarted merely because one status request returned no output. First inspect its
+  PID/state/log so duplicate jobs cannot be created.
+- Commands supplied to the researcher remain one physical line. Start, status, and any later
+  artifact inspection are separate commands, so a slow Git operation cannot make a completed
+  experiment look like an active training process.
+
 ## Required preflight artifact
 
 Run this after cloning/syncing a server, and after a material environment

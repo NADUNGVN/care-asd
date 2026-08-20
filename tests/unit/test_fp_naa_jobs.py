@@ -11,6 +11,8 @@ import pytest
 from care_asd.server.fp_naa_jobs import (
     CUBLAS_WORKSPACE_CONFIG,
     SCHEMA_VERSION,
+    V10_C1_SOURCE_RUN_ID,
+    V10_TAP_SOURCE_RUN_ID,
     FPNAAJobContext,
     JobError,
     JobStage,
@@ -20,6 +22,7 @@ from care_asd.server.fp_naa_jobs import (
     _common_paths,
     _launch_lock,
     _next_stage,
+    _stage_gate_path,
     _write_latest,
     _write_state,
     continue_fp_naa_job,
@@ -202,6 +205,19 @@ def test_server_pipeline_uses_the_versioned_equivariant_config(tmp_path: Path) -
     assert _common_paths(context)["v6_config"].name == "fp_naa_v6.yaml"
     assert _common_paths(context)["v8_config"].name == "fp_naa_v8.yaml"
     assert _common_paths(context)["v9_config"].name == "fp_naa_v9.yaml"
+    assert _common_paths(context)["v10_config"].name == "fp_naa_v10.yaml"
+
+
+def test_v10_evidence_preflight_has_a_stable_report_contract(tmp_path: Path) -> None:
+    context = _context(tmp_path)
+    run_root = context.reports_root / "server02_fp_naa_evidence_preflight_20260820T000000Z"
+
+    assert JobStage.EVIDENCE_PREFLIGHT.value == "evidence-preflight"
+    assert _stage_gate_path(run_root, JobStage.EVIDENCE_PREFLIGHT) == (
+        run_root / "evidence_preflight" / "gate.json"
+    )
+    assert V10_TAP_SOURCE_RUN_ID == "server02_fp_naa_tap_repair_preflight_20260818T072423Z"
+    assert V10_C1_SOURCE_RUN_ID == "server02_fp_naa_screening_20260817T083029Z"
 
 
 def test_state_schema_is_validated() -> None:

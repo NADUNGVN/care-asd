@@ -76,6 +76,34 @@ def test_v9_freezes_tap0_repair_without_changing_scientific_gates() -> None:
     assert v9.gates == v1.gates
 
 
+def test_v10_freezes_counterfactual_certified_evidence_union() -> None:
+    v1 = load_fp_naa_config(Path("configs/experiment/fp_naa_v1.yaml"))
+    v10 = load_fp_naa_config(Path("configs/experiment/fp_naa_v10.yaml"))
+
+    assert v10.experiment_id == "fp_naa_v10_counterfactual_certified_evidence_union"
+    assert v10.layerwise is None
+    assert v10.tap_repair is None
+    assert v10.evidence_union is not None
+    assert (
+        v10.evidence_union.tap_source_run_id
+        == "server02_fp_naa_tap_repair_preflight_20260818T072423Z"
+    )
+    assert v10.evidence_union.c1_source_run_id == "server02_fp_naa_screening_20260817T083029Z"
+    assert v10.evidence_union.c1_seeds == [42, 2026, 13711]
+    assert v10.evidence_union.crossfit_folds == 5
+    assert v10.evidence_union.minimum_machine_pass_fraction == 0.70
+    assert v10.adapter.dropout == v1.adapter.dropout
+    assert v10.adapter.reference_dropout_probability == v1.adapter.reference_dropout_probability
+    assert v10.adapter.reference_corruption_probability == (
+        v1.adapter.reference_corruption_probability
+    )
+    assert v10.training == v1.training
+    assert v10.frontend == v1.frontend
+    assert v10.augmentation == v1.augmentation
+    assert v10.backend == v1.backend
+    assert v10.gates == v1.gates
+
+
 def test_tail_safe_gain_bounds_must_be_ordered(tmp_path: Path) -> None:
     payload = yaml.safe_load(Path("configs/experiment/fp_naa_v2.yaml").read_text())
     payload["objective"]["gain_lower_bound"] = 1.3

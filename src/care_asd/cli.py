@@ -1749,6 +1749,45 @@ def fp_naa_tap_repair_preflight_dev(
     )
 
 
+@fp_naa_app.command("evidence-preflight-dev")
+def fp_naa_evidence_preflight_dev(
+    base_cache_dir: Annotated[Path, typer.Option("--base-cache-dir")],
+    augmentation_cache_dir: Annotated[Path, typer.Option("--augmentation-cache-dir")],
+    tap_cache_dir: Annotated[Path, typer.Option("--tap-cache-dir")],
+    tap_contract: Annotated[Path, typer.Option("--tap-contract")],
+    c1_checkpoint_dir: Annotated[Path, typer.Option("--c1-checkpoint-dir")],
+    output_dir: Annotated[Path, typer.Option("--output-dir")],
+    config: Annotated[Path, typer.Option("--config")],
+    workers: Annotated[int, typer.Option("--workers", min=1, max=16)] = 12,
+    device: Annotated[str, typer.Option("--device")] = "cuda",
+) -> None:
+    """Run the anomaly-label-free V10 evidence-union mechanism preflight."""
+    try:
+        from care_asd.evaluation.fp_naa_evidence_preflight import (
+            run_evidence_union_preflight,
+        )
+
+        result = run_evidence_union_preflight(
+            base_cache_directory=base_cache_dir,
+            augmentation_cache_directory=augmentation_cache_dir,
+            tap_cache_directory=tap_cache_dir,
+            tap_contract_path=tap_contract,
+            c1_checkpoint_directory=c1_checkpoint_dir,
+            output_directory=output_dir,
+            config_path=config,
+            workers=workers,
+            device=device,
+        )
+    except (FileNotFoundError, OSError, RuntimeError, ValueError) as exc:
+        console.print(f"[red]FP-NAA V10 evidence preflight failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    status = "passed" if result.gate_passed else "failed"
+    console.print(
+        f"[green]FP-NAA V10 evidence preflight complete.[/green] gate={status} "
+        f"summary={result.summary_path}"
+    )
+
+
 @fp_naa_app.command("cache-reference-safety")
 def fp_naa_cache_reference_safety(
     base_cache_dir: Annotated[Path, typer.Option("--base-cache-dir")],

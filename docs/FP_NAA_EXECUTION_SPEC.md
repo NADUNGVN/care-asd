@@ -339,6 +339,16 @@ preflight, raw/MSE controls, unchanged scientific gates, and novelty limits are 
 [`FP_NAA_V9_PREENCODER_TANGENT_REPAIR.md`](FP_NAA_V9_PREENCODER_TANGENT_REPAIR.md) before any V9
 result is generated.
 
+The valid V9-M run `server02_fp_naa_tap_repair_preflight_20260818T072423Z` then closed the repair
+hypothesis. P2 retained only 0.6674/0.2433 median/q05 in-support evidence and 0.6739/0.3695 on the
+held-out friction family; even the raw tap-0 path reached only 0.8429/0.4240. No V9 development
+screening or LOMO is authorized. Rather than train another representation repair, the next bounded
+hypothesis preserves the immutable strong C1 score and admits supplementary score evidence only
+after cross-fitted normal-tail control and pseudo-fault certification. Its expert set, penalties,
+mechanism gates, development controls, and post-challenge unseen-machine protocol are frozen in
+[`FP_NAA_V10_COUNTERFACTUAL_CERTIFIED_EVIDENCE_UNION.md`](FP_NAA_V10_COUNTERFACTUAL_CERTIFIED_EVIDENCE_UNION.md)
+before V10-M execution.
+
 ## 8. Primary prior art used to set the boundary
 
 - [DCASE 2026 Task 2 setup and exact metric](https://arxiv.org/abs/2606.01578)

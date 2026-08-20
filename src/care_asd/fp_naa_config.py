@@ -188,6 +188,37 @@ class FPTapRepairConfig(BaseModel):
     heldout_retention_q05_minimum: float = Field(ge=0.0)
 
 
+class FPEvidenceUnionConfig(BaseModel):
+    """Frozen score-space mechanism contract for FP-NAA v10.
+
+    The base score is an immutable C1 ensemble.  Supplementary experts may only
+    add evidence after cross-fitted normal-tail calibration; they can never
+    reduce the base evidence for an individual clip.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    tap_source_run_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+    c1_source_run_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+    c1_seeds: list[int]
+    supplementary_experts: list[Literal["tap0_rdp8_beam", "final_rdp4_beam", "final_global_ap"]]
+    crossfit_folds: int = Field(ge=2)
+    calibration_tail_probability: float = Field(gt=0.0, lt=0.5)
+    calibration_epsilon: float = Field(gt=0.0, lt=0.1)
+    minimum_in_support_evidence_gain_median: float = Field(ge=0.0)
+    minimum_in_support_evidence_gain_q05: float
+    minimum_heldout_evidence_gain_median: float = Field(ge=0.0)
+    minimum_heldout_evidence_gain_q05: float
+    maximum_clean_activation_fraction: float = Field(gt=0.0, lt=0.5)
+    minimum_machine_pass_fraction: float = Field(gt=0.0, le=1.0)
+    minimum_active_experts: int = Field(gt=0)
+    screening_minimum_gain_over_raw_c1: float = Field(gt=0.0)
+    screening_minimum_gain_over_calibrated_c1: float = Field(gt=0.0)
+    screening_maximum_machine_drop: float = Field(ge=0.0)
+    confirmatory_minimum_gain_over_calibrated_c1: float = Field(gt=0.0)
+    confirmatory_bootstrap_ci_low_minimum: float
+
+
 class FPGatesConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -232,6 +263,7 @@ class FPNAAConfig(BaseModel):
     observability: FPObservabilityConfig | None = None
     layerwise: FPLayerwiseConfig | None = None
     tap_repair: FPTapRepairConfig | None = None
+    evidence_union: FPEvidenceUnionConfig | None = None
     gates: FPGatesConfig
 
 
@@ -290,6 +322,20 @@ def load_fp_naa_config(path: str | Path) -> FPNAAConfig:
             raise ValueError("tap-repair heldout clips cannot exceed validation clips")
         if config.layerwise is not None:
             raise ValueError("tap-repair and layerwise preflights are mutually exclusive")
+    if config.evidence_union is not None:
+        union = config.evidence_union
+        if not union.c1_seeds or union.c1_seeds != sorted(set(union.c1_seeds)):
+            raise ValueError("evidence-union C1 seeds must be sorted and unique")
+        if not union.supplementary_experts or len(union.supplementary_experts) != len(
+            set(union.supplementary_experts)
+        ):
+            raise ValueError("evidence-union experts must be non-empty and unique")
+        if union.minimum_active_experts > len(union.supplementary_experts):
+            raise ValueError("minimum_active_experts exceeds registered experts")
+        if union.crossfit_folds > 10:
+            raise ValueError("evidence-union crossfit_folds must not exceed 10")
+        if config.layerwise is not None or config.tap_repair is not None:
+            raise ValueError("evidence-union and representation preflights are mutually exclusive")
     objective = config.objective
     if objective.gain_lower_bound > objective.gain_upper_bound:
         raise ValueError("gain_lower_bound must not exceed gain_upper_bound")

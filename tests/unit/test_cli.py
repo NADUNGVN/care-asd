@@ -207,6 +207,20 @@ def test_fp_naa_job_commands_are_exposed_in_help() -> None:
     assert "run-internal" not in result.stdout
 
 
+def test_fp_naa_v10_evidence_preflight_is_exposed_in_help() -> None:
+    result = runner.invoke(app, ["fp-naa", "evidence-preflight-dev", "--help"])
+
+    assert result.exit_code == 0
+    for option in (
+        "--base-cache-dir",
+        "--augmentation-cach",
+        "--tap-cache-dir",
+        "--tap-contract",
+        "--c1-checkpoint-dir",
+    ):
+        assert option in result.stdout
+
+
 def test_fp_naa_runtime_check_rejects_wrong_environment(monkeypatch) -> None:
     monkeypatch.setenv("CONDA_DEFAULT_ENV", "base")
     result = runner.invoke(app, ["fp-naa", "runtime-check"])
