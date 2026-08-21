@@ -68,6 +68,12 @@ immutable caches and C1 checkpoints, admits score experts using cross-fitted tra
 in-support pseudo-fault evidence, and treats held-out friction as a gate only. The controller
 requires the exact failed V9 gate and never enters the automatic main sequence.
 
+The valid V10 mechanism run authorized zero experts and closes the current FP-NAA experiment
+sequence. There is no automatic V11 stage. Literature review, post-hoc diagnostics, or a new
+preregistered document do not authorize server training by themselves; a future controller stage
+must name a distinct mechanism, immutable inputs, leakage boundary, and pass/fail gate before it
+can be implemented.
+
 ## Interruption-resistant execution
 
 Neither the researcher terminal nor a Codex tool call may own a long-running task. This rule covers

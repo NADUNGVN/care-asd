@@ -1,4 +1,4 @@
-"""Reproducible literature and claim-boundary audit for Audit-A1."""
+"""Reproducible literature and claim-boundary audits for CARE-ASD."""
 
 from __future__ import annotations
 
@@ -31,12 +31,18 @@ class LiteratureSource(BaseModel):
         "benchmark_specification",
         "journal_article",
         "conference_paper",
+        "workshop_paper",
         "arxiv_preprint",
         "challenge_technical_report",
     ]
     review_status: Literal["peer_reviewed", "not_peer_reviewed", "official_specification"]
     url: str
-    cluster: Literal["task_context", "direct_asd", "adjacent_signal_processing"]
+    cluster: Literal[
+        "task_context",
+        "direct_asd",
+        "adjacent_signal_processing",
+        "adjacent_model_selection",
+    ]
     method_family: Literal[
         "benchmark_definition",
         "learned_dual_channel_representation",
@@ -46,6 +52,13 @@ class LiteratureSource(BaseModel):
         "adaptive_cancellation",
         "active_noise_control",
         "learned_reference_purification",
+        "backend_diversity_fusion",
+        "domain_aware_score_calibration",
+        "cross_channel_predictive_residual",
+        "multi_encoder_multiview_fusion",
+        "train_normal_profile_ensemble",
+        "heterogeneous_score_fusion",
+        "unsupervised_model_selection",
     ]
     normal_only_asd: bool
     signal_level_transformation: bool
@@ -91,7 +104,7 @@ class ClaimBoundary(BaseModel):
 
 
 class LiteratureAuditConfig(BaseModel):
-    """Strict, versioned contract for the Audit-A1 literature package."""
+    """Strict, versioned contract for one CARE-ASD literature package."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -99,6 +112,15 @@ class LiteratureAuditConfig(BaseModel):
     study_id: str = Field(pattern=r"^[a-z0-9][a-z0-9_-]+$")
     cutoff_date: date
     source_policy: Literal["primary_sources_only"] = "primary_sources_only"
+    required_clusters: tuple[
+        Literal[
+            "task_context",
+            "direct_asd",
+            "adjacent_signal_processing",
+            "adjacent_model_selection",
+        ],
+        ...,
+    ] = ("direct_asd", "adjacent_signal_processing")
     working_title: str = Field(min_length=20)
     central_question: str = Field(min_length=20)
     contribution_statement: str = Field(min_length=20)
@@ -122,18 +144,20 @@ class LiteratureAuditConfig(BaseModel):
             unknown = sorted(set(claim.source_ids) - known_sources)
             if unknown:
                 raise ValueError(f"claim {claim.claim_id} cites unknown sources: {unknown}")
-        if not any(source.cluster == "direct_asd" for source in self.sources):
-            raise ValueError("literature audit requires at least one direct ASD source")
-        if not any(source.cluster == "adjacent_signal_processing" for source in self.sources):
-            raise ValueError(
-                "literature audit requires at least one adjacent signal-processing source"
-            )
+        if not self.required_clusters:
+            raise ValueError("literature audit requires at least one required cluster")
+        if len(self.required_clusters) != len(set(self.required_clusters)):
+            raise ValueError("required_clusters values must be unique")
+        observed_clusters = {source.cluster for source in self.sources}
+        missing_clusters = sorted(set(self.required_clusters) - observed_clusters)
+        if missing_clusters:
+            raise ValueError(f"literature audit is missing required clusters: {missing_clusters}")
         return self
 
 
 @dataclass(frozen=True)
 class LiteratureAuditResult:
-    """Paths written by one immutable Audit-A1 synthesis."""
+    """Paths written by one immutable literature synthesis."""
 
     output_directory: Path
     matrix_path: Path

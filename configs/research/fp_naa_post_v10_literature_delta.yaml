@@ -1,0 +1,238 @@
+schema_version: 1
+study_id: fp_naa_post_v10_literature_delta
+cutoff_date: 2026-08-21
+source_policy: primary_sources_only
+required_clusters: [task_context, direct_asd, adjacent_model_selection]
+
+working_title: "Post-V10 Literature Gate for CARE-ASD Successor Research"
+central_question: "Does the evidence available after the failed V10 mechanism gate justify another bounded FP-NAA performance hypothesis, and which candidate mechanisms remain distinct, leakage-controlled, and falsifiable?"
+contribution_statement: "The post-V10 literature gate rejects threshold-only tail rescue, another correlated BEATs score union, and proxy-fault model selection as immediate successors; it retains cross-channel predictive residuals and domain-aware calibration only as prior-art comparators inside a new safety or transfer study, not as novel components by themselves."
+
+sources:
+  - source_id: dcase2026_task_results
+    year: 2026
+    title: "DCASE 2026 Task 2 Official Results and Technical Reports"
+    authors: "DCASE 2026 Task 2 organizers and participating teams"
+    venue: "DCASE 2026 Challenge"
+    publication_type: benchmark_specification
+    review_status: official_specification
+    url: "https://dcase.community/challenge2026/task-first-shot-unsupervised-anomalous-sound-detection-for-machine-condition-monitoring-results"
+    cluster: task_context
+    method_family: benchmark_definition
+    normal_only_asd: true
+    signal_level_transformation: false
+    evaluates_asd_metrics: true
+    evaluates_known_component_safety: false
+    reports_reference_contamination: true
+    result_direction: context
+    key_finding: "The official result collection shows a broad performance frontier built from heterogeneous encoders, scoring backends, stereo views, calibration rules, and ensembles, with large machine-dependent variation."
+    audit_relationship: "Defines the contemporary comparison set and prevents CARE-ASD from treating ordinary score fusion, stereo processing, or multi-backend ensembling as a new contribution."
+
+  - source_id: dcase2026_submission_policy
+    year: 2026
+    title: "DCASE 2026 Challenge Submission and Technical Report Policy"
+    authors: "DCASE 2026 organizers"
+    venue: "DCASE 2026 Challenge"
+    publication_type: benchmark_specification
+    review_status: official_specification
+    url: "https://dcase.community/challenge2026/submission"
+    cluster: task_context
+    method_family: benchmark_definition
+    normal_only_asd: false
+    signal_level_transformation: false
+    evaluates_asd_metrics: false
+    evaluates_known_component_safety: false
+    reports_reference_contamination: false
+    result_direction: context
+    key_finding: "The official policy distinguishes challenge technical reports from peer-reviewed workshop publications and fixes how system evidence must be described."
+    audit_relationship: "Requires every DCASE technical report in this delta to be treated as a current primary system description rather than peer-reviewed scientific confirmation."
+
+  - source_id: zhou2026_backend_systematic
+    year: 2026
+    title: "Scoring Backends Matter More Than Pooling: A Systematic Study of Training-Free Anomalous Sound Detection under Domain Shift"
+    authors: "Jingwen Zhou; Mingzhe Wang"
+    venue: "arXiv"
+    publication_type: arxiv_preprint
+    review_status: not_peer_reviewed
+    url: "https://arxiv.org/abs/2606.19269"
+    cluster: direct_asd
+    method_family: backend_diversity_fusion
+    normal_only_asd: true
+    signal_level_transformation: false
+    evaluates_asd_metrics: true
+    evaluates_known_component_safety: false
+    reports_reference_contamination: false
+    result_direction: mixed
+    key_finding: "Backend choice moves target-domain AUC much more than temporal pooling; train-normal z-normalized minimum fusion nearly closes the per-machine oracle gap, while proxy-outlier pseudo-validation fails because candidates saturate."
+    audit_relationship: "Directly argues against another pooling search and warns that the pseudo-fault selection signal used to motivate expert choice can be uninformative even when candidate backends differ on real anomalies."
+
+  - source_id: mkrtchian2026_daco
+    year: 2026
+    title: "Training-Free Model Selection and Domain-Aware Score Calibration for First-Shot Anomalous Sound Detection"
+    authors: "Grach Mkrtchian"
+    venue: "arXiv"
+    publication_type: arxiv_preprint
+    review_status: not_peer_reviewed
+    url: "https://arxiv.org/abs/2607.04526"
+    cluster: direct_asd
+    method_family: domain_aware_score_calibration
+    normal_only_asd: true
+    signal_level_transformation: false
+    evaluates_asd_metrics: true
+    evaluates_known_component_safety: false
+    reports_reference_contamination: false
+    result_direction: mixed
+    key_finding: "A cross-validated normal-only domain-balance criterion predicts DCASE 2025 evaluation ranking better than development score, but can select degenerate maps unless paired with a coarse labeled-development viability veto."
+    audit_relationship: "Makes domain calibration and label-free selection mandatory comparators, while prohibiting claims that a normal-only criterion alone establishes anomaly-detection power or cross-year transfer."
+
+  - source_id: jeong2026_cross_channel_residual
+    year: 2026
+    title: "Cross-Channel and Raw-Spectral Detector Ensembles for First-Shot Noise-Aware Anomalous Sound Detection"
+    authors: "Seunggyu Jeong; Seong-Eun Kim"
+    venue: "DCASE 2026 Challenge technical report"
+    publication_type: challenge_technical_report
+    review_status: not_peer_reviewed
+    url: "https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Jeong_66_t2.pdf"
+    cluster: direct_asd
+    method_family: cross_channel_predictive_residual
+    normal_only_asd: true
+    signal_level_transformation: false
+    evaluates_asd_metrics: true
+    evaluates_known_component_safety: false
+    reports_reference_contamination: true
+    result_direction: benefit
+    key_finding: "A ridge predictor of far-channel embeddings from near-channel embeddings supplies a predictive-consistency residual, while a separate raw-log-mel Mahalanobis detector adds representation diversity beyond the embedding density core."
+    audit_relationship: "Shows that cross-channel predictive residuals and raw-spectral rescue are prior art; a successor can use them only as comparators or contribute a distinct safety, identifiability, or transfer test."
+
+  - source_id: shokriazar2026_shiftall_ldknn
+    year: 2026
+    title: "Noise-Aware First-Shot Unsupervised Anomalous Sound Detection via Frozen Encoders, Wiener Denoising, and Shiftall-LDKNN Scoring"
+    authors: "Yasaman Shokriazar; Arian Moradi; Felix Leber; Alfiia Ziganshina"
+    venue: "DCASE 2026 Challenge technical report"
+    publication_type: challenge_technical_report
+    review_status: not_peer_reviewed
+    url: "https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Moradi_97_t2.pdf"
+    cluster: direct_asd
+    method_family: multi_encoder_multiview_fusion
+    normal_only_asd: true
+    signal_level_transformation: true
+    evaluates_asd_metrics: true
+    evaluates_known_component_safety: false
+    reports_reference_contamination: true
+    result_direction: benefit
+    key_finding: "Frozen BEATs and EAT views, Wiener denoising, raw near-minus-far audio, LDKNN, and train-only source-to-target mean-shift augmentation are fused with weights assessed by strict leave-one-machine-out validation."
+    audit_relationship: "Provides a strong existing multi-view route and a leakage-conscious LOMO protocol, making approximate reconstruction expensive and scientifically weak unless CARE-ASD isolates a new mechanism."
+
+  - source_id: kajita2026_train_normal_profile
+    year: 2026
+    title: "A Train-Normal Profile Ensemble for Noise-Aware Unsupervised Anomalous Sound Detection"
+    authors: "Hisataka Kajita"
+    venue: "DCASE 2026 Challenge technical report"
+    publication_type: challenge_technical_report
+    review_status: not_peer_reviewed
+    url: "https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Kajita_4_t2.pdf"
+    cluster: direct_asd
+    method_family: train_normal_profile_ensemble
+    normal_only_asd: true
+    signal_level_transformation: false
+    evaluates_asd_metrics: true
+    evaluates_known_component_safety: false
+    reports_reference_contamination: true
+    result_direction: mixed
+    key_finding: "A broad normal-profile component bank compares consensus, top-tail rescue, two-sided rank, and agreement-balanced aggregation; the reported development replay favors domain consensus over top-tail rescue."
+    audit_relationship: "Removes sparse top-tail rescue as a novel immediate response to V10 and supplies direct counterevidence against assuming that sparse expert activation should improve the official score."
+
+  - source_id: jiang2026_aithu_fusion
+    year: 2026
+    title: "AITHU Submission for DCASE 2026 Task 2: Robust Machine-Wise Scoring with BEATs Representations"
+    authors: "Anbai Jiang; Xinhu Zheng; Wenrui Liang; Shuwei Zhang; Tianyu Liu; Jia Liu; Pingyi Fan; Wei-Qiang Zhang; Cheng Lu; Xie Chen; Yanmin Qian"
+    venue: "DCASE 2026 Challenge technical report"
+    publication_type: challenge_technical_report
+    review_status: not_peer_reviewed
+    url: "https://dcase.community/documents/challenge2026/technical_reports/DCASE2026_Jiang_125_t2.pdf"
+    cluster: direct_asd
+    method_family: heterogeneous_score_fusion
+    normal_only_asd: true
+    signal_level_transformation: false
+    evaluates_asd_metrics: true
+    evaluates_known_component_safety: false
+    reports_reference_contamination: false
+    result_direction: benefit
+    key_finding: "Heterogeneous BEATs scoring branches, independent training seeds, and generative augmentation are selected and fused at score level, with a reported development harmonic mean of 68.20 percent."
+    audit_relationship: "Shows that generic complementarity and BEATs score fusion are already crowded prior art and that competitive systems use diversity beyond the three correlated fixed branches tested by V10."
+
+  - source_id: leclei2022_n_minus_one
+    year: 2022
+    title: "N-1 Experts: Unsupervised Anomaly Detection Model Selection"
+    authors: "Constantin Le Clei; Yasha Pushak; Fatjon Zogaj; Moein Owhadi-Kareshk; Zahra Zohrevand; Robert Harlow; Hesam Fathi Moghadam; Sungpack Hong; Hassan Chafi"
+    venue: "AutoML 2022 Late-Breaking Workshop"
+    publication_type: workshop_paper
+    review_status: not_peer_reviewed
+    url: "https://openreview.net/pdf?id=7rHwie6nQos"
+    cluster: adjacent_model_selection
+    method_family: unsupervised_model_selection
+    normal_only_asd: false
+    signal_level_transformation: false
+    evaluates_asd_metrics: false
+    evaluates_known_component_safety: false
+    reports_reference_contamination: false
+    result_direction: benefit
+    key_finding: "Candidate anomaly detectors can be ranked by agreement with a panel of other detectors without labeled target data, under an assumption that detector errors and anomaly definitions are sufficiently diverse."
+    audit_relationship: "Establishes adjacent prior art for agreement-based unsupervised model selection and exposes the diversity assumption that V10's uniformly inactive expert family does not satisfy."
+
+supported_claims:
+  - claim_id: backend_diversity_precedes_pooling
+    text: "For the next bounded study, backend and representation diversity deserves priority over another temporal-pooling or same-representation branch search."
+    source_ids: [zhou2026_backend_systematic, jiang2026_aithu_fusion, dcase2026_task_results]
+    evidence_scope: "Direct ASD systematic evidence and current challenge system descriptions; not a universal theorem over every encoder or dataset."
+
+  - claim_id: proxy_fault_selection_requires_external_validation
+    text: "Pseudo-fault or proxy-outlier selection cannot by itself authorize a performance run because proxy discrimination may fail to rank real-anomaly backends."
+    source_ids: [zhou2026_backend_systematic, mkrtchian2026_daco]
+    evidence_scope: "A direct negative ASD result plus evidence that label-free criteria need an independent viability check."
+
+  - claim_id: calibration_is_a_control_not_a_power_certificate
+    text: "Domain-aware normal-score calibration is a necessary transfer control, but normal-distribution balance does not certify anomaly-detection power and requires a frozen viability veto."
+    source_ids: [mkrtchian2026_daco]
+    evidence_scope: "Cross-year ASD experiments with an explicitly disclosed degenerate-map failure mode."
+
+  - claim_id: orthogonal_stereo_residual_is_conditional
+    text: "Cross-channel predictive residuals remain mechanistically distinct from the failed V10 score branches, but only a new safety, identifiability, or transfer protocol could be a CARE-ASD contribution."
+    source_ids: [jeong2026_cross_channel_residual, shokriazar2026_shiftall_ldknn]
+    evidence_scope: "Current DCASE technical reports demonstrate the component families but do not report CARE-ASD's known-component preservation endpoints."
+
+  - claim_id: no_immediate_v11_gpu_authorization
+    text: "The literature delta does not justify immediate V11 GPU training; a successor must first state a mechanism not reducible to tail-threshold tuning, ordinary fusion, or reconstruction of a published ensemble."
+    source_ids: [kajita2026_train_normal_profile, jiang2026_aithu_fusion, dcase2026_task_results]
+    evidence_scope: "A go-or-no-go research-program decision combining current prior art with the already frozen CARE-ASD V10 failure."
+
+prohibited_claims:
+  - claim_id: top_tail_rescue_is_new
+    text: "Do not present sparse top-tail rescue or a relaxed median-gain rule as a novel V11 mechanism."
+    source_ids: [kajita2026_train_normal_profile]
+    evidence_scope: "The aggregation family is already described and its reported development replay does not favor it over consensus."
+
+  - claim_id: cross_channel_residual_is_prior_art
+    text: "Do not claim that predicting one channel representation from the other and scoring the residual is itself novel."
+    source_ids: [jeong2026_cross_channel_residual]
+    evidence_scope: "A direct DCASE 2026 system description implements this mechanism with normal-only ridge prediction."
+
+  - claim_id: dev_score_guarantees_unseen_transfer
+    text: "Do not use development-score ranking alone as evidence that a configuration will transfer to unseen evaluation machine types."
+    source_ids: [mkrtchian2026_daco, shokriazar2026_shiftall_ldknn]
+    evidence_scope: "Direct transfer analysis and strict leave-one-machine-out validation practice."
+
+  - claim_id: proxy_fault_gate_proves_real_anomaly_power
+    text: "Do not claim that passing a synthetic or proxy-fault gate proves ranking power on real anomalies."
+    source_ids: [zhou2026_backend_systematic]
+    evidence_scope: "Proxy outliers saturate competing backends in the reported ASD study and fail to provide a useful selection signal."
+
+  - claim_id: ordinary_score_fusion_is_novel
+    text: "Do not claim generic score calibration, rank fusion, maximum fusion, or multi-branch ensembling as a CARE-ASD novelty."
+    source_ids: [dcase2026_task_results, jiang2026_aithu_fusion, kajita2026_train_normal_profile]
+    evidence_scope: "Multiple current primary system descriptions already cover these aggregation families."
+
+  - claim_id: technical_reports_are_peer_reviewed
+    text: "Do not describe DCASE challenge technical reports in this delta as peer-reviewed scientific evidence."
+    source_ids: [dcase2026_submission_policy]
+    evidence_scope: "The official challenge publication policy distinguishes technical reports from reviewed workshop papers."

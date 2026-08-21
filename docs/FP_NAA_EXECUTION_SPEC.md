@@ -349,6 +349,15 @@ mechanism gates, development controls, and post-challenge unseen-machine protoco
 [`FP_NAA_V10_COUNTERFACTUAL_CERTIFIED_EVIDENCE_UNION.md`](FP_NAA_V10_COUNTERFACTUAL_CERTIFIED_EVIDENCE_UNION.md)
 before V10-M execution.
 
+The valid V10-M run `server02_fp_naa_evidence_preflight_20260821T131202Z` completed all seven
+machines but authorized zero experts. Every registered machine/expert certificate stayed within
+the clean-tail budget, while all in-support and held-out median gains were exactly zero; the empty
+policy therefore reduced to C1 with zero machine coverage. V10 is closed without development
+screening, LOMO, threshold changes, or expert-list tuning. The successor decision is now governed
+by the primary-source delta audit in
+[`FP_NAA_POST_V10_LITERATURE_GATE.md`](FP_NAA_POST_V10_LITERATURE_GATE.md). No V11 training stage
+is authorized by the V10 failure alone.
+
 ## 8. Primary prior art used to set the boundary
 
 - [DCASE 2026 Task 2 setup and exact metric](https://arxiv.org/abs/2606.01578)

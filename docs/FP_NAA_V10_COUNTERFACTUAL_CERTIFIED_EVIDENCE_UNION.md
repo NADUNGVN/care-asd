@@ -123,3 +123,25 @@ The confirmatory claim requires all of the following:
 
 Only that result can support a statistically credible positive method claim. Otherwise V10 remains
 a bounded negative mechanism study and the research must move to a new preregistered hypothesis.
+
+## Authoritative V10-M result
+
+The SERVER-02 run `server02_fp_naa_evidence_preflight_20260821T131202Z` completed all seven
+machines on source `4a788343fa52bd93db9e843899ffd79e34524d9a`. The three registered experts
+produced normal-tail penalties from 1.7721 to 3.7687 and clean activation fractions from 0.00617
+to 0.00758, safely below the frozen 0.035 budget. However, every one of the 21 machine/expert
+certificates had in-support and held-out median evidence gain equal to zero. No expert was
+eligible, global machine coverage was zero, and the candidate policy reduced exactly to immutable
+C1. The gate therefore failed with `authorized_experts=0`, `machine_coverage=0`, and aggregate
+in-support/held-out gain `0/0`.
+
+This is a valid negative mechanism result rather than an execution failure: 18 preflight tests
+passed, every machine completed, per-clip base monotonicity held, no development anomaly labels
+were read, and the registered held-out family remained gate-only. V10 is closed. Its expert list,
+tail probability, penalties, folds, and thresholds must not be tuned after this result, and neither
+development screening nor LOMO is authorized.
+
+The post-result research boundary is recorded in
+[`FP_NAA_POST_V10_LITERATURE_GATE.md`](FP_NAA_POST_V10_LITERATURE_GATE.md). It rejects a relabeled
+top-tail rescue or ordinary score-fusion successor and requires a new literature-cleared mechanism
+before any further GPU run.
