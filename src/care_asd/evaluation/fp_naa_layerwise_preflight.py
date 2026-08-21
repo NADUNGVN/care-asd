@@ -7,12 +7,12 @@ import json
 import math
 import os
 import random
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -473,7 +473,8 @@ def _write_item(item: _Prepared, *, offset: int, tap0: np.ndarray, final: np.nda
         )
     temporary = item.plan.feature_path.with_suffix(".npz.tmp")
     with temporary.open("wb") as handle:
-        np.savez_compressed(handle, **payload)
+        savez_compressed = cast(Callable[..., None], np.savez_compressed)
+        savez_compressed(handle, **payload)
     os.replace(temporary, item.plan.feature_path)
 
 
@@ -610,7 +611,7 @@ def _optimizer_step(
 ) -> None:
     if not torch.isfinite(loss):
         raise RuntimeError("V8 optimizer loss is non-finite")
-    loss.backward()
+    cast(Callable[[], None], loss.backward)()
     norm = torch.nn.utils.clip_grad_norm_(
         model.adapters.parameters(), clip_norm, error_if_nonfinite=True
     )
@@ -801,9 +802,11 @@ def _normal_batch(
 
 def _relative_norm(numerator: Tensor, denominator: Tensor) -> Tensor:
     batch = len(numerator)
-    return numerator.reshape(batch, -1).norm(dim=1) / denominator.reshape(batch, -1).norm(
-        dim=1
-    ).clamp_min(1.0e-8)
+    return cast(
+        Tensor,
+        numerator.reshape(batch, -1).norm(dim=1)
+        / denominator.reshape(batch, -1).norm(dim=1).clamp_min(1.0e-8),
+    )
 
 
 def _to_device(values: np.ndarray, device: str) -> Tensor:

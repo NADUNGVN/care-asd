@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 
 import numpy as np
 from scipy.signal import butter, sosfilt
@@ -212,7 +212,7 @@ def _limit_shared_perturbation(
         upper = np.minimum(upper, peak_limit - base)
     if np.any(lower > upper):
         raise ValueError("Base waveforms already violate the shared peak constraint")
-    return np.clip(perturbation, lower, upper)
+    return cast(np.ndarray, np.clip(perturbation, lower, upper))
 
 
 def _waveform(value: np.ndarray, name: str) -> np.ndarray:

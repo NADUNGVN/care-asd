@@ -3,13 +3,37 @@
 from __future__ import annotations
 
 import copy
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping, Sequence
+from typing import Protocol, cast
 
 import torch
 import torch.nn.functional as functional
 from torch import Tensor, nn
 
 from care_asd.models.fp_naa_adapter import BandwiseReferenceAdapter
+
+
+class _BEATsLayer(Protocol):
+    def __call__(
+        self,
+        values: Tensor,
+        *,
+        self_attn_padding_mask: Tensor | None,
+        need_weights: bool,
+        pos_bias: Tensor | None,
+    ) -> tuple[Tensor, object, Tensor | None]: ...
+
+
+class _BEATsEncoder(Protocol):
+    layers: Sequence[_BEATsLayer]
+    layer_norm_first: bool
+    layer_norm: Callable[[Tensor], Tensor]
+    pos_conv: Callable[[Tensor], Tensor]
+    dropout: float
+
+
+class _BEATsModel(Protocol):
+    encoder: _BEATsEncoder
 
 
 class LayerwiseNoiseAwareEncoder(nn.Module):
@@ -35,9 +59,10 @@ class LayerwiseNoiseAwareEncoder(nn.Module):
         super().__init__()
         if frequency_patches < 1 or embedding_dim < 1:
             raise ValueError("frequency_patches and embedding_dim must be positive")
-        encoder = getattr(beats_model, "encoder", None)
+        encoder_value = getattr(beats_model, "encoder", None)
+        encoder = cast(_BEATsEncoder, encoder_value)
         layers = getattr(encoder, "layers", None)
-        if encoder is None or layers is None or len(layers) < 1:
+        if encoder_value is None or layers is None or len(layers) < 1:
             raise ValueError("beats_model must expose a non-empty encoder.layers sequence")
         layer_count = len(layers)
         chosen = insertion_layers or tuple(range(1, layer_count + 1))
@@ -91,7 +116,7 @@ class LayerwiseNoiseAwareEncoder(nn.Module):
         reference = reference.transpose(0, 1)
         target_bias: Tensor | None = None
         reference_bias: Tensor | None = None
-        encoder = self.beats_model.encoder
+        encoder = cast(_BEATsModel, self.beats_model).encoder
 
         for depth, layer in enumerate(encoder.layers, start=1):
             with torch.no_grad():
@@ -138,7 +163,7 @@ class LayerwiseNoiseAwareEncoder(nn.Module):
         return sum(parameter.numel() for parameter in self.adapters.parameters())
 
     def _encoder_input(self, values: Tensor) -> Tensor:
-        encoder = self.beats_model.encoder
+        encoder = cast(_BEATsModel, self.beats_model).encoder
         positional = encoder.pos_conv(values.transpose(1, 2)).transpose(1, 2)
         output = values + positional
         if not bool(getattr(encoder, "layer_norm_first", False)):

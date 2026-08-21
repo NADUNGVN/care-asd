@@ -3,8 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 import numpy as np
+
+
+def _typed_array(value: object) -> np.ndarray:
+    """Bridge NumPy stub return differences across supported Python versions."""
+    return cast(np.ndarray, value)
 
 
 @dataclass(frozen=True)
@@ -19,7 +25,7 @@ class VarianceRescaler:
 def mean_pool(token_grid: np.ndarray) -> np.ndarray:
     """Temporally pool a ``[time, band, dimension]`` token grid."""
     grid = _token_grid(token_grid)
-    return grid.mean(axis=0, dtype=np.float64).astype(np.float32)
+    return _typed_array(grid.mean(axis=0, dtype=np.float64).astype(np.float32))
 
 
 def rdp_pool(token_grid: np.ndarray, *, gamma: float = 8.0, eps: float = 1.0e-12) -> np.ndarray:
@@ -44,13 +50,16 @@ def rdp_pool(token_grid: np.ndarray, *, gamma: float = 8.0, eps: float = 1.0e-12
         relative = deviations / maximum
         unnormalized = np.power(1.0 + relative, gamma)
         weights = unnormalized / unnormalized.sum()
-    return np.einsum("t,tbd->bd", weights, grid, optimize=True).astype(np.float32)
+    return cast(
+        np.ndarray,
+        np.einsum("t,tbd->bd", weights, grid, optimize=True).astype(np.float32),
+    )
 
 
 def global_average_descriptor(token_grid: np.ndarray) -> np.ndarray:
     """Return the conventional global average BEATs descriptor."""
     grid = _token_grid(token_grid)
-    return grid.mean(axis=(0, 1), dtype=np.float64).astype(np.float32)
+    return _typed_array(grid.mean(axis=(0, 1), dtype=np.float64).astype(np.float32))
 
 
 def cosine_distance_matrix(
@@ -69,7 +78,7 @@ def cosine_distance_matrix(
     query_unit = np.divide(query, np.maximum(query_norm, eps))
     reference_unit = np.divide(reference, np.maximum(reference_norm, eps))
     similarity = np.clip(query_unit @ reference_unit.T, -1.0, 1.0)
-    return (0.5 * (1.0 - similarity)).astype(np.float64)
+    return cast(np.ndarray, (0.5 * (1.0 - similarity)).astype(np.float64))
 
 
 def fit_variance_rescaler(
@@ -117,7 +126,7 @@ def variance_rescaled_knn_scores(
         raise ValueError("reference_bias does not match references")
     distances = cosine_distance_matrix(queries, reference, eps=eps)
     corrected = distances - rescaler.alpha * rescaler.reference_bias[None, :]
-    return corrected.min(axis=1)
+    return cast(np.ndarray, corrected.min(axis=1))
 
 
 def beam_scores(

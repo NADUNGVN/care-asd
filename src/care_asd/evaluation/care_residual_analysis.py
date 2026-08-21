@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scipy.stats import spearmanr  # type: ignore[import-untyped]
+from scipy.stats import spearmanr
 
 from care_asd.data.official_vector_cache import OFFICIAL_FEATURE_DIM, load_official_vectors
 from care_asd.evaluation.official_baseline import SCORE_COLUMNS

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import json
 import random
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 
 import numpy as np
 import pandas as pd
@@ -378,7 +379,7 @@ def _fit_machine(
     )
     optimizer = torch.optim.Adam(model.parameters(), lr=config.training.learning_rate)
     use_amp = config.training.mixed_precision and device.type == "cuda"
-    scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
+    scaler = torch.GradScaler("cuda", enabled=use_amp)
     loss_value = float("nan")
     model.train()
     for _ in range(epochs):
@@ -392,7 +393,8 @@ def _fit_machine(
             with torch.autocast(device_type=device.type, enabled=use_amp):
                 prediction = model(inputs)
                 loss = torch.mean((prediction - targets) ** 2)
-            scaler.scale(loss).backward()  # type: ignore[no-untyped-call]
+            scaled_loss = scaler.scale(loss)
+            cast(Callable[[], None], scaled_loss.backward)()
             scaler.step(optimizer)
             scaler.update()
             total += float(loss.detach()) * len(inputs)

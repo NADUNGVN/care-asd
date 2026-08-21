@@ -52,7 +52,7 @@ class RobustnessAnalysisConfig(BaseModel):
     candidates: tuple[Literal["B01", "B02"], Literal["B01", "B02"]] = ("B01", "B02")
     bootstrap_iterations: int = Field(default=2000, ge=100)
     seed: int = Field(default=2026, ge=0)
-    max_fpr: Literal[0.1] = 0.1
+    max_fpr: float = Field(default=0.1, ge=0.1, le=0.1)
     resampling: Literal["paired_within_machine_domain_condition"] = (
         "paired_within_machine_domain_condition"
     )

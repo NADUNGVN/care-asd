@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Protocol, cast
+from typing import Literal, Protocol, cast
 
 import numpy as np
 import pandas as pd
@@ -25,7 +25,8 @@ from care_asd.fp_naa_reference_safety_config import (
 from care_asd.models.beats_frontend import OfficialBEATsFrontend, fixed_duration_waveform
 from care_asd.signal.pseudo_faults import FaultFamily, inject_pseudo_fault, mix_paired_noise
 
-LEAKAGE_NAMES = ("low", "medium", "high")
+LeakageName = Literal["low", "medium", "high"]
+LEAKAGE_NAMES: tuple[LeakageName, ...] = ("low", "medium", "high")
 
 
 class ReferenceSafetyFrontend(Protocol):
@@ -401,7 +402,8 @@ def _safe_audio_path(root: Path, relative_text: str) -> Path:
 def _write_feature(path: Path, payload: dict[str, np.ndarray]) -> None:
     temporary = path.with_suffix(".npz.tmp")
     with temporary.open("wb") as handle:
-        np.savez(handle, **payload)
+        savez = cast(Callable[..., None], np.savez)
+        savez(handle, **payload)
     os.replace(temporary, path)
 
 

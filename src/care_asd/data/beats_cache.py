@@ -285,7 +285,7 @@ def _validate_existing_features(output: Path, feature_files: list[str]) -> tuple
             or not np.isfinite(far).all()
         ):
             raise ValueError(f"Invalid BEATs token grids: {path}")
-        shape = tuple(int(value) for value in near.shape)
+        shape = (int(near.shape[0]), int(near.shape[1]), int(near.shape[2]))
         if expected is None:
             expected = shape
         elif shape != expected:

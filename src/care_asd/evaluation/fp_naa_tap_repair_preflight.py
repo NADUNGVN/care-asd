@@ -6,10 +6,11 @@ import hashlib
 import json
 import math
 import os
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -338,7 +339,8 @@ def _write_tap_item(item: Any, *, offset: int, tap0: np.ndarray) -> None:
         )
     temporary = item.plan.feature_path.with_suffix(".npz.tmp")
     with temporary.open("wb") as handle:
-        np.savez_compressed(handle, **payload)
+        savez_compressed = cast(Callable[..., None], np.savez_compressed)
+        savez_compressed(handle, **payload)
     os.replace(temporary, item.plan.feature_path)
 
 
@@ -555,7 +557,7 @@ def _optimizer_step(
 ) -> None:
     if not torch.isfinite(loss):
         raise RuntimeError("V9 optimizer loss is non-finite")
-    loss.backward()
+    cast(Callable[[], None], loss.backward)()
     norm = torch.nn.utils.clip_grad_norm_(model.parameters(), clip_norm, error_if_nonfinite=True)
     if not torch.isfinite(norm):
         raise RuntimeError("V9 optimizer gradient norm is non-finite")
@@ -575,7 +577,7 @@ def _normal_batch(
 def _relative_norm(numerator: Tensor, denominator: Tensor) -> Tensor:
     top = numerator.reshape(len(numerator), -1).norm(dim=1)
     bottom = denominator.reshape(len(denominator), -1).norm(dim=1).clamp_min(1.0e-8)
-    return top / bottom
+    return cast(Tensor, top / bottom)
 
 
 def _predict(

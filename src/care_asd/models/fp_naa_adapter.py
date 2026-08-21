@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from typing import Literal
+from typing import Literal, cast
 
 import torch
 from torch import Tensor, nn
@@ -112,7 +112,10 @@ class BandwiseReferenceAdapter(nn.Module):
                 maximum_contraction=self.maximum_reference_contraction,
             ).permute(0, 2, 1, 3).reshape(batch * bands, time, dimension)
         adapted = target_rows + correction
-        return adapted.reshape(batch, bands, time, dimension).permute(0, 2, 1, 3).contiguous()
+        return cast(
+            Tensor,
+            adapted.reshape(batch, bands, time, dimension).permute(0, 2, 1, 3).contiguous(),
+        )
 
 
 def rdp_salient_contraction_projection(

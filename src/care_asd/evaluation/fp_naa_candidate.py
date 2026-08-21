@@ -8,7 +8,7 @@ import math
 import os
 import random
 import shutil
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -267,6 +267,11 @@ def run_fp_naa_screening(
             heldout = retention.loc[retention["fault_set"] == "heldout", "retention"]
             if in_support.empty or heldout.empty:
                 raise ValueError(f"Retention diagnostics are incomplete: {retention_path}")
+            trainable_parameters = reused_parameters
+            if trainable_parameters is None:
+                if model is None:
+                    raise ValueError("A trained model is required to count trainable parameters")
+                trainable_parameters = trainable_parameter_count(model)
             summary_rows.append(
                 {
                     "seed": seed,
@@ -301,11 +306,7 @@ def run_fp_naa_screening(
                         column="transport_relative_error",
                         q=0.90,
                     ),
-                    "trainable_parameters": (
-                        reused_parameters
-                        if reused_parameters is not None
-                        else trainable_parameter_count(model)
-                    ),
+                    "trainable_parameters": trainable_parameters,
                     "score_path": str(score_path.relative_to(output)),
                 }
             )
@@ -341,11 +342,12 @@ def run_fp_naa_screening(
         },
     )
     _write_progress(output, stage="complete", completed=total_runs, total=total_runs)
+    screening_checks = cast(dict[str, object], gate["checks"])
     return FPNaaScreeningResult(
         output,
         completed_summary,
         completed_gate,
-        bool(gate["checks"]["core_screening"]),
+        bool(screening_checks["core_screening"]),
     )
 
 
@@ -754,7 +756,7 @@ def _load_or_train_model(
         ),
     )
     use_amp = config.training.mixed_precision and device.type == "cuda"
-    scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
+    scaler = torch.GradScaler("cuda", enabled=use_amp)
     history: list[dict[str, float | int]] = []
     objective = cast(FPNaaObjective, candidate)
     if anchored_transport and config.training.c2_finetune_disable_dropout:
@@ -822,7 +824,8 @@ def _load_or_train_model(
                 optimizer.step()
                 optimizer_steps += 1
             else:
-                scaler.scale(effective_total).backward()
+                scaled_total = scaler.scale(effective_total)
+                cast(Callable[[], None], scaled_total.backward)()
                 scaler.unscale_(optimizer)
                 gradients_finite = _gradients_are_finite(model.parameters())
                 if gradients_finite:
@@ -1667,15 +1670,20 @@ def _configure_deterministic_runtime() -> None:
 
 
 def _deterministic_runtime_metadata() -> dict[str, object]:
+    flash_sdp_enabled = cast(Callable[[], bool], torch.backends.cuda.flash_sdp_enabled)
+    memory_efficient_sdp_enabled = cast(
+        Callable[[], bool], torch.backends.cuda.mem_efficient_sdp_enabled
+    )
+    math_sdp_enabled = cast(Callable[[], bool], torch.backends.cuda.math_sdp_enabled)
     return {
         "cublas_workspace_config": os.environ.get("CUBLAS_WORKSPACE_CONFIG"),
         "deterministic_algorithms": torch.are_deterministic_algorithms_enabled(),
         "deterministic_warn_only": torch.is_deterministic_algorithms_warn_only_enabled(),
         "cudnn_deterministic": torch.backends.cudnn.deterministic,
         "cudnn_benchmark": torch.backends.cudnn.benchmark,
-        "flash_sdp_enabled": torch.backends.cuda.flash_sdp_enabled(),
-        "memory_efficient_sdp_enabled": torch.backends.cuda.mem_efficient_sdp_enabled(),
-        "math_sdp_enabled": torch.backends.cuda.math_sdp_enabled(),
+        "flash_sdp_enabled": flash_sdp_enabled(),
+        "memory_efficient_sdp_enabled": memory_efficient_sdp_enabled(),
+        "math_sdp_enabled": math_sdp_enabled(),
     }
 
 

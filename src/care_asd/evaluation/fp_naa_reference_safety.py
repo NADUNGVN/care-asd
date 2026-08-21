@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -448,7 +449,7 @@ def _relative_shift(
 ) -> torch.Tensor:
     numerator = torch.linalg.vector_norm((stressed - matched).reshape(len(stressed), -1), dim=1)
     denominator = torch.linalg.vector_norm(matched.reshape(len(matched), -1), dim=1)
-    return numerator / (denominator + eps)
+    return cast(torch.Tensor, numerator / (denominator + eps))
 
 
 def _summarize(details: pd.DataFrame) -> pd.DataFrame:

@@ -6,6 +6,7 @@ import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 
@@ -264,11 +265,12 @@ def run_fp_naa_confirmatory(
         },
     )
     _write_progress(output, stage="complete", completed=total_new_runs, total=total_new_runs)
+    confirmatory_checks = cast(dict[str, object], gate["checks"])
     return FPNaaConfirmatoryResult(
         output,
         summary_path,
         gate_path,
-        bool(gate["checks"]["core_confirmatory"]),
+        bool(confirmatory_checks["core_confirmatory"]),
     )
 
 
@@ -451,7 +453,7 @@ def run_fp_naa_confirmatory_lomo(
     pivot["delta_c2_minus_c1"] = pivot["c2_fault_preserving"] - pivot["c1_mse"]
     positive_folds = int((pivot["delta_c2_minus_c1"] > 0.0).sum())
     passed = positive_folds >= config.gates.confirmatory_positive_lomo_folds_minimum
-    gate: dict[str, object] = {
+    lomo_gate: dict[str, object] = {
         "schema_version": 1,
         "gate": "G3_confirmatory_lomo",
         "confirmatory_core_passed": True,
@@ -462,7 +464,7 @@ def run_fp_naa_confirmatory_lomo(
         "minimum_positive_folds": config.gates.confirmatory_positive_lomo_folds_minimum,
         "passed": passed,
     }
-    _atomic_json(gate_path, gate)
+    _atomic_json(gate_path, lomo_gate)
     _atomic_csv(output / "confirmatory_lomo_fold_means.csv", pivot.reset_index())
     _atomic_json(
         output / "run.json",

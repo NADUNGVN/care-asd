@@ -16,13 +16,13 @@ import sys
 import tempfile
 import time
 import urllib.request
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from care_asd.beats_contract import BEATS_COMMIT, BEATS_ITER3_SHA256, BEATS_REPOSITORY
 
@@ -217,11 +217,12 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
         ) from exc
     installed = _installed_package_names()
     cu13 = sorted(name for name in installed if "cu13" in name)
+    cudnn_version = cast(Callable[[], int | None], torch.backends.cudnn.version)
     checks = {
         "torch": str(torch.__version__),
         "torchaudio": str(torchaudio.__version__),
         "cuda": str(torch.version.cuda),
-        "cudnn": torch.backends.cudnn.version(),
+        "cudnn": cudnn_version(),
         "cuda_available": bool(torch.cuda.is_available()),
         "cu13_packages": cu13,
         "cublas_workspace_config": os.environ["CUBLAS_WORKSPACE_CONFIG"],
@@ -248,7 +249,8 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
             attention = torch.nn.MultiheadAttention(32, 4, batch_first=True).cuda()
             sequence = torch.randn(2, 8, 32, device="cuda", requires_grad=True)
             attended, _ = attention(sequence, sequence, sequence, need_weights=False)
-            attended.square().mean().backward()
+            probe_value = attended.square().mean()
+            cast(Callable[[], None], probe_value.backward)()
             torch.cuda.synchronize()
         except RuntimeError as exc:
             raise JobError(
@@ -262,9 +264,14 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
         checks["deterministic_attention_backward_probe"] = "passed"
         checks["deterministic_algorithms"] = torch.are_deterministic_algorithms_enabled()
         checks["deterministic_warn_only"] = torch.is_deterministic_algorithms_warn_only_enabled()
-        checks["flash_sdp_enabled"] = torch.backends.cuda.flash_sdp_enabled()
-        checks["memory_efficient_sdp_enabled"] = torch.backends.cuda.mem_efficient_sdp_enabled()
-        checks["math_sdp_enabled"] = torch.backends.cuda.math_sdp_enabled()
+        flash_sdp_enabled = cast(Callable[[], bool], torch.backends.cuda.flash_sdp_enabled)
+        memory_efficient_sdp_enabled = cast(
+            Callable[[], bool], torch.backends.cuda.mem_efficient_sdp_enabled
+        )
+        math_sdp_enabled = cast(Callable[[], bool], torch.backends.cuda.math_sdp_enabled)
+        checks["flash_sdp_enabled"] = flash_sdp_enabled()
+        checks["memory_efficient_sdp_enabled"] = memory_efficient_sdp_enabled()
+        checks["math_sdp_enabled"] = math_sdp_enabled()
         try:
             from care_asd.evaluation.fp_naa_candidate import (
                 _gradients_are_finite,
@@ -381,7 +388,7 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
             probe_anchor.load_state_dict(probe_model.state_dict())
             probe_anchor.requires_grad_(False).eval()
             probe_optimizer = torch.optim.AdamW(probe_model.parameters(), lr=1.0e-3)
-            probe_scaler = torch.amp.GradScaler("cuda", enabled=True)
+            probe_scaler = torch.GradScaler("cuda", enabled=True)
             probe_clean = torch.randn(4, 2, 2, 8, device="cuda")
             probe_reference = torch.randn_like(probe_clean)
             probe_teacher_clean = probe_clean - 0.02 * probe_reference
@@ -407,7 +414,8 @@ def fp_naa_runtime_check(*, run_convolution: bool = True) -> dict[str, Any]:
                         anchor_clean=probe_anchor_clean,
                         config=anchored_objective,
                     )
-                probe_scaler.scale(probe_loss.total).backward()
+                scaled_probe_loss = probe_scaler.scale(probe_loss.total)
+                cast(Callable[[], None], scaled_probe_loss.backward)()
                 probe_scaler.unscale_(probe_optimizer)
                 probe_gradients_finite = _gradients_are_finite(probe_model.parameters())
                 if probe_gradients_finite:

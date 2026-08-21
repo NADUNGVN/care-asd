@@ -139,7 +139,8 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.mypy]
-python_version = "3.11"
+# Target the interpreter running mypy. The package supports Python 3.11--3.13;
+# pinning 3.11 while importing stubs installed for 3.12 makes those stubs internally inconsistent.
 strict = true
 warn_return_any = true
 warn_unused_configs = true

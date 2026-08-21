@@ -381,7 +381,8 @@ def _default_frontend_factory(
 def _write_feature(path: Path, payload: dict[str, np.ndarray]) -> None:
     temporary = path.with_suffix(".npz.tmp")
     with temporary.open("wb") as handle:
-        np.savez(handle, **payload)
+        savez = cast(Callable[..., None], np.savez)
+        savez(handle, **payload)
     os.replace(temporary, path)
 
 

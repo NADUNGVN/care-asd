@@ -214,6 +214,14 @@ The proposition also says nothing about the probability of a future fault direct
 safety statement would require a justified distribution or support model for \(q\), which the frozen
 study does not supply.
 
+Proposition 1 does **not** depend logically on Lemma 1. Even if the normal physical decomposition
+were known uniquely, the proposition would still follow whenever the declared future-fault
+extension class contains both retention-benign and retention-adverse extensions that are
+indistinguishable from normal observations. It is therefore an application-specific no-free-lunch
+statement about a uniform certificate under an unrestricted fault-support direction, not a new
+ICA/BSS identifiability theorem. Lemma 1 supplies only a separate warning about what the weak
+unstructured normal model does not identify.
+
 ## 6. Formal result, interpretation, and empirical evidence
 
 The manuscript keeps three levels separate:
@@ -233,7 +241,8 @@ The ordinary ICA ambiguities of scale and permutation are not the paper's claime
 Lemma 1 demonstrates that a weaker, unstructured factor model admits non-diagonal transformations;
 the reviewer objection is correct that physical semantic admissibility does not automatically
 follow. Proposition 1 supplies the application-level safety statement without relying on that
-semantic leap.
+semantic leap or on Lemma 1. Neither formal statement is claimed as the paper's primary novelty;
+they provide scoped rationale for the decision-oriented empirical audit.
 
 ## 7. Connection to frozen CARE-ASD experiments
 

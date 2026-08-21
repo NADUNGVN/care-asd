@@ -1,4 +1,4 @@
-# When the Noise Reference Contains the Machine: Identifiability and Safety Limits in Normal-Only Anomalous Sound Detection
+# Auditing Safe Removability from a Contaminated Far-Microphone Reference in Normal-Only Anomalous Sound Detection
 
 Status: DSP internal-review draft built on evidence frozen at Audit-A4 commit
 `f1d5f7fadea74de6e9c7fdefcb172962b3298b63`. Newly derived DCASE and
@@ -10,16 +10,10 @@ access, or new V-series method.
 
 A synchronized far microphone can provide useful auxiliary information for anomalous sound
 detection (ASD), but it is not necessarily a noise-only observation: machine-origin and
-environmental signals can propagate to both near and far microphones. We formalize the resulting
-contaminated-reference problem at two levels. First, an unstructured instantaneous or local-bin
-latent factorization is exactly non-unique under non-diagonal changes of basis; this algebraic fact
-does not by itself relabel physical machine and environmental sources. Second, if the declared
-future-fault class contains both retention-benign and adverse extensions along a suppressed
-direction, those extensions have identical normal evidence but require different retention
-decisions. Normal-only observations then
-cannot uniformly certify nontrivial removal as fault-safe over that declared class. We formulate a
-controlled safety-audit protocol that separates downstream utility, known-component environmental
-attenuation, machine/fault retention, selector false-safe behavior, and frozen decision rules. In a
+environmental signals can propagate to both near and far microphones. We formulate a
+decision-oriented audit for this contaminated-reference setting. The audit treats downstream
+utility, known-component environmental attenuation, machine/fault retention, selector false-safe
+risk and coverage, and frozen holdout decisions as non-substitutable estimands. In a
 DCASE-2026-aligned development study conditional on one locked training realization, broad
 reference-correlated residual replacement did not improve the registered primary AUC endpoint and
 harmed a prospectively specified secondary pAUC endpoint (paired delta -0.01740, 95% interval
@@ -28,11 +22,15 @@ In controlled synthetic-mixture studies, a normal-only selector had a 92.85% fal
 post-correction holdout, while AP-CARE retained injected fault-proxy energy but obtained median
 environmental attenuation of -0.0397 dB and failed five of six frozen mechanism checks. These
 findings establish an empirical safety/efficacy boundary for the tested controllers, component
-family, comparator, and development machines. They do not imply that far-channel information is
-generally useless or that safe cancellation is universally impossible.
+family, comparator, and development machines. As supporting rationale, an unstructured
+instantaneous/local-bin factorization has non-unique latent coordinates, and a normal-only rule
+cannot issue a uniform fault-safety certificate when the declared future-fault class contains both
+retention-benign and retention-adverse extensions along a suppressed direction. The statements are
+not a physical source-label or general convolutive BSS theorem. The findings do not imply that
+far-channel information is generally useless or that safe cancellation is universally impossible.
 
-**Keywords:** anomalous sound detection; contaminated reference; dual microphone; source
-non-uniqueness; fault preservation; safety audit; domain shift; negative results
+**Keywords:** anomalous sound detection; contaminated reference; dual microphone; safe-removal
+certification; fault preservation; safety audit; domain shift; negative results
 
 ## 1. Introduction
 
@@ -60,30 +58,44 @@ shared component as nuisance to be subtracted.
 
 Desired-signal leakage in an auxiliary reference is established signal-processing prior art,
 including adaptive-cancellation analysis by
-[Al-Kindi and Dunlop (1989)](https://doi.org/10.1016/0165-1684(89)90005-4). Current ASD systems use
-deterministic reference denoising, spatial descriptors, embedding residuals, and learned
-noise-aware representations. These are counterexamples to a generic negative claim about stereo
-ASD. The gap retained by the frozen literature audit is narrower: among the direct ASD sources
-reviewed through 16 August 2026, we did not identify work that jointly reports (i) downstream
-utility under a controlled near-only comparator, (ii) known environmental and fault components,
-(iii) separate attenuation and retention, and (iv) a frozen prospective safety/stop rule. This is a
-bounded search result, not an exhaustive “no previous work” claim. DCASE technical reports and
-relevant preprints are treated as primary system descriptions rather than peer-reviewed
+[Al-Kindi and Dunlop (1989)](https://doi.org/10.1016/0165-1684(89)90005-4). Separate target,
+interference, and artifact measures are established in source-separation evaluation
+([Vincent et al., 2006](https://doi.org/10.1109/TSA.2005.858005)); speech-enhancement and
+residual-echo studies explicitly separate desired-signal damage from nuisance suppression
+([Hu and Loizou, 2007](https://doi.org/10.1016/j.specom.2006.12.006);
+[Ivry et al., 2022](https://doi.org/10.21437/Interspeech.2022-673)); and downstream task utility and
+selective risk--coverage are also prior art
+([Iwamoto et al., 2022](https://doi.org/10.21437/Interspeech.2022-318);
+[El-Yaniv and Wiener, 2010](https://jmlr.org/papers/v11/el-yaniv10a.html)). CARE-ASD therefore does
+not claim to invent these ingredients. Current ASD systems using deterministic reference denoising,
+spatial descriptors, embedding residuals, or learned noise-aware representations are also
+counterexamples to a generic negative claim about stereo ASD.
+
+The remaining gap is narrower. In the sources reviewed through 21 August 2026, we did not identify
+a normal-only ASD study that jointly operationalizes (i) downstream utility under a locked
+comparator, (ii) separately known environmental and fault-proxy components, (iii) non-substitutable
+attenuation and retention endpoints, (iv) selector false-safe risk with coverage, and (v) a frozen
+joint decision on an untouched holdout. This is a bounded source result, not an exhaustive “no
+previous work” claim. The individual elements and several partial combinations are prior art, so
+the methodological claim is only their ASD-specific decision integration. DCASE technical reports
+and relevant preprints are treated as primary system descriptions rather than peer-reviewed
 confirmation.
 
-The paper makes three contributions:
+The paper makes three contributions, ordered by the strength of the surviving claim:
 
-1. A formal contaminated-reference model that distinguishes algebraic latent-factor non-uniqueness
-   from a bounded, decision-theoretic limitation on normal-only fault-safety certification, and
-   identifies assumptions that can change either result.
-2. A decision-oriented contaminated-reference audit specification that jointly separates
+1. A frozen empirical component-safety/efficacy boundary in a DCASE-2026-aligned development
+   setting: the tested broad and conservative interventions did not establish improved ASD, while
+   controlled studies did not establish a reliable region with both useful attenuation and
+   fault-proxy preservation.
+2. An ASD-specific, decision-oriented contaminated-reference audit specification that jointly separates
    fixed-comparator ASD utility, known-component environmental attenuation and fault retention,
    selector safety, and prospective stop decisions. Its individual ingredients are established
-   evaluation practices; the claimed contribution is their operational integration for this
-   safety decision, not invention of each ingredient.
-3. A frozen empirical boundary in a DCASE-2026-aligned development setting: the tested broad and
-   conservative interventions did not establish improved ASD, while controlled studies did not
-   establish a reliable region with both useful attenuation and fault-proxy preservation.
+   evaluation practices; the claimed contribution is only their operational integration for this
+   ASD safety decision, not invention of each ingredient or validation of a universal framework.
+3. A scoped formal rationale that separates algebraic latent-factor non-uniqueness from a bounded,
+   decision-theoretic limitation on uniform normal-only fault-safety certification and identifies
+   assumptions that can change the problem. Neither statement is claimed as a new general ICA/BSS
+   identifiability result.
 
 ## 2. Problem formulation
 
@@ -146,6 +158,12 @@ probable, that every processor removes fault energy, or that the normal physical
 have two valid semantic labels. An identity or always-abstain rule can preserve fault energy but
 does not demonstrate useful removal.
 
+Proposition 1 does not depend logically on the latent-factor result above. It would still hold if
+the normal physical decomposition were uniquely known, provided the declared future-fault class
+retained both benign and adverse suppressed-direction extensions. It is therefore a conditional,
+application-specific no-free-lunch statement supporting the audit decision, not the paper's primary
+theoretical novelty.
+
 The proposition is not a universal BSS impossibility result. Under further technical conditions,
 classical ICA uses mutual independence and suitable non-Gaussianity to obtain identifiability up to
 its conventional ambiguities
@@ -194,10 +212,12 @@ efficacy and retention requirements. The estimands are downstream utility relati
 comparator, environmental attenuation, machine/fault retention, and false-safe risk
 \(P(S=0\mid D=1)\), together with coverage. The **audit decision** applies a frozen joint rule to
 these estimands on declared holdouts. Each element is familiar experimental practice. The
-methodological contribution claimed here is the explicit decision contract that prevents utility,
-signal modification, abstention, or retention-without-attenuation from being substituted for one
-another. Reuse in other contaminated-reference domains is possible in principle but is not
-validated by the ASD experiments.
+methodological contribution claimed here is limited to an ASD-specific explicit decision contract
+that prevents utility, signal modification, abstention, or retention-without-attenuation from being
+substituted for one another. Component-separated metrics, downstream evaluation, target-distortion
+control, and risk--coverage are clearly prior art; whether their present integration is sufficient
+methodological novelty remains subject to independent expert review. Reuse in other
+contaminated-reference domains is possible in principle but is not validated by the ASD experiments.
 
 ### 3.1 Downstream utility under a controlled comparator
 
@@ -442,14 +462,15 @@ Separately, a declared unseen-fault class containing retention-benign and advers
 suppressed direction prevents a normal-only rule from uniformly certifying nontrivial removal as
 fault-safe. These statements explain why correlation alone is not
 a safety certificate; they neither follow from the empirical failures nor predict that every
-algorithm will fail.
+algorithm will fail. Proposition 1 is logically independent of the latent-coordinate lemma and is a
+conditional no-free-lunch rationale rather than the paper's primary novelty.
 
 ### 6.2 Why a far microphone can still be useful
 
 A far channel can improve representation learning, provide spatial or contextual features, support
 multi-view consistency, or diversify an ensemble. None of these uses requires the assumption that
 all reference-correlated energy is removable noise. Auxiliary-reference usefulness and safely
-removable-noise identifiability are therefore distinct. The CARE-ASD result concerns the latter and
+removable-noise certification are therefore distinct. The CARE-ASD result concerns the latter and
 does not contradict successful dual-channel systems addressing the former.
 
 ### 6.3 What could make safe cancellation identifiable
@@ -515,10 +536,12 @@ kept in supplementary and reproducibility records.
     statement about real future faults or a claim that all processors fail.
 13. V1-V10 are dependent research history, not replications. Their gates cannot be pooled to inflate
     statistical certainty.
-14. The literature search has a fixed cutoff and a bounded source set. Its direct-ASD matrix was not
-    an exhaustive BSS/ICA review. Several relevant DCASE reports and arXiv manuscripts were not peer
-    reviewed at the cutoff, and all citation metadata requires final manual verification before
-    submission.
+14. The literature search has a fixed cutoff and a bounded source set; it is not an exhaustive
+    systematic review. The expanded prior-art audit found close precedents for component-separated
+    evaluation, contaminated-reference distortion control, downstream utility, and risk--coverage;
+    only their joint ASD-specific decision integration remains a possible differentiator. Several
+    relevant DCASE reports and arXiv manuscripts were not peer reviewed at the cutoff, and all
+    citation metadata requires final manual verification before submission.
 
 ## 8. Reproducibility and evidence integrity
 
@@ -543,23 +566,27 @@ the formalization, red-team review, and audit protocol are
 [`DSP_REVIEWER_RED_TEAM.md`](DSP_REVIEWER_RED_TEAM.md),
 [`DSP_BSS_REVIEWER_ATTACK.md`](DSP_BSS_REVIEWER_ATTACK.md), and
 [`CONTAMINATED_REFERENCE_SAFETY_AUDIT_PROTOCOL.md`](CONTAMINATED_REFERENCE_SAFETY_AUDIT_PROTOCOL.md).
+The expanded positioning, requested expert review, and conditional-inference sign-off are recorded
+in [`DSP_NOVELTY_PRIOR_ART_AUDIT.md`](DSP_NOVELTY_PRIOR_ART_AUDIT.md),
+[`BSS_EXPERT_REVIEW_PACKET.md`](BSS_EXPERT_REVIEW_PACKET.md), and
+[`DSP_STATISTICS_EXTERNAL_VALIDITY_SIGNOFF.md`](DSP_STATISTICS_EXTERNAL_VALIDITY_SIGNOFF.md).
 
 ## 9. Conclusion
 
 A synchronized far microphone may be useful auxiliary evidence without being a noise-only
 reference. When machine-origin and environmental signals reach both microphones, correlation alone
-does not certify a shared component as safely removable. The formal result is deliberately bounded:
-latent coordinates are non-unique in an unstructured instantaneous/local-bin model, and a
-normal-only rule cannot uniformly certify nontrivial removal over a declared future-fault class
-containing retention-benign and adverse extensions along the suppressed direction. The controlled
-CARE-ASD audit keeps these statements separate from downstream
-utility and component-level evidence. In the tested DCASE-2026-aligned development regime, broad
+does not certify a shared component as safely removable. The controlled CARE-ASD audit separates
+downstream utility from component efficacy, retention, selector risk/coverage, and frozen holdout
+decisions. In the tested DCASE-2026-aligned development regime, broad
 reference-correlated suppression failed to improve primary AUC and harmed secondary pAUC;
 conservative gating did not establish improvement; and controlled selectors did not demonstrate a
 joint region of useful environmental attenuation and fault-proxy preservation. This is a bounded
-safety/identifiability result, not a claim that dual-microphone ASD is ineffective. Its practical
-contribution is a reproducible way to require utility, efficacy, retention, selector safety, and
-prospective stopping before a contaminated reference is called safely removable noise.
+empirical component-safety/efficacy result, not a claim that dual-microphone ASD is ineffective.
+The latent-coordinate lemma and conditional uniform-certification proposition supply scoped
+rationale; they do not prove physical source-label non-identifiability or general BSS impossibility.
+The practical contribution is a reproducible ASD decision contract requiring utility, efficacy,
+retention, selector safety, and prospective stopping before a contaminated reference is called
+safely removable noise.
 
 ## Provisional references and verification status
 
