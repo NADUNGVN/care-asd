@@ -22,9 +22,40 @@ and a controller can achieve high coverage by accepting unsafe cases.
 The protocol audits a declared processor, controller, component family, detector, and data regime.
 It does not prove safety for untested faults, propagation paths, detectors, or deployment domains.
 
-## 2. Layer A: downstream utility under a controlled comparator
+## 2. Decision objects and estimands
 
-### 2.1 Freeze the comparison contract
+The protocol uses the following generic objects:
+
+- a **processor** \(\Phi_\theta(x_p,x_r)\), which maps primary observation \(x_p\) and potentially
+  contaminated reference \(x_r\) to a processed output after realizing controller state \(\theta\);
+- a **controlled comparator** \(\Phi_0\), usually the unchanged primary path, paired on the same
+  downstream observations;
+- a **selector** \(D(x_p,x_r)\in\{0,1\}\), which accepts or abstains from applying the processor;
+- a hidden controlled **safe-use label** \(S\), equal to one only when the realized case jointly
+  meets the prespecified environmental-efficacy and desired-component-retention requirements; and
+- an **audit decision**, which applies frozen pass/fail/stop rules to all required estimands on a
+  declared holdout rather than choosing a favorable endpoint after inspection.
+
+The four non-substitutable estimands are:
+
+1. **downstream utility:** paired change in the declared task metric under the controlled comparator;
+2. **environmental efficacy:** attenuation of the separately known nuisance component under a fixed
+   realized processor;
+3. **machine/fault retention:** retention of separately known desired or fault-proxy components,
+   including lower-tail behavior; and
+4. **selector safety:** false-safe risk \(P(S=0\mid D=1)\) together with coverage \(P(D=1)\).
+
+This is a decision-oriented synthesis of standard experimental elements, not a claim that each
+element is individually new. Its reusable feature is the joint decision contract: downstream gain
+cannot substitute for component retention, retention without attenuation cannot count as useful
+removal, and abstention cannot be hidden by reporting only conditional safety. The same structure
+could in principle audit contaminated references in acoustic echo/reference processing, vibration
+cancellation, or biomedical reference channels, but CARE-ASD validates it only in the stated ASD
+setting.
+
+## 3. Layer A: downstream utility under a controlled comparator
+
+### 3.1 Freeze the comparison contract
 
 Before reading candidate outcomes, record:
 
@@ -41,14 +72,14 @@ The strongest comparison changes only the preprocessing and preserves the entire
 detector. If an intervention necessarily changes the detector interface, the altered components and
 capacity controls must be reported rather than described as an identical detector.
 
-### 2.2 Use paired observations
+### 3.2 Use paired observations
 
 Each candidate and reference should score the same evaluation observations. Candidate-minus-
 reference effects are paired within the prespecified sampling strata. The resampling target must be
 stated precisely. Resampling frozen evaluation clips quantifies evaluation-observation uncertainty;
 it does not quantify training-initialization uncertainty when only one training realization exists.
 
-### 2.3 Preserve the endpoint hierarchy
+### 3.3 Preserve the endpoint hierarchy
 
 The registered primary endpoint determines the confirmatory decision. Prospectively specified
 secondary endpoints may show harm or a useful diagnostic pattern, but they must remain secondary.
@@ -60,23 +91,23 @@ B02 retains the near view but introduces a capacity-controlled two-branch input 
 is protocol- and capacity-controlled rather than literally architecture-identical. B00, B01, and
 B02 use the same 1,400 development files and seed 13711.
 
-## 3. Layer B: controlled known-component decomposition
+## 4. Layer B: controlled known-component decomposition
 
-### 3.1 Construct or obtain separately known components
+### 4.1 Construct or obtain separately known components
 
 The audit requires observations for which the intervention's environmental and machine/fault
 inputs can be evaluated separately. Components may be measured, simulated, or mixed from recorded
 carriers, but their provenance and limitations must be explicit. Synthetic fault proxies are not a
 substitute for all physical failures.
 
-### 3.2 Freeze the realized controller
+### 4.2 Freeze the realized controller
 
 If the processor is nonlinear or adaptive, first realize its controller state on the complete
 mixture. Then hold that state fixed while applying the processor to the known components. Allowing
 each counterfactual component to re-estimate the controller would answer a different question and
 can obscure what the realized mixture decision removed.
 
-### 3.3 Report both efficacy and safety
+### 4.3 Report both efficacy and safety
 
 At minimum, define:
 
@@ -93,7 +124,7 @@ not identify which source was changed.
 environmental, normal-machine, and injected fault-proxy components. The frozen endpoints include
 environmental attenuation and the median and lower-tail fault-retention ratios.
 
-## 4. Layer C: selector and controller safety
+## 5. Layer C: selector and controller safety
 
 Let the hidden controlled label (S=1) denote a case that meets the prespecified joint safety and
 efficacy target, and let the normal-only selector decision (D=1) denote acceptance. Report:
@@ -121,7 +152,7 @@ risk tracking, and tail-loss reduction. AP-CARE adds joint retention/attenuation
 untouched internal holdout. The studies have different chronology and should not be counted as
 independent preregistered replications.
 
-## 5. Layer D: frozen prospective decisions
+## 6. Layer D: frozen prospective decisions
 
 The record must distinguish four chronological states:
 
@@ -141,7 +172,7 @@ Sequential mechanism studies should not be presented as independent replications
 research history, narrowing evidence, evidence against reporting one cherry-picked failed variant,
 and a justified stopping boundary.
 
-## 6. Minimum audit report
+## 7. Minimum audit report
 
 A complete report should contain:
 
@@ -156,7 +187,7 @@ A complete report should contain:
 9. source and output hashes sufficient to regenerate every reported value; and
 10. an explicit list of untested generalizations.
 
-## 7. CARE-ASD evidence mapping
+## 8. CARE-ASD evidence mapping
 
 | Protocol layer | Frozen CARE-ASD evidence | Proper role |
 |---|---|---|

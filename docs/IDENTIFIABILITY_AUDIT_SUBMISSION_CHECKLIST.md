@@ -133,8 +133,9 @@ match exactly.
 - [x] DCASE technical reports and arXiv papers are labeled non-peer-reviewed where applicable.
 - [x] FP-NAA V1-V10 is supplementary process evidence, not ten independent replications.
 - [x] Limitations exclude unseen-machine, deployment, and universal-impossibility claims.
-- [x] A bounded two-source/two-microphone non-uniqueness argument is separated from empirical
-  selector failure and ASD degradation.
+- [x] An instantaneous/local-bin latent-factor lemma and a conditional normal-only safety-
+  certification proposition are separated from physical source semantics, empirical selector
+  failure, and ASD degradation.
 - [x] Paired-bootstrap inference is explicitly conditional on the single locked training seed
   13711 and does not claim training-initialization uncertainty.
 - [x] Exact DCASE harmonic and real/emulated results are labeled “derived post hoc from frozen
@@ -148,8 +149,9 @@ match exactly.
   identifiers.
 - [ ] Replace the collective author placeholder in `CITATION.cff` and `pyproject.toml`.
 - [ ] Confirm the final title with all authors.
-- [ ] Obtain signal-processing review of the bounded non-uniqueness proposition and its relationship
-  to established blind source separation identifiability results.
+- [ ] Obtain signal-processing review of the latent-factor lemma, the decision-theoretic Proposition
+  1, their semantic/convolutional boundaries, and their relationship to established blind source
+  separation identifiability results.
 - [ ] Obtain explicit author sign-off on the SAFE-REF chronology, endpoint hierarchy, and
   single-seed claim boundary.
 - [ ] Convert the Markdown draft into the current *Digital Signal Processing* manuscript template.

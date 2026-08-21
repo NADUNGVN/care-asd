@@ -1,61 +1,78 @@
-# DSP reviewer red-team: CARE-ASD contaminated-reference audit
+# Digital Signal Processing reviewer red team: current status
 
-Status: internal scientific audit prepared from repository evidence frozen at Audit-A4 commit
-`f1d5f7fadea74de6e9c7fdefcb172962b3298b63`. This document is not a new result and does not
-authorize training, tuning, evaluation-label access, or a change to any frozen gate.
+Review basis: hardened manuscript following review of commit
+`0875bdadd30e37b3a053d4bf0e24ebea854a3326`. Historical objections are retained below but are no
+longer phrased as though the formal model, chronology, or endpoint hierarchy were absent.
 
-## Executive red-team decision
+## Current decision
 
-The evidence supports a serious methodological paper about the limits of certifying safe
-reference-correlated removal in the tested normal-only, dual-microphone setting. The current draft
-is not yet ready for journal submission because its identifiability claim lacks a formal observation
-model, the SAFE-REF chronology is not transparent, the principal-versus-secondary endpoint status
-is blurred, and uncertainty from a single locked training realization is not delimited. These are
-framing and validity problems, not reasons to restart model search.
+**READY FOR INTERNAL REVIEW**
 
-## Claim map and likely reviewer objections
+This means ready for an independent BSS/multichannel DSP expert and the author team, not ready for
+journal submission. The theoretical overclaim found in the earlier proposition has been repaired by
+weakening and separation of claims. Physical source-semantic non-identifiability is not proven, the
+convolutional theorem has been withdrawn, and irreducible single-seed/external-validity limits remain.
 
-| Claim | Evidence | Likely DSP reviewer objection | Severity | Required fix |
-|---|---|---|---|---|
-| A synchronized far microphone is not guaranteed to be a noise-only reference. | DCASE-aligned near/far recordings; leakage-sensitive SAFE-REF and AP-CARE controlled mixtures; prior desired-signal leakage literature in `LITERATURE_MATRIX_AUDIT_A1.md`. | The statement is plausible but the paper has no explicit mixing model showing where the ambiguity arises. | **Critical** | Add a two-source/two-microphone convolutional model and state which structural assumptions are absent. |
-| Safe removability is not identifiable from normal-only dual-channel observations in the tested setting. | B01/B02 outcomes, Phase 8 association, SAFE-REF, and AP-CARE G1 in `reports/audit/care_asd_identifiability_audit_v1/`. | “Identifiable” is used as an empirical label rather than a mathematical property; a reviewer may read it as an unsupported impossibility theorem. | **Critical** | Prove only a bounded non-uniqueness result under a stated weak model class, then separate that result from empirical failure and inability to certify safety. |
-| The paper contributes more than two failed algorithms. | Frozen comparator, known-component interventions, selector tests, prospective gates, and stop decision across B00/B01/B02, SAFE-REF, and AP-CARE. | The current scientific spine still resembles an algorithm paper with negative results; desk rejection is plausible if the reusable method is not primary. | **Critical** | Present a controlled contaminated-reference safety-audit protocol before the individual interventions and organize Results by utility, component safety, selector safety, and frozen decision rules. |
-| SAFE-REF is an untouched prospective validation of the original controller specification. | Initial run `server02_phase10_reference_safety_20260815T102535Z`; correction commit `d78e0cb`; corrected run `server02_phase10_reference_safety_20260815T145112Z`. | The corrected protocol followed inspection of the first simulation outcome. Calling the entire corrected study preregistered or independent would be historically inaccurate. | **Critical** | Add a chronology table. Label the corrected SAFE-REF analysis as post-correction with an internal untouched holdout; identify which conclusions do not depend on the correction. |
-| The old 20% SAFE-REF coverage requirement was corrected after discovering an 8.40% safe prevalence. | Corrected gate retains `minimum_coverage=0.20`; corrected safe prevalence is 172/2048; AP-CARE planning notes a feasibility ceiling near 8.84%. | A reviewer may suspect that a failed threshold was silently changed after viewing results. | **Major** | State that the 20% criterion was not changed or used to rescue the gate. Describe the later prevalence calculation as a post-result feasibility diagnosis; false-safe, tracking, and tail-loss failures remain independent. |
-| B01 degraded ASD performance. | Frozen B01-versus-B00 paired bootstrap: AUC delta -0.00566, 95% CI [-0.02491, 0.01297]; pAUC delta -0.01740, CI [-0.03271, -0.00286]. | The registered primary endpoint was mean AUC, whose interval includes zero; pAUC was a prospectively specified secondary endpoint. “B01 significantly failed” can overstate the primary result. | **Major** | Report primary AUC non-improvement first and identify the pAUC harm as a frozen secondary result. Avoid an omnibus significance claim. |
-| B02 avoided some B01 damage but did not improve ASD. | B02-versus-B00 AUC delta -0.00192, CI [-0.00969, 0.00596]; pAUC delta -0.00540, CI [-0.01398, 0.00323]. | A null interval does not establish equivalence, safety, or no effect. | **Major** | Say the tested B02 intervention did not demonstrate improvement; describe its smaller negative point estimates only descriptively. Do not claim equivalence. |
-| B00, B01, and B02 use a fixed downstream comparator. | Same 1,400 files, feature convention, scoring family, seed 13711, and capacity constraints; Phase 6/7/9 protocols. | B02 changes the input architecture into matched-capacity near/residual projections, so “identical detector” is too strong for B02 even though the protocol is controlled. | **Major** | Distinguish exact backend locking for B01 from capacity- and protocol-controlled architectural comparison for B02. Keep simultaneous changes explicit. |
-| Paired bootstrap quantifies the uncertainty of the B01/B02 findings. | Frozen 5,000-replicate stratified paired bootstrap in `frozen_global_inference.csv`. | All three comparators use one locked training seed (13711). Evaluation bootstrap does not include optimizer or initialization variability. | **Major** | State that inference is conditional on the locked training realization and quantifies variation over frozen evaluation observations/strata only. Do not add retrospective seeds. |
-| Reported development metrics are aligned with the official DCASE endpoint. | Frozen score CSVs contain all 1,400 paired predictions and labels needed by `dcase2026_metrics.py`; historical summaries report mean AUC and standardized pAUC. | The manuscript discusses the official harmonic endpoint but does not report it; the historical aggregate is not the exact 21-cell DCASE harmonic score. | **Major** | Compute only a deterministic, secondary official metric from frozen scores. Label it “derived post hoc from frozen predictions/artifacts” and retain paired delta AUC/pAUC as the frozen inference. |
-| Controlled known-component experiments establish a safety/efficacy boundary. | SAFE-REF known safe-use labels; AP-CARE separate application to frozen fault, machine, and environmental components. | Controlled faults and acoustic paths are synthetic proxies, not observed mechanical faults under all real propagation conditions. | **Major** | Define exactly what is known in each construction, avoid “physical ground truth” without qualification, and bound external generalization to the tested synthesis family. |
-| AP-CARE retained fault evidence but did not attenuate environmental energy usefully. | Holdout retention median 1.00012, q05 0.98840; eligible attenuation median -0.03969 dB; 0/256 holdout cases reach 1 dB; five of six checks fail. | The phrase “preserved faults because it cancelled nothing” is a causal interpretation; the matched medium/high subset used for improvement is very small. | **Major** | Report retention and attenuation as separate demonstrated results, mark their causal connection as an interpretation, and disclose the matched-subset count. |
-| The selector/controller did not identify a reliable safe-use region. | SAFE-REF false-safe 0.92849, upper bound 0.93957, risk rho 0.03996; AP-CARE gate failure. | Failure of these selectors does not exclude other observations, supervision, geometry, arrays, or learned joint representations. | **Major** | Scope every conclusion to the tested observables/controllers and list assumptions that could restore identifiability or certify safety. |
-| Stronger B01 feature displacement coincided with lower anomaly evidence. | Phase 8 rho -0.55242 over 1,400 clips, with machine/domain strata in frozen artifacts. | The association is heterogeneous by machine and is neither a source decomposition nor a causal estimate. | **Moderate** | Call displacement a log-Mel feature measure, report heterogeneity, and use the result as mechanism-consistent evidence only. |
-| B01 harm is not explained by one machine. | B01 pAUC leave-one-machine-out range remains negative: [-2.49, -1.11] percentage points. | Leave-one-machine-out over seven observed machines is a sensitivity check, not inference to unseen machines. | **Moderate** | Keep it descriptive and do not call it cross-machine validation. |
-| Results apply to the DCASE-2026-aligned development setting. | Seven development machine types: real synchronized ToyCar and fan; five emulated `*Emu` types. | Pooling real and emulated machines may conceal sensitivity; only two real types make general inference weak. | **Major** | Derive a predeclared post-hoc descriptive real-versus-emulated stratification from frozen scores, with no subset selection or inferential claim. |
-| SAFE-REF and AP-CARE are two independent known-component holdouts. | Separate generators, gates, artifacts, and untouched splits. | AP-CARE was designed after SAFE-REF; “independent” may be mistaken for two preregistered replications of the same experiment. | **Major** | Say they are distinct controlled studies with different roles and chronologies; reserve “untouched” for the split whose outcomes were not used during its own calibration. |
-| V1-V10 strengthens the stop decision. | `FP_NAA_NEGATIVE_EVIDENCE_LEDGER.md`, frozen per-stage gates, V10 failure. | The sequence is outcome-informed and cannot be counted as ten independent replications or pooled evidence. | **Major** | Move details to supplementary/reproducibility material and present the series only as research history, narrowing evidence, and protection against reporting a single cherry-picked failure. |
-| The literature gap is novel. | Audit-A1 matrix: the reviewed direct ASD sources did not jointly report aligned downstream utility, known components, separate attenuation/retention, and frozen stop rules. | The search is bounded and includes challenge reports and preprints; “no prior work” would be an exhaustive claim not supported by the audit. | **Major** | Use “we did not identify prior work in the reviewed direct ASD sources that jointly ...”; manually verify titles, venues, years, DOIs, and publication status before submission. |
-| Far-channel usefulness and safely removable-noise identifiability are different questions. | Positive dual-microphone DCASE systems in the literature matrix coexist with failures of B01/B02/SAFE-REF/AP-CARE. | Without an explicit distinction, the paper appears to contradict successful stereo systems or claim the far microphone is unsafe. | **Critical** | State both questions and their different answers in the Introduction and Discussion. Make clear that CARE-ASD primarily addresses safe removability. |
-| Audit-A4 provides reproducible frozen evidence. | Audit-A4 exact regeneration: 23/23 artifacts and 14/14 source hashes matched; 29 tests passed at commit `f1d5f7f`. | New derived analyses could silently mutate frozen evidence or be mistaken for confirmatory results. | **Major** | Put each new calculation in a new deterministic script/output directory with hashes, input manifest, analysis label, and no overwrite; re-verify Audit-A4 byte identity after edits. |
+Status meanings:
 
-## Required epistemic labels
+- **RESOLVED:** the present manuscript/supporting document answers the objection at the claimed scope.
+- **PARTIALLY RESOLVED:** wording and scope are corrected, but current evidence cannot close the
+  broader scientific question.
+- **OPEN:** a material item still requires expert, author, bibliographic, or journal-production work.
 
-The revised manuscript should consistently separate five statement types:
+## Current reviewer-status table
 
-1. **Demonstrated result:** a value or gate outcome directly reproduced from a frozen artifact.
-2. **Interpretation:** a mechanism-consistent explanation that is not uniquely identified by the data.
-3. **Hypothesis:** a proposed reason or future condition not tested in the frozen audit.
-4. **Limitation:** an unmeasured uncertainty or excluded regime, including training initialization.
-5. **Untested generalization:** another detector, machine family, physical fault, propagation geometry,
-   supervision source, or evaluation domain outside the frozen study.
+| Claim or issue | Evidence | Best current reviewer objection | Severity | Status | Where handled / required action |
+|---|---|---|---|---|---|
+| A formal model supports the paper. | Two-microphone physical observation model; local-bin latent class; Lemma 1; Proposition 1. | The old \(s'=Ts\) argument proved coordinate ambiguity, not that \(m'=m+\alpha e\) remained machine-origin. | Critical | RESOLVED | Manuscript Sec. 2.2 and `IDENTIFIABILITY_FORMALIZATION.md` Secs. 2, 4–6 explicitly concede the semantic limit and replace the original proposition. |
+| Proposition 1 is defensible. | Two normal-observationally identical future-fault extensions require different retention decisions. | The result is conditional and nearly no-free-lunch; it does not prove physical normal-source ambiguity or a probability of harm. | Critical | PARTIALLY RESOLVED | Manuscript Secs. 2.2 and 7; formalization Sec. 5. Retain the bounded uniform-certification wording and obtain independent BSS expert sign-off. |
+| The theory applies to convolutional acoustic mixing. | Time-domain model motivates the problem. | An arbitrary invertible \(T(z)\) need not have a stable causal inverse or preserve a physically admissible acoustic model. | Critical | RESOLVED | The formal result is narrowed to instantaneous/local-frequency-bin mixing in manuscript Sec. 2.2 and formalization Sec. 1. No general convolutional theorem remains. |
+| The paper is consistent with ICA/BSS. | Explicit absence of independence, non-Gaussianity, geometry, paths, source models, and related structure. | Established ICA/BSS identifiability makes an unqualified “unidentifiable” claim false. | Critical | RESOLVED | Manuscript Secs. 2.2 and 6.3; formalization Secs. 2.3 and 8; `DSP_BSS_REVIEWER_ATTACK.md` BSS/ICA section. |
+| Far-channel usefulness differs from safe removability. | Positive DCASE systems can fuse or learn from far audio without declaring shared energy nuisance-only. | The paper could otherwise appear to deny successful dual-channel systems. | Critical | RESOLVED | Manuscript Introduction questions 1–2 and Sec. 6.2 explicitly give “potentially yes” versus “not certified by usefulness/correlation.” |
+| The audit protocol is a methodological contribution. | Joint decision contract covers comparator utility, known-component efficacy/retention, selector false-safe risk/coverage, and frozen decisions. | These are mostly standard good practices, and no cross-domain validation establishes a universal framework. | Major | PARTIALLY RESOLVED | Manuscript Sec. 3 and `CONTAMINATED_REFERENCE_SAFETY_AUDIT_PROTOCOL.md` Sec. 2 claim operational integration only. Avoid “first” or universal validation. |
+| B01 is informative. | Exact locked backend; broad residual replacement; paired frozen effects. | It is a stress test and possible straw man, not representative modern BSS. | Major | RESOLVED | Manuscript Secs. 4.2, 5.2, and 6.1 label its exact role and prohibit algorithm-class generalization. |
+| B02 is a conservative comparator. | Near-primary branch, frozen confidence, matched first-projection parameter count. | It changes the interface and is one gate, so “same detector” and representativeness are too strong. | Major | RESOLVED | Manuscript Secs. 3.1, 4.2, 5.3, and 6.1 call it capacity/protocol-controlled, not detector-identical or exhaustive. |
+| SAFE-REF found no safe-use region. | Corrected holdout false-safe 0.92849, upper 0.93957, risk rho 0.03996, tail reduction 0.01780. | One selector/generator cannot show that every normal-only selector fails. | Major | RESOLVED | Manuscript Secs. 5.5, 6.1, and 7 restrict the result to the tested selector, observables, and controlled family. |
+| SAFE-REF evidence is prospective. | Timestamped commits/runs; corrected split; unchanged 20% criterion. | The first failure was viewed before correction, and feasibility was diagnosed later. | Critical | RESOLVED | Manuscript Sec. 4.5 and `AP_CARE_V2_EXECUTION_SPEC.md` preserve chronology; the corrected result is called post-correction, not pristine preregistration. |
+| AP-CARE corroborates the mechanism. | Frozen G1 internal holdout: retention passed; attenuation did not; five of six checks failed. | It followed SAFE-REF, uses proxies, and only four matched medium/high cases inform one comparison. | Major | RESOLVED | Manuscript Secs. 4.4, 5.6, and 7 report the chronology, proxy scope, separate endpoints, and subset count. It is not called an independent replication. |
+| Known components establish physical fault safety. | Generator exposes environmental, machine, and injected fault-proxy inputs separately. | Synthetic provenance inside a generator is not physical ground truth across real faults, paths, and rooms. | Major | RESOLVED | Manuscript Secs. 4.4 and 7 use “fault proxy” and bound external validity. |
+| Paired bootstrap supports uncertainty statements. | 5,000 replicates preserve file pairs and resample normal/anomaly files within machine-section groups. | File-level exchangeability may miss acquisition clustering and does not sample machine populations. | Major | PARTIALLY RESOLVED | Manuscript Sec. 4.3 and Limitation 2 now state the resampling unit and boundary. No stronger frozen cluster analysis is available. |
+| Results are statistically robust to training. | Same locked seed 13711 for B00/B01/B02. | Evaluation bootstrap does not quantify initialization/optimizer uncertainty. | Major | OPEN | Manuscript Sec. 4.3 and Limitation 1 correctly make inference conditional. Do not add retrospective seeds; authors must accept this submission risk. |
+| Endpoint claims respect the protocol. | Mean AUC primary; pAUC prospective secondary; exact \(\Omega\) post hoc. | Highlighting harmful pAUC or \(\Omega\) can become endpoint switching. | Major | RESOLVED | Abstract, Secs. 4.3, 5.2, 5.7, and 7 retain the hierarchy and descriptive label. |
+| Real/emulated sensitivity supports external validity. | Frozen descriptive split: two real, five emulated types. | Tiny non-random groups cannot support inferential subgroup claims or evaluation-machine generalization. | Major | RESOLVED | Manuscript Sec. 5.7 and Limitation 5 keep it descriptive and reject a real-machine benefit claim. Broader validity remains OPEN below. |
+| V1–V10 strengthens the stop decision. | Sequential frozen gates and negative-evidence ledger. | Outcome-informed variants create researcher degrees of freedom and are not replications. | Major | RESOLVED | Manuscript Secs. 4.5, 6.5, and 7; `FP_NAA_POST_V10_LITERATURE_GATE.md`. They are history/narrowing/stop support only. |
+| The novelty claim is supported by literature. | Audit-A1 found no reviewed direct ASD source jointly reporting the four specified audit elements. | The matrix is bounded, includes preprints/reports, and is not an exhaustive ICA/BSS or safety-method review. | Major | PARTIALLY RESOLVED | Introduction uses “we did not identify ... among reviewed direct ASD sources”; theory sources are added in Sec. 2.2. A publisher-verified final search remains OPEN. |
+| The conclusion matches the evidence. | Conditional B01/B02 effects plus controlled SAFE-REF/AP-CARE failures under frozen contracts. | Few interventions and proxy families cannot establish a general identifiability or safety limit. | Critical | RESOLVED | Abstract, Discussion Sec. 6.1, Limitations, and Conclusion now distinguish formal, interpretive, and empirical levels and bind the conclusion to tested regimes. |
 
-## Desk-rejection risks that must be closed before internal journal review
+## Open submission blockers
 
-1. Formalize the non-uniqueness claim without asserting universal impossibility.
-2. Make the controlled safety-audit methodology the paper's primary contribution.
-3. Disclose the SAFE-REF correction chronology and the unchanged 20% threshold.
-4. Restore the registered endpoint hierarchy and single-seed conditioning.
-5. Report exact DCASE alignment only as a post-hoc deterministic sensitivity result, if the frozen
-   scores pass all input-integrity checks.
-6. Replace exhaustive novelty and universal far-microphone claims with evidence-bounded language.
+1. **Independent theoretical review.** A BSS/multichannel DSP expert must confirm the latent-versus-
+   physical semantic boundary and the decision-theoretic Proposition 1.
+2. **Bibliography and novelty audit.** Verify all author/title/venue/year/pages/DOI/status metadata
+   against publisher or official records and refresh the bounded search at submission time. The
+   existing Audit-A1 direct-ASD matrix is not an exhaustive theory review.
+3. **Author acceptance of conditional inference.** The paper cannot claim training-seed robustness,
+   acquisition-cluster robustness, or population inference over machines from the frozen design.
+4. **External validity.** Only two real synchronized types, one detector family, and synthetic fault
+   proxies remain. This is an honest limitation, not fixable by wording.
+5. **Journal production.** Convert the Markdown draft to DSP format, finalize figures/tables,
+   bibliography, ethics/data statements, author contributions, and line-by-line proofing.
+
+## Historical objections now closed
+
+- “The manuscript has no formal model” → **RESOLVED** by manuscript Sec. 2 and
+  `IDENTIFIABILITY_FORMALIZATION.md`.
+- “The exact DCASE metric is absent” → **RESOLVED** as a deterministic post-hoc descriptive metric
+  in manuscript Sec. 5.7, without replacing the frozen estimand.
+- “The real/emulated composition is hidden” → **RESOLVED** in manuscript Secs. 4.1, 5.7, and 7.
+- “The one-seed bootstrap scope is hidden” → **RESOLVED** in manuscript Sec. 4.3 and Limitation 1.
+- “SAFE-REF chronology and 20% feasibility are hidden” → **RESOLVED** in manuscript Sec. 4.5.
+- “V1–V10 are treated as replications” → **RESOLVED** in manuscript Sec. 6.5.
+- “Positive dual-channel systems contradict the paper” → **RESOLVED** by the two-question framing
+  in Introduction and Discussion Sec. 6.2.
+
+## Reviewer recommendation
+
+Send the hardened draft for **internal expert review**. Do not submit to *Digital Signal Processing*
+until the four scientific blockers above receive explicit sign-off. No new algorithm search or
+reopening of frozen experiments is justified.

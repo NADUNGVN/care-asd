@@ -118,9 +118,10 @@ evidence and is not pooled into the paper's inferential estimates.
 
 Audit-A4 verification and the remaining author-owned submission tasks are recorded in
 [`IDENTIFIABILITY_AUDIT_SUBMISSION_CHECKLIST.md`](IDENTIFIABILITY_AUDIT_SUBMISSION_CHECKLIST.md).
-The DSP reviewer red-team, formal non-uniqueness layer, reusable audit protocol, and current
-readiness decision are recorded in
+The DSP reviewer red-team, BSS-specific attack, bounded latent/certification formalization, reusable
+audit protocol, and current readiness decision are recorded in
 [`DSP_REVIEWER_RED_TEAM.md`](DSP_REVIEWER_RED_TEAM.md),
+[`DSP_BSS_REVIEWER_ATTACK.md`](DSP_BSS_REVIEWER_ATTACK.md),
 [`IDENTIFIABILITY_FORMALIZATION.md`](IDENTIFIABILITY_FORMALIZATION.md),
 [`CONTAMINATED_REFERENCE_SAFETY_AUDIT_PROTOCOL.md`](CONTAMINATED_REFERENCE_SAFETY_AUDIT_PROTOCOL.md),
 and [`DSP_SUBMISSION_READINESS.md`](DSP_SUBMISSION_READINESS.md).

@@ -11,11 +11,13 @@ access, or new V-series method.
 A synchronized far microphone can provide useful auxiliary information for anomalous sound
 detection (ASD), but it is not necessarily a noise-only observation: machine-origin and
 environmental signals can propagate to both near and far microphones. We formalize the resulting
-contaminated-reference problem and show a bounded source-label non-uniqueness: without additional
-constraints on sources or transfer paths, identical normal observations can admit decompositions
-that assign the same reference-correlated direction differently to machine and environment.
-Normal-only observations therefore do not uniformly certify that removing that direction will
-preserve unseen fault-relevant machine energy over this weak model class. We then formulate a
+contaminated-reference problem at two levels. First, an unstructured instantaneous or local-bin
+latent factorization is exactly non-unique under non-diagonal changes of basis; this algebraic fact
+does not by itself relabel physical machine and environmental sources. Second, if the declared
+future-fault class contains both retention-benign and adverse extensions along a suppressed
+direction, those extensions have identical normal evidence but require different retention
+decisions. Normal-only observations then
+cannot uniformly certify nontrivial removal as fault-safe over that declared class. We formulate a
 controlled safety-audit protocol that separates downstream utility, known-component environmental
 attenuation, machine/fault retention, selector false-safe behavior, and frozen decision rules. In a
 DCASE-2026-aligned development study conditional on one locked training realization, broad
@@ -71,11 +73,14 @@ confirmation.
 
 The paper makes three contributions:
 
-1. A formal contaminated-reference observation model and a bounded non-uniqueness argument that
-   identifies which extra assumptions are required before safe removability can be certified.
-2. A controlled contaminated-reference safety-audit protocol that separates fixed-comparator ASD
-   utility, known-component environmental attenuation and fault retention, selector safety, and
-   prospective stop decisions.
+1. A formal contaminated-reference model that distinguishes algebraic latent-factor non-uniqueness
+   from a bounded, decision-theoretic limitation on normal-only fault-safety certification, and
+   identifies assumptions that can change either result.
+2. A decision-oriented contaminated-reference audit specification that jointly separates
+   fixed-comparator ASD utility, known-component environmental attenuation and fault retention,
+   selector safety, and prospective stop decisions. Its individual ingredients are established
+   evaluation practices; the claimed contribution is their operational integration for this
+   safety decision, not invention of each ingredient.
 3. A frozen empirical boundary in a DCASE-2026-aligned development setting: the tested broad and
    conservative interventions did not establish improved ASD, while controlled studies did not
    establish a reliable region with both useful attenuation and fault-proxy preservation.
@@ -104,45 +109,55 @@ In vector form, \(\mathbf{x}=\mathbf{H}*\mathbf{s}+\boldsymbol{\epsilon}\) with
 \(\mathbf{s}=[m,e]^{\mathsf T}\). Both sources may appear in both observations; “far” is a spatial
 description, not an environmental-source label.
 
-### 2.2 Bounded source-label non-uniqueness
+### 2.2 Algebraic ambiguity and bounded safety non-certifiability
 
-Assume normal-only paired observations, unknown sources and paths, and no guaranteed source
-independence, disjoint support, known geometry, reference-only interval, supervised source model,
-or prior excluding unseen fault energy from the shared subspace. For any invertible mixing operator
-\(\mathbf{T}\),
-
-\[
-\mathbf{s}'=\mathbf{T}*\mathbf{s},\qquad
-\mathbf{H}'=\mathbf{H}*\mathbf{T}^{-1}
-\]
-
-produces the same observation because
-\(\mathbf{H}'*\mathbf{s}'=\mathbf{H}*\mathbf{s}\). Non-diagonal \(\mathbf{T}\) changes which part
-of a shared direction is assigned to the semantic machine and environmental sources. For example,
+The physical convolutional model above motivates the problem, but the algebraic statement is scoped
+to an instantaneous mixture or one local frequency bin,
+\(\mathbf{x}_k=\mathbf{H}\mathbf{s}_k\), with nonsingular
+\(\mathbf{H}\in\mathbb{C}^{2\times2}\). Its admissible latent-factor class imposes no independence,
+non-Gaussianity, support, geometry, path, or source-family constraints. For any nonsingular constant
+matrix \(\mathbf{T}\),
 
 \[
-\mathbf{H}=\begin{bmatrix}1&1\\0.5&1.5\end{bmatrix},\qquad
-\mathbf{T}=\begin{bmatrix}1&0.25\\0.25&1\end{bmatrix}
+\mathbf{s}'_k=\mathbf{T}\mathbf{s}_k,\qquad
+\mathbf{H}'=\mathbf{H}\mathbf{T}^{-1}
 \]
 
-gives
+reproduces every observation exactly. A non-diagonal \(\mathbf{T}\) gives an ambiguity beyond scale
+and permutation. However, in this unstructured class the components are latent coordinates, not
+physically certified source labels. In particular, the equality
+\(m'=m+\alpha e\) does **not** establish that \(m'\) is a physically admissible machine-origin
+source. The basis argument therefore proves latent-factor non-uniqueness, not physical source-label
+ambiguity. This semantic limit corrects the strongest over-reading of the earlier formulation.
 
-\[
-\mathbf{H}'=\begin{bmatrix}0.8&0.8\\0.133\overline{3}&1.466\overline{6}\end{bmatrix},
-\]
+**Proposition 1 (bounded decision-theoretic non-certifiability).** Let a normal-only processor
+declare a nonzero observed direction removable. Suppose the declared future-fault extension class
+contains two models with the same complete normal observation law: one satisfies the retention rule
+after removal, while the other includes a machine-fault increment that maps into the suppressed
+direction strongly enough to violate that rule. Normal observations alone cannot certify the
+removal as fault-safe uniformly over that class.
 
-with all paths nonzero in both factorizations, while \(m'=m+0.25e\) and \(e'=0.25m+e\). The
-normal observations are identical but the semantic allocation is not.
+To see this, hold the complete normal physical model and observation law fixed. In World A, future
+fault increments avoid the suppressed direction; in World B, an unseen machine fault propagates
+into that direction strongly enough to violate the same retention rule. The worlds are identical
+during normal-only fitting, so the processor makes the same decision, but the safety outcome differs.
+This establishes a limitation of a declared uniform certificate. It does not show that World B is
+probable, that every processor removes fault energy, or that the normal physical sources themselves
+have two valid semantic labels. An identity or always-abstain rule can preserve fault energy but
+does not demonstrate useful removal.
 
-**Bounded proposition.** In this weak model class, normal-only observations do not uniquely label
-a reference-correlated component as environmental rather than machine-origin. A normal-only rule
-therefore cannot uniformly certify removal of that component as safe for all admissible unseen
-fault increments across observationally equivalent models.
-
-This is a non-uniqueness statement, not a universal impossibility theorem. Known paths or geometry,
-validated independence/nonstationarity assumptions, reference-only segments, supervised
-components, additional microphones, or a justified restriction on fault support can change the
-identifiability problem.
+The proposition is not a universal BSS impossibility result. Under further technical conditions,
+classical ICA uses mutual independence and suitable non-Gaussianity to obtain identifiability up to
+its conventional ambiguities
+([Comon, 1994](https://doi.org/10.1016/0165-1684(94)90029-9);
+[Hyvärinen and Oja, 2000](https://doi.org/10.1016/S0893-6080(00)00026-5)). Known geometry or paths,
+spatial priors, source-specific generative models, sparsity or temporal structure, reference-only
+segments, supervised components, sufficiently diverse mixtures, additional microphones, or a
+validated fault-support restriction can change the problem. Nor do we extend the proposition to an
+arbitrary filter transform \(\mathbf{T}(z)\): invertibility alone does not guarantee a stable causal
+inverse or a physically admissible transformed acoustic system. The complete definitions and proof
+boundary are given in
+[`IDENTIFIABILITY_FORMALIZATION.md`](IDENTIFIABILITY_FORMALIZATION.md).
 
 ### 2.3 Safety and efficacy are joint requirements
 
@@ -165,11 +180,24 @@ express the distinction: a processor is “safe and useful” only over a stated
 only if prespecified lower bounds on retention and attenuation hold jointly. High retention with
 near-zero attenuation is not evidence of effective safe cancellation.
 
-Mathematical non-uniqueness, empirical selector failure, downstream ASD degradation, and failure
-to certify safe removal are separate claims. The experiments below test the latter three; they do
-not make the first statement universal beyond its stated model class.
+Latent-factor non-uniqueness, the decision-theoretic certification limit, empirical selector
+failure, and downstream ASD degradation are separate claims. The experiments below test particular
+processors and controlled component families; they neither prove the formal statements nor make
+them universal beyond their declared classes.
 
 ## 3. Controlled contaminated-reference safety-audit methodology
+
+The audit is decision-oriented. A **processor** \(\Phi_\theta\) maps primary and reference
+observations to an output; a **selector** \(D\) accepts or abstains from applying it; and a hidden
+controlled **safe-use label** \(S\) records whether the realized case jointly meets prespecified
+efficacy and retention requirements. The estimands are downstream utility relative to a controlled
+comparator, environmental attenuation, machine/fault retention, and false-safe risk
+\(P(S=0\mid D=1)\), together with coverage. The **audit decision** applies a frozen joint rule to
+these estimands on declared holdouts. Each element is familiar experimental practice. The
+methodological contribution claimed here is the explicit decision contract that prevents utility,
+signal modification, abstention, or retention-without-attenuation from being substituted for one
+another. Reuse in other contaminated-reference domains is possible in principle but is not
+validated by the ASD experiments.
 
 ### 3.1 Downstream utility under a controlled comparator
 
@@ -237,7 +265,11 @@ protocol-controlled rather than detector-identical.
 The registered primary endpoint for B01 and B02 is mean development AUC. Standardized pAUC at
 maximum false-positive rate 0.1 is a prospectively specified secondary endpoint. Candidate-minus-
 B00 intervals use 5,000 paired bootstrap replicates stratified by machine type, section, and
-condition. Audit-A2 adds descriptive per-machine/domain estimates, a 2,000-replicate sensitivity
+condition. Within each machine-section stratum, normal and anomaly files are resampled separately
+with replacement and each B00/candidate file pair remains intact. The interval therefore requires
+exchangeability at the development-file level within those strata. It does not model dependence
+among clips from a shared acquisition sequence, nor does it sample new machine types or recording
+sessions. Audit-A2 adds descriptive per-machine/domain estimates, a 2,000-replicate sensitivity
 bootstrap, and leave-one-machine-out summaries; these do not replace the original inference.
 
 All B00/B01/B02 models use seed 13711. The paired bootstrap quantifies uncertainty over the frozen
@@ -397,9 +429,20 @@ did not jointly achieve useful environmental attenuation and the declared mechan
 results support a bounded empirical conclusion: the tested normal-only observables and controllers
 did not establish a reliable safe-removal region in this DCASE-2026-aligned development regime.
 
-The mathematical statement is different. Under a weak source/path model, the semantic allocation
-of shared energy is non-unique. This explains why correlation alone is insufficient for a safety
-certificate; it does not prove that richer assumptions or supervision cannot resolve the ambiguity.
+B01 is deliberately a broad residual-replacement stress test, not a surrogate for modern BSS or
+every reference canceller. B02 is one conservative, capacity-controlled near-primary design, not a
+representative sample of all gates. SAFE-REF and AP-CARE similarly evaluate their declared selectors
+and component generators. Their joint value is triangulation of one safety mechanism under frozen
+contracts; the set does not exhaust the algorithm class and cannot support a claim that another
+selector, representation, or structurally informed BSS method would fail.
+
+The formal statements are different. An unstructured instantaneous/local-bin latent model has
+non-unique coordinates, but this alone does not prove physical machine/environment relabelling.
+Separately, a declared unseen-fault class containing retention-benign and adverse extensions along a
+suppressed direction prevents a normal-only rule from uniformly certifying nontrivial removal as
+fault-safe. These statements explain why correlation alone is not
+a safety certificate; they neither follow from the empirical failures nor predict that every
+algorithm will fail.
 
 ### 6.2 Why a far microphone can still be useful
 
@@ -412,9 +455,12 @@ does not contradict successful dual-channel systems addressing the former.
 ### 6.3 What could make safe cancellation identifiable
 
 Safe removal may become defensible with measured geometry and transfer paths, validated source
-independence or nonstationarity, reference-only intervals, supervised environmental components,
-additional spatial observations, or a justified model of the admissible fault subspace. Each such
-assumption must be supported by evidence rather than inferred from a good aggregate ASD score.
+independence and suitable non-Gaussianity, source-specific generative models, sparsity or temporal
+structure, identifiable nonstationarity, reference-only intervals, supervised components,
+additional sufficiently diverse spatial observations, or a justified model of the admissible fault
+subspace. These are the kinds of structure used by ICA/BSS and supervised separation; CARE-ASD does
+not dispute their identifiability results. Each assumption must be supported in the target regime
+rather than inferred from a good aggregate ASD score.
 Component-level attenuation, retention, false-safe risk, and untouched prospective validation
 would still be required.
 
@@ -437,34 +483,42 @@ kept in supplementary and reproducibility records.
 ## 7. Limitations
 
 1. B00/B01/B02 use a single locked training realization (seed 13711). Evaluation bootstrap does
-   not quantify training-initialization or optimizer uncertainty; primary inference is conditional
-   on that realization.
-2. The registered primary endpoint for B01/B02 is mean AUC. The harmful B01 pAUC interval is an
+    not quantify training-initialization or optimizer uncertainty; primary inference is conditional
+    on that realization.
+2. The paired bootstrap resamples files within machine-section-condition strata. Its intervals are
+   conditional on file-level exchangeability and do not account for unidentified acquisition-level
+   clustering or population variation over machine types. They must not be read as deployment-wide
+   confidence intervals.
+3. The registered primary endpoint for B01/B02 is mean AUC. The harmful B01 pAUC interval is an
    informative prospectively specified secondary result, not a replacement primary endpoint.
-3. The exact DCASE harmonic metric and real/emulated split were derived post hoc from frozen
+4. The exact DCASE harmonic metric and real/emulated split were derived post hoc from frozen
    development predictions. They are descriptive and have no new tuning or confirmatory status.
-4. Only ToyCar and fan are real synchronized development machine types. The five other types are
+5. Only ToyCar and fan are real synchronized development machine types. The five other types are
    emulated, and neither group supports general inference to unseen evaluation machines.
-5. The detector is an official-compatible autoencoder, not the full class of contemporary audio
+6. The detector is an official-compatible autoencoder, not the full class of contemporary audio
    foundation models, learned stereo representations, raw-waveform systems, or ensembles.
-6. Controlled faults and acoustic paths are synthetic proxies built with recorded normal carriers.
+7. Controlled faults and acoustic paths are synthetic proxies built with recorded normal carriers.
    They provide component identity inside the generator but do not span all physical failure modes,
    rooms, nonlinear propagation, or sensor mismatch.
-7. SAFE-REF's corrected protocol followed inspection of a first failed simulation. Its corrected
+8. SAFE-REF's corrected protocol followed inspection of a first failed simulation. Its corrected
    calibration/holdout split remains diagnostically useful, but the study is not a pristine
    original preregistration.
-8. AP-CARE was designed after SAFE-REF. Only four holdout cases entered its matched medium/high
+9. AP-CARE was designed after SAFE-REF. Only four holdout cases entered its matched medium/high
    retention comparison, limiting the strength of that check despite the frozen rule.
-9. Phase 8 is heterogeneous, feature-space, and non-causal. It cannot identify which physical
+10. Phase 8 is heterogeneous, feature-space, and non-causal. It cannot identify which physical
    component caused a score change.
-10. The formal proposition applies to a deliberately weak model class. Additional structural
-    assumptions can restore identifiability; no universal impossibility or general far-microphone
-    unsafety claim is made.
-11. V1-V10 are dependent research history, not replications. Their gates cannot be pooled to inflate
+11. The change-of-basis lemma proves only latent-coordinate non-uniqueness in an unstructured
+    instantaneous/local-frequency-bin model. It does not prove that transformed coordinates retain
+    physical machine/environment provenance, and no arbitrary convolutional theorem is claimed.
+12. Proposition 1 is conditional on an admissible future-fault class that has not been restricted
+    away from suppressed directions. It is a uniform-certification limitation, not a probability
+    statement about real future faults or a claim that all processors fail.
+13. V1-V10 are dependent research history, not replications. Their gates cannot be pooled to inflate
     statistical certainty.
-12. The literature search has a fixed cutoff and a bounded source set. Several relevant DCASE
-    reports and arXiv manuscripts were not peer reviewed at the cutoff, and all citation metadata
-    requires final manual verification before submission.
+14. The literature search has a fixed cutoff and a bounded source set. Its direct-ASD matrix was not
+    an exhaustive BSS/ICA review. Several relevant DCASE reports and arXiv manuscripts were not peer
+    reviewed at the cutoff, and all citation metadata requires final manual verification before
+    submission.
 
 ## 8. Reproducibility and evidence integrity
 
@@ -486,16 +540,20 @@ No Audit-A4 source or derived artifact is modified by this manuscript revision. 
 labels or scores were accessed. Restricted audio is not redistributed. The source documents for
 the formalization, red-team review, and audit protocol are
 [`IDENTIFIABILITY_FORMALIZATION.md`](IDENTIFIABILITY_FORMALIZATION.md),
-[`DSP_REVIEWER_RED_TEAM.md`](DSP_REVIEWER_RED_TEAM.md), and
+[`DSP_REVIEWER_RED_TEAM.md`](DSP_REVIEWER_RED_TEAM.md),
+[`DSP_BSS_REVIEWER_ATTACK.md`](DSP_BSS_REVIEWER_ATTACK.md), and
 [`CONTAMINATED_REFERENCE_SAFETY_AUDIT_PROTOCOL.md`](CONTAMINATED_REFERENCE_SAFETY_AUDIT_PROTOCOL.md).
 
 ## 9. Conclusion
 
 A synchronized far microphone may be useful auxiliary evidence without being a noise-only
-reference. When machine-origin and environmental signals reach both microphones, normal-only
-observations under a weak model do not uniquely label which shared component is safely removable.
-The controlled CARE-ASD audit keeps that mathematical ambiguity separate from downstream utility
-and component-level evidence. In the tested DCASE-2026-aligned development regime, broad
+reference. When machine-origin and environmental signals reach both microphones, correlation alone
+does not certify a shared component as safely removable. The formal result is deliberately bounded:
+latent coordinates are non-unique in an unstructured instantaneous/local-bin model, and a
+normal-only rule cannot uniformly certify nontrivial removal over a declared future-fault class
+containing retention-benign and adverse extensions along the suppressed direction. The controlled
+CARE-ASD audit keeps these statements separate from downstream
+utility and component-level evidence. In the tested DCASE-2026-aligned development regime, broad
 reference-correlated suppression failed to improve primary AUC and harmed secondary pAUC;
 conservative gating did not establish improvement; and controlled selectors did not demonstrate a
 joint region of useful environmental attenuation and fault-proxy preservation. This is a bounded
