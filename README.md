@@ -9,15 +9,17 @@ Research codebase for unsupervised anomalous sound detection on
 [DCASE 2026 Challenge Task 2](https://dcase.community/challenge2026/task-first-shot-unsupervised-anomalous-sound-detection-for-machine-condition-monitoring)
 stereo (near/far) machine audio, with:
 
-1. An exact near-only comparator and capacity-matched reference interventions
-2. Frozen aligned performance deltas and bootstrap confidence intervals
-3. Known-component SAFE-REF and AP-CARE identifiability holdouts
-4. Reproducible audit tables and figures generated from hashed evidence
+1. A formal contaminated-reference model with a bounded non-uniqueness result
+2. An exact near-only comparator and capacity-matched reference interventions
+3. Frozen downstream effects plus known-component attenuation/retention and selector-safety audits
+4. Reproducible audit tables, figures, and post-hoc DCASE sensitivity generated from hashed evidence
 
 Target journal: *Digital Signal Processing* (Elsevier).
 
 > The current publication direction follows
 > [`docs/IDENTIFIABILITY_AUDIT_PAPER.md`](docs/IDENTIFIABILITY_AUDIT_PAPER.md),
+> [`docs/CARE_ASD_IDENTIFIABILITY_MANUSCRIPT_DRAFT.md`](docs/CARE_ASD_IDENTIFIABILITY_MANUSCRIPT_DRAFT.md),
+> [`docs/DSP_SUBMISSION_READINESS.md`](docs/DSP_SUBMISSION_READINESS.md),
 > [`docs/AP_CARE_V2_EXECUTION_SPEC.md`](docs/AP_CARE_V2_EXECUTION_SPEC.md), and
 > [`docs/RESEARCH_SCOPE.md`](docs/RESEARCH_SCOPE.md); the original implementation
 > plan and SAFE-REF protocol remain historical context.
@@ -52,8 +54,8 @@ Target journal: *Digital Signal Processing* (Elsevier).
 | Audit-A0 | Frozen Phase 7--10 + AP-G1 evidence synthesis | **implemented locally** |
 | Audit-A1 | Primary-source literature matrix and claim boundary | **implemented locally** |
 | Audit-A2 | Frozen machine/domain robustness appendix | **implemented locally** |
-| Audit-A3 | Identifiability manuscript draft and FP-NAA evidence ledger | **complete** |
-| Audit-A4 | Reproducibility bundle and submission checklist | **technical gate passed; author actions pending** |
+| Audit-A3 | Identifiability manuscript draft and FP-NAA evidence ledger | **reframed; ready for internal review** |
+| Audit-A4 | Reproducibility bundle and submission checklist | **technical gate passed; formal/bibliographic/author review pending** |
 
 ## Quick start
 
@@ -63,6 +65,9 @@ with `care-asd audit synthesize`; it consumes only committed evidence and never
 starts training, accesses evaluation data, or changes a historical report.
 The full reproduction and submission gate is documented in
 [`docs/IDENTIFIABILITY_AUDIT_SUBMISSION_CHECKLIST.md`](docs/IDENTIFIABILITY_AUDIT_SUBMISSION_CHECKLIST.md).
+The formal claim boundary and reviewer red-team are documented in
+[`docs/IDENTIFIABILITY_FORMALIZATION.md`](docs/IDENTIFIABILITY_FORMALIZATION.md) and
+[`docs/DSP_REVIEWER_RED_TEAM.md`](docs/DSP_REVIEWER_RED_TEAM.md).
 
 ### Requirements
 

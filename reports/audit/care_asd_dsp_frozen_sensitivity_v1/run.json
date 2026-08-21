@@ -1,0 +1,83 @@
+{
+  "analysis_code": [
+    {
+      "path": "scripts/run_dsp_frozen_sensitivity.py",
+      "sha256": "e0e97f9cb8c96ba6068042e2120ab5d0b4bf2e342f6df5d7f645485575d81c72"
+    },
+    {
+      "path": "src/care_asd/evaluation/dsp_frozen_sensitivity.py",
+      "sha256": "aa1bfb8c96cd3f1df9edd6a1054d4c5d7f9af1eaf1c2c0ed17d6d083100792e7"
+    },
+    {
+      "path": "src/care_asd/evaluation/dcase2026_metrics.py",
+      "sha256": "eb9e75e13260aa3ba0befa8c472b828367b5aa24e7ea42064128aeb132905f95"
+    }
+  ],
+  "analysis_type": "post_hoc_sensitivity",
+  "chronological_label": "derived post hoc from frozen predictions/artifacts",
+  "config": {
+    "path": "configs/research/dsp_frozen_sensitivity_v1.yaml",
+    "sha256": "3cb3385f4bc0fe87ce67b32013978fde0d1685d3168a54f881cf81bdcbae40cd"
+  },
+  "decisions": {
+    "confirmatory": false,
+    "development_labels_from_frozen_scores_only": true,
+    "evaluation_access": "prohibited",
+    "frozen_primary_estimand_replaced": false,
+    "model_training": "prohibited",
+    "model_tuning": "prohibited",
+    "post_hoc": true,
+    "sensitivity": true,
+    "subset_search": "prohibited",
+    "threshold_changes": "prohibited"
+  },
+  "inputs": [
+    {
+      "path": "reports/alignment/server02_phase6_alignment_20260813T061557Z/scores.csv",
+      "rows": 1400,
+      "sha256": "97bb7b754ac6218577f2bf0adc9e6ac2ca974158752a28002c520ee6051c2c9c",
+      "system": "B00"
+    },
+    {
+      "path": "reports/alignment/server02_phase7_care_residual_20260814T095459Z/scores.csv",
+      "rows": 1400,
+      "sha256": "a5689d41d39f45f704d4e64066cec4493eda5993dc65d6294e2d35554baf6c34",
+      "system": "B01"
+    },
+    {
+      "path": "reports/fusion/server02_phase9_gated_fusion_20260815T013410Z/scores.csv",
+      "rows": 1400,
+      "sha256": "25636d140f29888db022fbc12e0cefae26d1c0b3408b7fc5aa15f38bb867090c",
+      "system": "B02"
+    }
+  ],
+  "machine_groups": {
+    "emulated": [
+      "ToyCarEmu",
+      "bearingEmu",
+      "gearboxEmu",
+      "sliderEmu",
+      "valveEmu"
+    ],
+    "real": [
+      "ToyCar",
+      "fan"
+    ]
+  },
+  "metric_contract": "DCASE2026: domain normal versus all anomalies; pooled pAUC@0.1; harmonic mean over every cell",
+  "outputs": [
+    "official_metric_summary.csv",
+    "official_metric_cells.csv",
+    "README.md",
+    "manifest.json"
+  ],
+  "pairing": {
+    "file_ids_identical": true,
+    "metadata_identical": true,
+    "rows_per_system": 1400
+  },
+  "reference": "B00",
+  "schema_version": 1,
+  "source_snapshot_commit": "f1d5f7fadea74de6e9c7fdefcb172962b3298b63",
+  "study_id": "care_asd_dsp_frozen_sensitivity_v1"
+}

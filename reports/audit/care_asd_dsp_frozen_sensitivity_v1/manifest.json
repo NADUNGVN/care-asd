@@ -1,0 +1,51 @@
+{
+  "config": {
+    "path": "configs/research/dsp_frozen_sensitivity_v1.yaml",
+    "sha256": "3cb3385f4bc0fe87ce67b32013978fde0d1685d3168a54f881cf81bdcbae40cd"
+  },
+  "inputs": [
+    {
+      "path": "reports/alignment/server02_phase6_alignment_20260813T061557Z/scores.csv",
+      "rows": 1400,
+      "sha256": "97bb7b754ac6218577f2bf0adc9e6ac2ca974158752a28002c520ee6051c2c9c",
+      "system": "B00"
+    },
+    {
+      "path": "reports/alignment/server02_phase7_care_residual_20260814T095459Z/scores.csv",
+      "rows": 1400,
+      "sha256": "a5689d41d39f45f704d4e64066cec4493eda5993dc65d6294e2d35554baf6c34",
+      "system": "B01"
+    },
+    {
+      "path": "reports/fusion/server02_phase9_gated_fusion_20260815T013410Z/scores.csv",
+      "rows": 1400,
+      "sha256": "25636d140f29888db022fbc12e0cefae26d1c0b3408b7fc5aa15f38bb867090c",
+      "system": "B02"
+    }
+  ],
+  "outputs": [
+    {
+      "bytes": 1184,
+      "path": "reports/audit/care_asd_dsp_frozen_sensitivity_v1/official_metric_summary.csv",
+      "sha256": "94465ca830c0f8d5cb29ac640b0711593f2a43a2e5437ddaf54bf2d8f4ff3318"
+    },
+    {
+      "bytes": 7497,
+      "path": "reports/audit/care_asd_dsp_frozen_sensitivity_v1/official_metric_cells.csv",
+      "sha256": "59a403a1d34e429faacd2719c4552c5731dc5cf64dca06fc74cc866c6850e2ce"
+    },
+    {
+      "bytes": 2674,
+      "path": "reports/audit/care_asd_dsp_frozen_sensitivity_v1/run.json",
+      "sha256": "fb80e2a12767df7988a8e31600aeb6e85587ab13a20024c9fecdaf47ac659ff3"
+    },
+    {
+      "bytes": 1366,
+      "path": "reports/audit/care_asd_dsp_frozen_sensitivity_v1/README.md",
+      "sha256": "a1819c66348271b7f7bc79f64ea95b190d9ac2f218cc0389a595e9caff3c00ec"
+    }
+  ],
+  "schema_version": 1,
+  "source_snapshot_commit": "f1d5f7fadea74de6e9c7fdefcb172962b3298b63",
+  "study_id": "care_asd_dsp_frozen_sensitivity_v1"
+}

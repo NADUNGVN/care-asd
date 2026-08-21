@@ -1,0 +1,46 @@
+schema_version: 1
+study_id: care_asd_dsp_frozen_sensitivity_v1
+analysis_type: post_hoc_sensitivity
+source_snapshot_commit: f1d5f7fadea74de6e9c7fdefcb172962b3298b63
+
+sources:
+  B00: reports/alignment/server02_phase6_alignment_20260813T061557Z/scores.csv
+  B01: reports/alignment/server02_phase7_care_residual_20260814T095459Z/scores.csv
+  B02: reports/fusion/server02_phase9_gated_fusion_20260815T013410Z/scores.csv
+
+expected_source_sha256:
+  B00: 97bb7b754ac6218577f2bf0adc9e6ac2ca974158752a28002c520ee6051c2c9c
+  B01: a5689d41d39f45f704d4e64066cec4493eda5993dc65d6294e2d35554baf6c34
+  B02: 25636d140f29888db022fbc12e0cefae26d1c0b3408b7fc5aa15f38bb867090c
+
+reference: B00
+
+machine_groups:
+  real:
+    - ToyCar
+    - fan
+  emulated:
+    - ToyCarEmu
+    - bearingEmu
+    - gearboxEmu
+    - sliderEmu
+    - valveEmu
+
+analysis_code:
+  - scripts/run_dsp_frozen_sensitivity.py
+  - src/care_asd/evaluation/dsp_frozen_sensitivity.py
+  - src/care_asd/evaluation/dcase2026_metrics.py
+
+output_dir: reports/audit/care_asd_dsp_frozen_sensitivity_v1
+
+decisions:
+  confirmatory: false
+  post_hoc: true
+  sensitivity: true
+  development_labels_from_frozen_scores_only: true
+  evaluation_access: prohibited
+  model_training: prohibited
+  model_tuning: prohibited
+  threshold_changes: prohibited
+  subset_search: prohibited
+  frozen_primary_estimand_replaced: false

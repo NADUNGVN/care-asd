@@ -1,0 +1,10 @@
+system,scope,machine_count,cell_count,official_score,official_score_percent,analysis_label,delta_vs_b00
+B00,all,7,21,0.5725696124112103,57.25696124112103,derived_post_hoc_from_frozen_predictions_artifacts,0.0
+B01,all,7,21,0.5533553926770951,55.33553926770951,derived_post_hoc_from_frozen_predictions_artifacts,-0.01921421973411519
+B02,all,7,21,0.5712483871296836,57.12483871296836,derived_post_hoc_from_frozen_predictions_artifacts,-0.0013212252815266723
+B00,real,2,6,0.5273235748982567,52.73235748982567,derived_post_hoc_from_frozen_predictions_artifacts,0.0
+B01,real,2,6,0.5112378237162114,51.12378237162114,derived_post_hoc_from_frozen_predictions_artifacts,-0.01608575118204525
+B02,real,2,6,0.5298867860917424,52.988678609174244,derived_post_hoc_from_frozen_predictions_artifacts,0.0025632111934857926
+B00,emulated,5,15,0.5929193580265876,59.291935802658756,derived_post_hoc_from_frozen_predictions_artifacts,0.0
+B01,emulated,5,15,0.5722117177489222,57.22117177489222,derived_post_hoc_from_frozen_predictions_artifacts,-0.020707640277665362
+B02,emulated,5,15,0.5896593031871487,58.96593031871487,derived_post_hoc_from_frozen_predictions_artifacts,-0.0032600548394389195

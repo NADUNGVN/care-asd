@@ -3,7 +3,9 @@
 Status date: 2026-08-21  
 Target venue: *Digital Signal Processing* (Elsevier)  
 Technical reproducibility gate: **passed**  
-Submission gate: **pending author metadata, venue formatting, and final author approval**
+Scientific framing gate: **ready for internal review**
+Submission gate: **pending formal review, bibliography verification, author metadata, venue
+formatting, and final author approval**
 
 This checklist closes the technical part of Audit-A4 without authorizing new training,
 evaluation-label access, or post-failure tuning. The paper remains an empirical identifiability
@@ -13,9 +15,10 @@ theorem.
 ## 1. Frozen package verification
 
 All four packages were regenerated on 2026-08-21 from a clean `research/fp-naa` worktree at
-commit `0d62f07`. Regeneration used new output directories, so the immutable committed packages
-were never overwritten. Every stable `run.json` field matched after excluding only `git_commit`,
-which correctly records the commit at regeneration time.
+commit `0d62f07` and sealed in the verified Audit-A4 repository state
+`f1d5f7fadea74de6e9c7fdefcb172962b3298b63`. Regeneration used new output directories, so the
+immutable committed packages were never overwritten. Every stable `run.json` field matched after
+excluding only `git_commit`, which correctly records the commit at regeneration time.
 
 | Package | Contract | Committed package | Frozen inputs | Output artifacts | Result |
 |---|---|---|---:|---:|---|
@@ -37,6 +40,18 @@ The focused detached regression suite passed:
 It covered audit synthesis, literature audit, robustness analysis, and their CLI surfaces. The
 persisted local diagnostic directory is outside the repository and is not part of the scientific
 record.
+
+After the DSP manuscript reframing, the same four packages were regenerated again into new
+temporary directories. The result remained **23/23 exact artifact hashes**, with quantitative
+source hashes, coverage, and decision fields unchanged. A focused suite covering Audit-A4, the
+exact DCASE metric, the new frozen sensitivity package, and CLI regression passed:
+
+```text
+32 passed in 10.23s
+```
+
+A path-scoped Git comparison against `f1d5f7f` confirmed that no frozen Audit-A4 source or output
+artifact changed.
 
 ## 2. Reproduction commands
 
@@ -65,6 +80,10 @@ uv run care-asd audit literature \
   --config configs/research/fp_naa_post_v10_literature_delta.yaml \
   --repo-root . \
   --output-dir <new-post-v10-output>
+
+uv run python scripts/run_dsp_frozen_sensitivity.py \
+  --config configs/research/dsp_frozen_sensitivity_v1.yaml \
+  --output-dir <new-dsp-sensitivity-output>
 ```
 
 Compare each regenerated `run.json` with its committed counterpart. `git_commit` may differ;
@@ -75,14 +94,15 @@ match exactly.
 
 | Manuscript claim group | Authoritative artifact | Manuscript location |
 |---|---|---|
-| B00/B01/B02 AUC, pAUC, paired intervals | `care_asd_identifiability_audit_v1/performance_evidence.csv` | Abstract; Sections 3.5 and 4.1 |
-| Machine/domain sensitivity and LOMO ranges | `care_asd_robustness_appendix_v1/heterogeneity.json` and `leave_one_machine_out.csv` | Section 4.2 |
-| Phase 8 displacement/score association | `care_asd_identifiability_audit_v1/decision.json` and frozen Phase 8 source hash | Sections 3.3 and 4.3 |
-| SAFE-REF false-safe behavior | `care_asd_identifiability_audit_v1/decision.json` and `identifiability_evidence.csv` | Sections 3.4 and 4.4 |
-| AP-CARE retention/attenuation gate | `identifiability_evidence.csv`, `ap_care_holdout_diagnostics.csv`, and `decision.json` | Sections 3.4 and 4.4 |
-| Literature novelty and prohibited claims | `care_asd_literature_audit_v1/claim_boundary.json` | Sections 1, 2, 5, and 6 |
-| FP-NAA V1-V10 bounded negative sequence | `docs/FP_NAA_NEGATIVE_EVIDENCE_LEDGER.md` and immutable server run IDs | Section 4.5 only; not pooled |
-| Stop and leakage decisions | `care_asd_identifiability_audit_v1/decision.json` | Sections 3.6, 5, 6, and integrity statement |
+| B00/B01/B02 AUC, pAUC, paired intervals | `care_asd_identifiability_audit_v1/performance_evidence.csv` | Abstract; Sections 4.3, 5.1–5.3 |
+| Machine/domain sensitivity and LOMO ranges | `care_asd_robustness_appendix_v1/heterogeneity.json` and `leave_one_machine_out.csv` | Sections 5.2–5.3 |
+| Phase 8 displacement/score association | `care_asd_identifiability_audit_v1/decision.json` and frozen Phase 8 source hash | Sections 4.4 and 5.4 |
+| SAFE-REF false-safe behavior | `care_asd_identifiability_audit_v1/decision.json` and `identifiability_evidence.csv` | Sections 4.4–4.5 and 5.5 |
+| AP-CARE retention/attenuation gate | `identifiability_evidence.csv`, `ap_care_holdout_diagnostics.csv`, and `decision.json` | Sections 4.4–4.5 and 5.6 |
+| Exact DCASE and real/emulated sensitivity | `care_asd_dsp_frozen_sensitivity_v1/official_metric_summary.csv`, `run.json`, and `manifest.json` | Section 5.7; post hoc only |
+| Literature novelty and prohibited claims | `care_asd_literature_audit_v1/claim_boundary.json` | Sections 1, 6, 7, and provisional references |
+| FP-NAA V1-V10 bounded negative sequence | `docs/FP_NAA_NEGATIVE_EVIDENCE_LEDGER.md` and immutable server run IDs | Sections 4.5 and 6.5 only; not pooled |
+| Stop and leakage decisions | `care_asd_identifiability_audit_v1/decision.json` | Sections 4.5, 6, 7, and reproducibility statement |
 
 ## 4. Environment and data boundary
 
@@ -92,14 +112,17 @@ match exactly.
 - [x] The paper generators use committed derived evidence and do not require raw audio.
 - [x] Restricted DCASE audio is not redistributed.
 - [x] No unseen evaluation labels or scores were accessed.
-- [x] Failed SAFE-REF/AP-CARE holdouts were not reused for tuning.
+- [x] The original SAFE-REF result and subsequent correction are both retained; the corrected study
+  is labeled post-correction and is not retroactively described as the original preregistration.
+- [x] The failed AP-CARE holdout was not reused for tuning.
 - [x] GPU replication and successor stages remain prohibited by the frozen decision.
 - [x] Code and generated-artifact text hashes are portable across LF/CRLF checkouts.
 - [x] Repository code license is MIT.
 
 ## 5. Scientific-content checklist
 
-- [x] Harmful B01 pAUC result retained with its preregistered paired interval.
+- [x] B01 AUC is retained as the registered primary endpoint; harmful pAUC is labeled as a
+  prospectively specified secondary result.
 - [x] Null B02 result retained without interpreting interval overlap as equivalence.
 - [x] Simple aggregate subtraction is distinguished from the paired-bootstrap estimand.
 - [x] Source/target asymmetry and machine heterogeneity are reported.
@@ -110,6 +133,14 @@ match exactly.
 - [x] DCASE technical reports and arXiv papers are labeled non-peer-reviewed where applicable.
 - [x] FP-NAA V1-V10 is supplementary process evidence, not ten independent replications.
 - [x] Limitations exclude unseen-machine, deployment, and universal-impossibility claims.
+- [x] A bounded two-source/two-microphone non-uniqueness argument is separated from empirical
+  selector failure and ASD degradation.
+- [x] Paired-bootstrap inference is explicitly conditional on the single locked training seed
+  13711 and does not claim training-initialization uncertainty.
+- [x] Exact DCASE harmonic and real/emulated results are labeled “derived post hoc from frozen
+  predictions/artifacts” and do not replace the frozen estimand.
+- [x] The SAFE-REF 20% coverage criterion is reported as unchanged; the later 8.84% feasibility
+  calculation is labeled a post-result diagnosis rather than a gate modification.
 
 ## 6. Items requiring author action before submission
 
@@ -117,6 +148,10 @@ match exactly.
   identifiers.
 - [ ] Replace the collective author placeholder in `CITATION.cff` and `pyproject.toml`.
 - [ ] Confirm the final title with all authors.
+- [ ] Obtain signal-processing review of the bounded non-uniqueness proposition and its relationship
+  to established blind source separation identifiability results.
+- [ ] Obtain explicit author sign-off on the SAFE-REF chronology, endpoint hierarchy, and
+  single-seed claim boundary.
 - [ ] Convert the Markdown draft into the current *Digital Signal Processing* manuscript template.
 - [ ] Build a formal bibliography and verify every DOI, author list, year, and access date.
 - [ ] Check the venue's current word/page limits, figure limits, graphical-abstract requirements,
@@ -134,7 +169,7 @@ match exactly.
 
 ## 7. Final release gate
 
-The technical bundle is reproducible and internally consistent. The manuscript is **not yet ready
-to upload** until every unchecked author-action item is resolved. None of those administrative or
-formatting items permits changing the frozen evidence, reopening V10, or accessing evaluation
-labels.
+The technical bundle is reproducible and the revised scientific story is **ready for internal
+review**, not yet for journal upload. The manuscript remains blocked from external submission until
+the critical review and author-action items are resolved. None of those actions permits changing
+the frozen evidence, reopening V10, adding retrospective seeds, or accessing evaluation labels.

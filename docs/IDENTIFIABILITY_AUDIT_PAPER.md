@@ -102,8 +102,8 @@ Unsupported claims:
 | Audit-A0 | Frozen evidence package and figures | Local CPU | Artifact/hash audit |
 | Audit-A1 | Literature matrix and novelty positioning | None | **Complete; claim boundary frozen** |
 | Audit-A2 | Machine/domain robustness appendix from frozen scores | Local CPU | **Complete; no new tuning** |
-| Audit-A3 | Manuscript methods, results, limitations | None | **Complete; cross-checked against frozen artifacts** |
-| Audit-A4 | Reproducibility bundle and submission checklist | None | **Technical gate passed; author metadata/formatting pending** |
+| Audit-A3 | Manuscript methods, results, limitations | None | **Reframed around formal identifiability and audit methodology; ready for internal review** |
+| Audit-A4 | Reproducibility bundle and submission checklist | None | **Technical gate passed; formal/bibliographic/author review pending** |
 
 No new training, evaluation-data access, or hardware benchmark is on the critical
 path. Any exploratory successor controller must receive a new method ID, new
@@ -118,3 +118,9 @@ evidence and is not pooled into the paper's inferential estimates.
 
 Audit-A4 verification and the remaining author-owned submission tasks are recorded in
 [`IDENTIFIABILITY_AUDIT_SUBMISSION_CHECKLIST.md`](IDENTIFIABILITY_AUDIT_SUBMISSION_CHECKLIST.md).
+The DSP reviewer red-team, formal non-uniqueness layer, reusable audit protocol, and current
+readiness decision are recorded in
+[`DSP_REVIEWER_RED_TEAM.md`](DSP_REVIEWER_RED_TEAM.md),
+[`IDENTIFIABILITY_FORMALIZATION.md`](IDENTIFIABILITY_FORMALIZATION.md),
+[`CONTAMINATED_REFERENCE_SAFETY_AUDIT_PROTOCOL.md`](CONTAMINATED_REFERENCE_SAFETY_AUDIT_PROTOCOL.md),
+and [`DSP_SUBMISSION_READINESS.md`](DSP_SUBMISSION_READINESS.md).
