@@ -1,0 +1,19 @@
+{
+  "artifacts": {
+    "claim_boundary.json": "eb421b7a5e78b82bae9d88bb8378632ef04478fe059aeb743869b67bc6b279e1",
+    "literature_audit.md": "83bc37778b0db0bcf21666e442f34c51a1ece921dd4c053077177e742f6b336e",
+    "literature_matrix.csv": "eb86f06c2dd45763bbfe36fbb91354b41e8db655e13a3a0382024983d27956f0"
+  },
+  "config": {
+    "path": "configs/research/fp_naa_post_v10_literature_delta.yaml",
+    "sha256": "c3f0f22e2ba5f63d6433f1975c1bd212e03d8dfa8834c01b107083c5a246bd2a"
+  },
+  "cutoff_date": "2026-08-21",
+  "git_commit": "1760f38946ccdd64fc10f9dbda4826fc60d09ff5",
+  "prohibited_claim_count": 6,
+  "schema_version": 1,
+  "source_count": 9,
+  "source_policy": "primary_sources_only",
+  "study_id": "fp_naa_post_v10_literature_delta",
+  "supported_claim_count": 5
+}

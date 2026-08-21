@@ -1,0 +1,108 @@
+{
+  "central_question": "Does the evidence available after the failed V10 mechanism gate justify another bounded FP-NAA performance hypothesis, and which candidate mechanisms remain distinct, leakage-controlled, and falsifiable?",
+  "contribution_statement": "The post-V10 literature gate rejects threshold-only tail rescue, another correlated BEATs score union, and proxy-fault model selection as immediate successors; it retains cross-channel predictive residuals and domain-aware calibration only as prior-art comparators inside a new safety or transfer study, not as novel components by themselves.",
+  "cutoff_date": "2026-08-21",
+  "prohibited_claims": [
+    {
+      "claim_id": "top_tail_rescue_is_new",
+      "evidence_scope": "The aggregation family is already described and its reported development replay does not favor it over consensus.",
+      "source_ids": [
+        "kajita2026_train_normal_profile"
+      ],
+      "text": "Do not present sparse top-tail rescue or a relaxed median-gain rule as a novel V11 mechanism."
+    },
+    {
+      "claim_id": "cross_channel_residual_is_prior_art",
+      "evidence_scope": "A direct DCASE 2026 system description implements this mechanism with normal-only ridge prediction.",
+      "source_ids": [
+        "jeong2026_cross_channel_residual"
+      ],
+      "text": "Do not claim that predicting one channel representation from the other and scoring the residual is itself novel."
+    },
+    {
+      "claim_id": "dev_score_guarantees_unseen_transfer",
+      "evidence_scope": "Direct transfer analysis and strict leave-one-machine-out validation practice.",
+      "source_ids": [
+        "mkrtchian2026_daco",
+        "shokriazar2026_shiftall_ldknn"
+      ],
+      "text": "Do not use development-score ranking alone as evidence that a configuration will transfer to unseen evaluation machine types."
+    },
+    {
+      "claim_id": "proxy_fault_gate_proves_real_anomaly_power",
+      "evidence_scope": "Proxy outliers saturate competing backends in the reported ASD study and fail to provide a useful selection signal.",
+      "source_ids": [
+        "zhou2026_backend_systematic"
+      ],
+      "text": "Do not claim that passing a synthetic or proxy-fault gate proves ranking power on real anomalies."
+    },
+    {
+      "claim_id": "ordinary_score_fusion_is_novel",
+      "evidence_scope": "Multiple current primary system descriptions already cover these aggregation families.",
+      "source_ids": [
+        "dcase2026_task_results",
+        "jiang2026_aithu_fusion",
+        "kajita2026_train_normal_profile"
+      ],
+      "text": "Do not claim generic score calibration, rank fusion, maximum fusion, or multi-branch ensembling as a CARE-ASD novelty."
+    },
+    {
+      "claim_id": "technical_reports_are_peer_reviewed",
+      "evidence_scope": "The official challenge publication policy distinguishes technical reports from reviewed workshop papers.",
+      "source_ids": [
+        "dcase2026_submission_policy"
+      ],
+      "text": "Do not describe DCASE challenge technical reports in this delta as peer-reviewed scientific evidence."
+    }
+  ],
+  "study_id": "fp_naa_post_v10_literature_delta",
+  "supported_claims": [
+    {
+      "claim_id": "backend_diversity_precedes_pooling",
+      "evidence_scope": "Direct ASD systematic evidence and current challenge system descriptions; not a universal theorem over every encoder or dataset.",
+      "source_ids": [
+        "zhou2026_backend_systematic",
+        "jiang2026_aithu_fusion",
+        "dcase2026_task_results"
+      ],
+      "text": "For the next bounded study, backend and representation diversity deserves priority over another temporal-pooling or same-representation branch search."
+    },
+    {
+      "claim_id": "proxy_fault_selection_requires_external_validation",
+      "evidence_scope": "A direct negative ASD result plus evidence that label-free criteria need an independent viability check.",
+      "source_ids": [
+        "zhou2026_backend_systematic",
+        "mkrtchian2026_daco"
+      ],
+      "text": "Pseudo-fault or proxy-outlier selection cannot by itself authorize a performance run because proxy discrimination may fail to rank real-anomaly backends."
+    },
+    {
+      "claim_id": "calibration_is_a_control_not_a_power_certificate",
+      "evidence_scope": "Cross-year ASD experiments with an explicitly disclosed degenerate-map failure mode.",
+      "source_ids": [
+        "mkrtchian2026_daco"
+      ],
+      "text": "Domain-aware normal-score calibration is a necessary transfer control, but normal-distribution balance does not certify anomaly-detection power and requires a frozen viability veto."
+    },
+    {
+      "claim_id": "orthogonal_stereo_residual_is_conditional",
+      "evidence_scope": "Current DCASE technical reports demonstrate the component families but do not report CARE-ASD's known-component preservation endpoints.",
+      "source_ids": [
+        "jeong2026_cross_channel_residual",
+        "shokriazar2026_shiftall_ldknn"
+      ],
+      "text": "Cross-channel predictive residuals remain mechanistically distinct from the failed V10 score branches, but only a new safety, identifiability, or transfer protocol could be a CARE-ASD contribution."
+    },
+    {
+      "claim_id": "no_immediate_v11_gpu_authorization",
+      "evidence_scope": "A go-or-no-go research-program decision combining current prior art with the already frozen CARE-ASD V10 failure.",
+      "source_ids": [
+        "kajita2026_train_normal_profile",
+        "jiang2026_aithu_fusion",
+        "dcase2026_task_results"
+      ],
+      "text": "The literature delta does not justify immediate V11 GPU training; a successor must first state a mechanism not reducible to tail-threshold tuning, ordinary fusion, or reconstruction of a published ensemble."
+    }
+  ],
+  "working_title": "Post-V10 Literature Gate for CARE-ASD Successor Research"
+}
