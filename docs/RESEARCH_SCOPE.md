@@ -48,3 +48,9 @@ The retained DSP manuscript is an identifiability/audit paper. It combines an
 aligned negative-control sequence, a frozen post-hoc mechanism association, and
 two known-component synthetic holdouts. No expensive development replication,
 unseen evaluation, or board-kit benchmark is run after the AP-G1 stop rule.
+
+The current Audit-A3 manuscript draft is
+[`CARE_ASD_IDENTIFIABILITY_MANUSCRIPT_DRAFT.md`](CARE_ASD_IDENTIFIABILITY_MANUSCRIPT_DRAFT.md).
+The sequential FP-NAA V1-V10 results remain supplementary bounded evidence in
+[`FP_NAA_NEGATIVE_EVIDENCE_LEDGER.md`](FP_NAA_NEGATIVE_EVIDENCE_LEDGER.md) and are not pooled as
+independent replications.
