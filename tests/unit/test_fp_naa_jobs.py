@@ -12,6 +12,7 @@ from care_asd.server.fp_naa_jobs import (
     CUBLAS_WORKSPACE_CONFIG,
     SCHEMA_VERSION,
     V10_C1_SOURCE_RUN_ID,
+    V10_REQUIRED_V9_GATE,
     V10_TAP_SOURCE_RUN_ID,
     FPNAAJobContext,
     JobError,
@@ -218,6 +219,7 @@ def test_v10_evidence_preflight_has_a_stable_report_contract(tmp_path: Path) -> 
     )
     assert V10_TAP_SOURCE_RUN_ID == "server02_fp_naa_tap_repair_preflight_20260818T072423Z"
     assert V10_C1_SOURCE_RUN_ID == "server02_fp_naa_screening_20260817T083029Z"
+    assert V10_REQUIRED_V9_GATE == "V9_M_preencoder_tangent_repair_preflight"
 
 
 def test_state_schema_is_validated() -> None:

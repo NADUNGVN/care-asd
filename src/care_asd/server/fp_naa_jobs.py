@@ -39,6 +39,7 @@ CHECKPOINT_URL = (
 )
 V10_TAP_SOURCE_RUN_ID = "server02_fp_naa_tap_repair_preflight_20260818T072423Z"
 V10_C1_SOURCE_RUN_ID = "server02_fp_naa_screening_20260817T083029Z"
+V10_REQUIRED_V9_GATE = "V9_M_preencoder_tangent_repair_preflight"
 
 
 class JobStage(StrEnum):
@@ -1341,10 +1342,7 @@ def _run_evidence_preflight(
             "V10 requires the completed V9 tap-repair mechanism gate",
         )
     v9_gate = _read_json(v9_gate_path)
-    if (
-        v9_gate.get("gate") != "V9_M_preencoder_tangent_repair"
-        or v9_gate.get("passed") is not False
-    ):
+    if v9_gate.get("gate") != V10_REQUIRED_V9_GATE or v9_gate.get("passed") is not False:
         raise JobError(
             "V9_CLOSURE_MISMATCH",
             "V10 is authorized only by the frozen failed V9 mechanism result",
