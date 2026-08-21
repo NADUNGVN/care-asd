@@ -1,7 +1,7 @@
 [project]
 name = "care-asd"
 version = "0.1.0"
-description = "CARE-ASD: Causal Acoustic-Path and Reliability-Calibrated Anomalous Sound Detection"
+description = "CARE-ASD: an identifiability audit of contaminated-reference processing for anomalous sound detection"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11,<3.14"
@@ -71,8 +71,8 @@ full = [
 care-asd = "care_asd.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/care-asd/care-asd"
-Documentation = "https://github.com/care-asd/care-asd/tree/main/docs"
+Homepage = "https://github.com/NADUNGVN/care-asd"
+Documentation = "https://github.com/NADUNGVN/care-asd/tree/research/fp-naa/docs"
 
 [build-system]
 requires = ["hatchling"]

@@ -52,6 +52,8 @@ Target journal: *Digital Signal Processing* (Elsevier).
 | Audit-A0 | Frozen Phase 7--10 + AP-G1 evidence synthesis | **implemented locally** |
 | Audit-A1 | Primary-source literature matrix and claim boundary | **implemented locally** |
 | Audit-A2 | Frozen machine/domain robustness appendix | **implemented locally** |
+| Audit-A3 | Identifiability manuscript draft and FP-NAA evidence ledger | **complete** |
+| Audit-A4 | Reproducibility bundle and submission checklist | **technical gate passed; author actions pending** |
 
 ## Quick start
 
@@ -59,6 +61,8 @@ AP-G1 is complete and failed. Its wrappers remain for provenance, but AP-CARE
 must not be retuned on the frozen holdout. The retained audit package is built
 with `care-asd audit synthesize`; it consumes only committed evidence and never
 starts training, accesses evaluation data, or changes a historical report.
+The full reproduction and submission gate is documented in
+[`docs/IDENTIFIABILITY_AUDIT_SUBMISSION_CHECKLIST.md`](docs/IDENTIFIABILITY_AUDIT_SUBMISSION_CHECKLIST.md).
 
 ### Requirements
 

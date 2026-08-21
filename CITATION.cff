@@ -1,13 +1,15 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
-title: "CARE-ASD: Causal Acoustic-Path and Reliability-Calibrated Anomalous Sound Detection"
+title: "CARE-ASD: An Identifiability Audit of Contaminated-Reference Processing for Anomalous Sound Detection"
 version: "0.1.0"
 date-released: "2026-08-06"
 type: software
+authors:
+  - name: "CARE-ASD Research Contributors"
 abstract: >-
-  CARE-ASD implements causal acoustic-path estimation, reliability-calibrated
-  anomaly detection, and selective edge inference for unsupervised anomalous
-  sound detection on unseen machines (DCASE 2026 Task 2).
+  CARE-ASD provides frozen, reproducible audits of contaminated-reference
+  processing for unsupervised anomalous sound detection. It retains harmful and
+  null outcomes, known-component safety checks, and preregistered stop decisions.
 keywords:
   - anomalous sound detection
   - acoustic path
@@ -15,4 +17,4 @@ keywords:
   - DCASE
   - machine condition monitoring
 license: MIT
-repository-code: "https://github.com/care-asd/care-asd"
+repository-code: "https://github.com/NADUNGVN/care-asd"

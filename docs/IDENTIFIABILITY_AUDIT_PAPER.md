@@ -103,7 +103,7 @@ Unsupported claims:
 | Audit-A1 | Literature matrix and novelty positioning | None | **Complete; claim boundary frozen** |
 | Audit-A2 | Machine/domain robustness appendix from frozen scores | Local CPU | **Complete; no new tuning** |
 | Audit-A3 | Manuscript methods, results, limitations | None | **Complete; cross-checked against frozen artifacts** |
-| Audit-A4 | Reproducibility bundle and submission checklist | None | All claims trace to artifacts |
+| Audit-A4 | Reproducibility bundle and submission checklist | None | **Technical gate passed; author metadata/formatting pending** |
 
 No new training, evaluation-data access, or hardware benchmark is on the critical
 path. Any exploratory successor controller must receive a new method ID, new
@@ -115,3 +115,6 @@ The Audit-A3 draft is
 The FP-NAA V1-V10 sequence is isolated in
 [`FP_NAA_NEGATIVE_EVIDENCE_LEDGER.md`](FP_NAA_NEGATIVE_EVIDENCE_LEDGER.md) as supplementary bounded
 evidence and is not pooled into the paper's inferential estimates.
+
+Audit-A4 verification and the remaining author-owned submission tasks are recorded in
+[`IDENTIFIABILITY_AUDIT_SUBMISSION_CHECKLIST.md`](IDENTIFIABILITY_AUDIT_SUBMISSION_CHECKLIST.md).
